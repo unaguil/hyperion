@@ -25,7 +25,7 @@ import config.Configuration;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class MessageProcessor extends WaitableThread {
+class MessageProcessor extends WaitableThread {
 
 	// the communication peer
 	private final Peer peer;
