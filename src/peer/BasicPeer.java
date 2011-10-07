@@ -120,14 +120,14 @@ public class BasicPeer implements Peer {
 		this.peerID = id;
 		
 		myLogger.trace("Peer " + peerID + " initializing");
-
-		peerBehavior.init();
-
-		myLogger.trace("Peer " + peerID + " starts receiving");
-		receivingThread = new ReceivingThread(this);
-		receivingThread.start();
 		
 		init();
+		
+		peerBehavior.init();
+		
+		receivingThread = new ReceivingThread(this);
+		receivingThread.start();
+		myLogger.trace("Peer " + peerID + " starts receiving");
 	}
 	
 	/**
@@ -211,13 +211,6 @@ public class BasicPeer implements Peer {
 				}
 			}
 
-			// Initialize all layers
-			for (final CommunicationLayer layer : communicationLayers)
-				layer.init();
-
-			// Load peer data
-			peerBehavior.loadData();
-
 			receivedMessages.start();
 
 			// Starts message processing thread
@@ -237,6 +230,10 @@ public class BasicPeer implements Peer {
 		}
 		
 		detector = new BeaconDetector(this);
+		
+		// Initialize all layers
+		for (final CommunicationLayer layer : communicationLayers)
+			layer.init();
 
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();

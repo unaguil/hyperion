@@ -9,6 +9,4 @@ public interface PeerBehavior {
 	public void broadcast(byte[] data) throws IOException;
 	
 	public byte[] receiveData();
-	
-	public void loadData();
 }

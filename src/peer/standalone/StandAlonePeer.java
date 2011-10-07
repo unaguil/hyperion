@@ -2,17 +2,22 @@ package peer.standalone;
 
 import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
 import graphcreation.services.Service;
+import graphcreation.services.ServiceList;
 import graphsearch.CompositionListener;
 import graphsearch.CompositionSearch;
 import graphsearch.SearchID;
 import graphsearch.forward.ForwardCompositionSearch;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -31,6 +36,10 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 
 	// local socket address
 	private java.net.InetSocketAddress socketAddress;
+	
+	private ServiceList findServices;
+
+	private final Map<SearchID, List<ExtendedServiceGraph>> receivedCompositions = new HashMap<SearchID, List<ExtendedServiceGraph>>();
 
 	// Basic peer
 	protected final Peer peer;
@@ -47,27 +56,33 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	private static final int DEST_PORT = 6666;
 
 	private CompositionSearch compositionSearch;
+	
+	private final String servicesDir;
 
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
 
-	public StandAlonePeer(String configurationFile) {
+	public StandAlonePeer(String configurationFile, String servicesDir) {
 		Configuration.setFile(configurationFile);
 		
+		this.servicesDir = servicesDir;
+		
 		peer = new BasicPeer(this);
+		
+		compositionSearch = new ForwardCompositionSearch(peer, this);
 	}
 
-	public void init(PeerID peerID) throws IOException {
+	public void start(PeerID peerID) throws IOException {
 		peer.initPeer(peerID);
 	}
 
 	@Override
 	public void init() throws IOException {
-		compositionSearch = new ForwardCompositionSearch(peer, this);
-		
 		socket = new DatagramSocket(LISTEN_PORT);
 		socketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), DEST_PORT);
 
 		logger.info("Starting peer " + peer.getPeerID() + " listening on port " + LISTEN_PORT);
+		
+		loadData();
 	}
 
 	@Override
@@ -93,20 +108,15 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 		return data;
 	}
 
-	@Override
-	public void loadData() {
-		// TODO Auto-generated method stub
-	}
-
 	public static void main(String args[]) throws IOException {
-		if (args.length < 2) {
-			System.out.println("Usage: StandAlonePeer [ConfigurationFile] [peerID]");
+		if (args.length < 3) {
+			System.out.println("Usage: StandAlonePeer [PeerID] [ConfigurationFile] [ServicesDir]");
 			System.exit(0);
 		}
 
-		StandAlonePeer peer = new StandAlonePeer(args[0]);
+		StandAlonePeer peer = new StandAlonePeer(args[1], args[2]);
 
-		peer.init(new PeerID(args[1]));
+		peer.start(new PeerID(args[0]));
 	}
 
 	@Override
@@ -131,5 +141,20 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	public void compositionModified(SearchID searchID, Set<Service> removedServices) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	public void loadData() {
+		try {
+			final String xmlPath = getServicesFilePath(peer.getPeerID());
+			final ServiceList sList = new ServiceList(xmlPath, peer.getPeerID());
+			compositionSearch.manageLocalServices(sList, new ServiceList());
+
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private String getServicesFilePath(final PeerID peerID) {
+		return servicesDir + File.separator + "Services" + peerID + ".xml";
 	}
 }
