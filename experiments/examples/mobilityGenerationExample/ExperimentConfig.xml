@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<experiment>
+	<staticConfig>
+		<!-- Script configuration variables -->
+		<!-- <entry key="nNodes">2</entry> -->
+		<entry key="finishTime">15.0</entry>
+		<entry key="gridW">100</entry>
+		<entry key="gridH">100</entry>
+		<entry key="javaAgent">dissemination.peer.Peer</entry>
+		<!-- Random waypoint configuration -->
+		<entry key="mobilityModel">RandomWaypoint</entry>
+		<entry key="minSpeed">1.0</entry>
+		<entry key="maxSpeed">20.0</entry>
+		<entry key="pauseTime">1.0</entry>
+		<!-- Peer configuration variables -->
+		<entry key="reliableBroadcastPeer.cleanReceivedMessagesTime">1000</entry>
+		<entry key="reliableBroadcastPeer.maxTries">5</entry>
+		<entry key="reliableBroadcastPeer.randomWait">150</entry>
+		<entry key="beaconDetector.beaconTime">2000</entry>
+		<entry key="beaconDetector.randomTime">200</entry>
+		
+		<!-- Parameter populator -->
+		<entry key="populator">ParameterPopulator</entry>
+		<entry key="nDistribution">((0.1, 5), (0.2, 3), (0.6, 2), (0.1, 0))</entry>
+		<entry key="gDistribution">(0.2, 0.3, 0.4, 0.1)</entry>
+		<entry key="tDistribution">('UNIQUE', (0.4, 0.6), (0.3, 0.4, 0.3), (0.1, 0.5, 0.4))</entry>
+		
+	</staticConfig>
+	<dynamicConfig>
+		<dynamicEntry key="nNodes" interpolator="LinealInterpolator" start="2" end="50" step="2"/>
+	</dynamicConfig>
+	<code codeFile="code.txt"/>
+	<measures>
+		<measure type="generic.SentMessages"/>
+		<measure type="generic.ReceivedMessages"/>
+		<measure type="generic.ReliableBroadcastedMessages"/>
+		<measure type="generic.DeliveredMessages"/>
+		<measure type="generic.DeliveredRatio"/>
+		<measure type="detection.SentBeaconMessages"/>
+		<measure type="detection.ReceivedBeaconMessages"/>
+		<measure type="detection.NewNeighborsDetected"/>
+		<measure type="detection.LostNeighborsDetected"/>
+	</measures>
+</experiment>

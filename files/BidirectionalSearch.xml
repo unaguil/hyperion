@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tests>
+	<test workingDir="scripts/tests/bigraphsearch/verysimple" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simple" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simple2" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simpleMultipleSolutions" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simpleMultipleSearches" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simpleDelayedSolution" script="Script.tcl"/>
+	<test workingDir="scripts/tests/bigraphsearch/simpleSearchExpired" script="Script.tcl"/>
+</tests>

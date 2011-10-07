@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<parameterTable>
+	<parameter id="I-A">
+		<entry distance="2" neighbor="1"/>
+	</parameter>
+</parameterTable>

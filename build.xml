@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="ParameterBasedRouting">
+	<property environment="env" />
+	<property name="AGENTJ_CORE" value="${env.AGENTJ}/core" />
+	<property name="ECLIPSE_HOME" value="../../../../bin/eclipse" />
+	<property name="junit.output.dir" value="junit" />
+	<property name="AgentJPeer.location" value="../AgentJPeer" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.6" />
+	<property name="source" value="1.6" />
+	<property name="junit.formatter.type" value="brief" />
+	<path id="AgentJPeer.classpath">
+		<pathelement location="${AgentJPeer.location}/bin" />
+		<pathelement location="${AGENTJ_CORE}/target/agentj-core-1.0.jar" />
+		<pathelement location="${AGENTJ_CORE}/lib/proto-logging-0.1.jar" />
+		<pathelement location="${AgentJPeer.location}/lib/log4j-1.2.16.jar" />
+	</path>
+	<path id="ParameterBasedRouting.classpath">
+		<pathelement location="bin" />
+		<pathelement location="lib/jgrapht-jdk1.6.jar" />
+		<pathelement location="lib/junit-4.8.2.jar" />
+		<path refid="AgentJPeer.classpath" />
+	</path>
+	<target name="init">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="src">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="test">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="files">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="scripts">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean">
+		<delete dir="bin" />
+		<delete dir="junit" />
+		<delete>
+			<fileset dir="scripts" includes="**/agentjlogs/**" />
+		</delete>
+		<delete>
+			<fileset dir="scripts" includes="**/hs_err_pid*.log" />
+		</delete>
+	</target>
+	<target depends="clean" name="cleanall">
+		<ant antfile="build.xml" dir="${AgentJPeer.location}" inheritAll="false" target="clean" />
+	</target>
+	<target depends="build-subprojects,build-project" name="build" />
+	<target name="build-subprojects">
+		<ant antfile="build.xml" dir="${AgentJPeer.location}" inheritAll="false" target="build-project">
+			<propertyset>
+				<propertyref name="build.compiler" />
+			</propertyset>
+		</ant>
+	</target>
+	<target depends="init" name="build-project">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+			<src path="src" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</javac>
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+			<src path="test" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</javac>
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+			<src path="files" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</javac>
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+			<src path="scripts" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</javac>
+	</target>
+
+	<!-- Layer tests -->
+
+	<target name="BroadcastTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.BroadcastTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="DetectionTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.DetectionTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="DetectionTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.DetectionTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="DisseminationTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.DisseminationTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="DisseminationTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.DisseminationTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="MulticastTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.MulticastTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="MulticastTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.MulticastTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="GraphCreationTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.GraphCreationTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="GraphCreationTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.GraphCreationTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="FSearchTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.FSearchTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="FSearchTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.FSearchTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="BSearchTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.BSearchTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="BSearchTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.BSearchTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="BidirectionalSearchTest" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.BidirectionalSearchTest" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="BidirectionalSearchTest50" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<test name="layers.BidirectionalSearchTest50" todir="${junit.output.dir}" />
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<!-- End of Layer tests -->
+
+	<!-- Batch tests -->
+
+	<target name="AllTests" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="false" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<batchtest todir="${junit.output.dir}">
+				<fileset dir="test/">
+					<include name="**/*Test*.java" />
+					<exclude name="**/testing/*" />
+				</fileset>
+			</batchtest>
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<target name="BasicTests" depends="build">
+		<mkdir dir="${junit.output.dir}" />
+		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+			<formatter type="${junit.formatter.type}" />
+			<batchtest todir="${junit.output.dir}">
+				<fileset dir="test/">
+					<include name="**/*Test*.java" />
+					<exclude name="**/layers/*" />
+					<exclude name="**/testing/*" />
+				</fileset>
+			</batchtest>
+			<classpath refid="ParameterBasedRouting.classpath" />
+		</junit>
+	</target>
+
+	<!-- End of Batch tests -->
+
+	<target name="junitreport">
+		<junitreport todir="${junit.output.dir}">
+			<fileset dir="${junit.output.dir}">
+				<include name="TEST-*.xml" />
+			</fileset>
+			<report format="frames" todir="${junit.output.dir}" />
+		</junitreport>
+	</target>
+
+</project>

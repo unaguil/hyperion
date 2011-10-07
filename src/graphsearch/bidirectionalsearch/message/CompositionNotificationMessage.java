@@ -1,0 +1,39 @@
+package graphsearch.bidirectionalsearch.message;
+
+import graphcreation.collisionbased.ServiceDistance;
+import graphcreation.services.Service;
+import graphsearch.SearchID;
+import graphsearch.bidirectionalsearch.Util;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import peer.PeerID;
+import peer.message.PayloadMessage;
+
+public class CompositionNotificationMessage extends ShortestPathNotificationMessage {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public CompositionNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
+		super(source, searchID, serviceDistances, notificationPath);
+	}
+
+	protected CompositionNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath, final Service destination) {
+		super(source, searchID, serviceDistances, notificationPath, destination);
+	}
+
+	public Set<Service> getComposition() {
+		return Util.getAllServices(serviceDistances);
+	}
+
+	@Override
+	public PayloadMessage copy() {
+		final CompositionNotificationMessage message = new CompositionNotificationMessage(getSource(), getSearchID(), serviceDistances, notificationPath, destination);
+		return message;
+	}
+}

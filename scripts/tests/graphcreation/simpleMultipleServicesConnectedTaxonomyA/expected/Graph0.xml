@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml>
+	<graph>
+		<node id="Service:S2:5"/>
+		<edge id="1" source="Connection:O-B*I-A" target="Service:S2:5"/>
+		<node id="Service:S3:0"/>
+		<node id="Connection:O-B*I-A"/>
+		<edge id="2" source="Service:S3:0" target="Connection:O-B*I-A"/>
+	</graph>
+</graphml>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml>
+	<graph>
+		<node id="Service:Composition1-INIT:0"/>
+		<node id="Connection:O-A*I-A"/>
+		<edge id="1" source="Service:Composition1-INIT:0" target="Connection:O-A*I-A"/>
+		<node id="Service:S1:0"/>
+		<node id="Service:S2:5"/>
+		<node id="Connection:O-B*I-B"/>
+		<node id="Connection:O-C*I-C"/>
+		<edge id="2" source="Connection:O-A*I-A" target="Service:S1:0"/>
+		<edge id="3" source="Connection:O-A*I-A" target="Service:S2:5"/>
+		<edge id="4" source="Service:S1:0" target="Connection:O-B*I-B"/>
+		<edge id="5" source="Service:S1:0" target="Connection:O-C*I-C"/>
+		<edge id="6" source="Service:S2:5" target="Connection:O-B*I-B"/>
+		<edge id="7" source="Service:S2:5" target="Connection:O-C*I-C"/>
+		<node id="Service:S3:3"/>
+		<node id="Connection:O-D*I-D"/>
+		<edge id="8" source="Connection:O-B*I-B" target="Service:S3:3"/>
+		<edge id="9" source="Connection:O-C*I-C" target="Service:S3:3"/>
+		<edge id="10" source="Service:S3:3" target="Connection:O-D*I-D"/>
+		<node id="Service:Composition1-GOAL:0"/>
+		<edge id="11" source="Connection:O-D*I-D" target="Service:Composition1-GOAL:0"/>
+	</graph>
+</graphml>

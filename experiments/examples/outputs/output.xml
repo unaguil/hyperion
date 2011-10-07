@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+<measures creationDate="2011-03-27 18:31" tag="6" type="nodes">
+	<measure period="5.0" type="AcceptedMessages" units="messages">
+		<result meanTotal="5.00" sampleSize="4" stdTotal="8.66">
+			<entry mean="2.25" std="3.90" time="5.0"/>
+			<entry mean="2.75" std="4.76" time="10.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="ExpiredMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="NewNeighborsDetected" units="neighbors">
+		<result meanTotal="0.50" sampleSize="4" stdTotal="0.87">
+			<entry mean="0.50" std="0.87" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="SentACKMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="ReceivedBeaconMessages" units="messages">
+		<result meanTotal="5.25" sampleSize="4" stdTotal="9.09">
+			<entry mean="2.25" std="3.90" time="5.0"/>
+			<entry mean="3.00" std="5.20" time="10.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="DeliveredMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="ReliableBroadcastedMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="SentBeaconMessages" units="messages">
+		<result meanTotal="63.50" sampleSize="4" stdTotal="0.50">
+			<entry mean="31.25" std="0.83" time="5.0"/>
+			<entry mean="32.25" std="0.83" time="10.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="ReceivedMessages" units="messages">
+		<result meanTotal="5.25" sampleSize="4" stdTotal="9.09">
+			<entry mean="2.25" std="3.90" time="5.0"/>
+			<entry mean="3.00" std="5.20" time="10.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="SentMessages" units="messages">
+		<result meanTotal="63.50" sampleSize="4" stdTotal="0.50">
+			<entry mean="31.25" std="0.83" time="5.0"/>
+			<entry mean="32.25" std="0.83" time="10.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="ReceivedACKMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="RebroadcastedMessages" units="messages">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="DeliveredRatio" units="[0.0 - 0.1] ratio">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+	<measure period="5.0" type="LostNeighborsDetected" units="neighbors">
+		<result meanTotal="0.00" sampleSize="4" stdTotal="0.00">
+			<entry mean="0.00" std="0.00" time="5.0"/>
+		</result>
+	</measure>
+</measures>

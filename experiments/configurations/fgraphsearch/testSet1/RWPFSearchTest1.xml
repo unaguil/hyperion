@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<experiment tag="0.5" type="% nodes with parameters">
+	<staticConfig>
+		<!-- Script configuration variables -->
+		<entry key="nNodes">70</entry>
+		<entry key="finishTime">50.0</entry>
+		<entry key="gridW">265</entry>
+		<entry key="gridH">1058</entry>
+		<entry key="discardTime">0</entry>
+		<entry key="javaAgent">graphsearch.peer.ForwardPeer</entry>
+		<entry key="mobilityModel">LoadMobilityModel</entry>
+		<entry key="minSpeed">1.0</entry>
+		<entry key="maxSpeed">25.0</entry>
+		<entry key="pauseTime">10.0</entry>
+
+		<!-- Composition populator -->
+		<entry key="populator">CompositionsPopulator</entry>
+		<entry key="nCompositions">10</entry>
+		<entry key="compositionIO">(1, 5)</entry>
+		<entry key="dDistribution">((0.3, 5), (0.4, 4), (0.3, 2))</entry>
+		<entry key="width">(1, 4)</entry>
+
+		<!-- Search behavior -->
+		<entry key="nodeBehavior">CompositionSearchBehavior</entry>
+		<entry key="searchFreq">0.03</entry>
+		<entry key="timeRange">(3.0, 'END')</entry>
+
+		<!-- Peer configuration variables -->
+		<entry key="messageProcessor.randomWait">200</entry>
+		<entry key="beaconDetector.beaconTime">1000</entry>
+		<entry key="reliableBroadcast.rebroadcastTime">200</entry>
+		<entry key="reliableBroadcast.maxTries">3</entry>
+		<entry key="dissemination.maxDistance">5</entry>
+		<entry key="parameterSearch.searchMessageTTL">5</entry>
+		<entry key="graphsearch.maxTTL">10</entry>
+		<entry key="graphsearch.searchExpiration">20000</entry>
+	</staticConfig>
+	<dynamicConfig />
+	<repeat number="5" />
+	<measures>
+		<measure type="generic.SentMessages" period="5.0" />
+		<measure type="generic.ReceivedMessages" period="5.0" />
+		<measure type="detection.AvgNeighbors" period="5.0" />
+		<measure type="generic.ReliableBroadcastedMessages" period="5.0" />
+		<measure type="generic.DeliveredMessages" period="5.0" />
+		<measure type="generic.ExpiredMessages" period="5.0" />
+		<measure type="generic.DeliveredRatio" period="5.0" />
+		<measure type="graphsearch.StartedCompositions" period="5.0" />
+		<measure type="graphsearch.AvgFoundCompositions" period="5.0" />
+		<measure type="graphsearch.AvgCompositionSearchTime" period="5.0" />
+		<measure type="graphsearch.AvgCompositionAvailableTime" period="5.0" />
+		<measure type="graphsearch.SentCompositionModificationMessages" period="5.0" />
+		<measure type="graphsearch.SentFCompositionMessages" period="5.0" />
+		<measure type="graphsearch.SentInvalidCompositionsMessages" period="5.0" />
+	</measures>
+</experiment>

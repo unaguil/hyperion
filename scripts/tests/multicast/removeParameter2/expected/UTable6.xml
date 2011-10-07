@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unicastTable>
+	<route dest="9" parameter="I-A" through="5" type="SEARCH"/>
+	<route dest="9" parameter="I-B" through="5" type="SEARCH"/>
+	<route dest="0" parameter="I-A" through="5" type="PARAMETER"/>
+</unicastTable>

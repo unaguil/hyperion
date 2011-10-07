@@ -1,0 +1,8 @@
+package graphsearch.shortestpathnotificator;
+
+import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
+
+public interface ShortestPathListener {
+
+	public void acceptShortestPathNotificationMessage(ShortestPathNotificationMessage shortestPathNotificationMessage);
+}

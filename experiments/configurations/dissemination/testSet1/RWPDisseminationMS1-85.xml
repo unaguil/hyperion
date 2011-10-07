@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<experiment tag="0.85" type="% nodes with parameters">
+	<staticConfig>
+		<!-- Script configuration variables -->
+		<entry key="nNodes">70</entry>
+		<entry key="finishTime">1000.0</entry>
+		<entry key="gridW">265</entry>
+		<entry key="gridH">1058</entry>
+		<entry key="discardTime">0</entry>
+		<entry key="javaAgent">dissemination.peer.Peer</entry>
+		<entry key="mobilityModel">LoadMobilityModel</entry>
+		<entry key="minSpeed">1.0</entry>
+		<entry key="maxSpeed">25.0</entry>
+		<entry key="pauseTime">10.0</entry>
+		<entry key="populator">ParameterPopulator</entry>
+		<entry key="nDistribution">((0.85, 10), (0.15, 0))</entry>
+		<entry key="gDistribution">(1.0, )</entry>
+		<entry key="tDistribution">('UNIQUE',)</entry>
+		<!-- Peer configuration variables -->
+		<entry key="reliableBroadcastPeer.maxTries">5</entry>
+		<entry key="reliableBroadcastPeer.randomWait">150</entry>
+		<entry key="beaconDetector.beaconTime">1000</entry>
+		<entry key="beaconDetector.randomTime">200</entry>
+		<entry key="reactivePTableUPdate.maxDistance">5</entry>
+	</staticConfig>
+	<dynamicConfig/>
+	<repeat number="1"/>
+	<measures>
+		<measure type="generic.SentMessages" period="5.0"/>
+		<measure type="generic.ReceivedMessages" period="5.0"/>
+		<measure type="detection.NewNeighborsDetected" period="5.0"/>
+		<measure type="detection.LostNeighborsDetected" period="5.0"/>
+		<measure type="detection.SentBeaconMessages" period="5.0"/>
+		<measure type="detection.ReceivedBeaconMessages" period="5.0"/>
+		<measure type="dissemination.SentTableMessages" period="5.0"/>
+		<measure type="dissemination.ReceivedTableMessages" period="5.0"/>
+	</measures>
+</experiment>

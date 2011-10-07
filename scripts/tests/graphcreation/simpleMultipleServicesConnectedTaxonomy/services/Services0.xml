@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+	<service id="S1">
+		<parameter id="I-W"/>
+		<parameter id="O-A"/>
+	</service>
+	<service id="S3">
+		<parameter id="I-F"/>
+		<parameter id="O-B"/>
+	</service>
+</services>

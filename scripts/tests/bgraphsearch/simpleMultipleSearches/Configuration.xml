@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>	
+	<entry key="reliableBroadcastPeer.maxTries">5</entry>
+	<entry key="reliableBroadcastPeer.randomWait">150</entry>
+	<entry key="beaconDetector.beaconTime">1000</entry>
+	<entry key="beaconDetector.randomTime">200</entry>
+	<entry key="reactivePTableUPdate.maxDistance">5</entry>
+	<entry key="parameterSearch.searchMessageTTL">5</entry>
+	<entry key="graphsearch.maxTTL">5</entry>
+	<entry key="graphsearch.searchExpiration">30000</entry>
+</properties>

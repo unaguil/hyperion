@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<experiment tag="6" type="nodes">
+	<staticConfig>
+		<!-- Script configuration variables -->
+		<entry key="nNodes">6</entry>
+		<entry key="finishTime">10.0</entry>
+		<entry key="gridW">1000</entry>
+		<entry key="gridH">1000</entry>
+		<entry key="discardTime">0</entry>
+		<entry key="javaAgent">detection.peer.Peer</entry>
+		<!-- Random waypoint configuration -->
+		<entry key="mobilityModel">RandomWaypoint</entry>-->
+		<entry key="minSpeed">1.0</entry>
+		<entry key="maxSpeed">25.0</entry>
+		<entry key="pauseTime">10.0</entry>
+		<!-- Peer configuration variables -->
+		<entry key="reliableBroadcastPeer.maxTries">5</entry>
+		<entry key="reliableBroadcastPeer.randomWait">150</entry>
+		<entry key="beaconDetector.beaconTime">1000</entry>
+		<entry key="beaconDetector.randomTime">200</entry>
+	</staticConfig>
+	<repeat number="4"/>
+	<measures>
+		<measure type="generic.SentMessages" period="5.0"/>
+		<measure type="generic.ReceivedMessages" period="5.0"/>
+		<measure type="generic.SentBundleMessages" period="5.0"/>
+		<measure type="generic.ReceivedBundleMessages" period="5.0"/>
+		<measure type="detection.NewNeighborsDetected" period="5.0"/>
+		<measure type="detection.LostNeighborsDetected" period="5.0"/>
+		<measure type="detection.AvgNeighbors" period="5.0"/>
+		<measure type="detection.SentBeaconMessages" period="5.0"/>
+		<measure type="detection.ReceivedBeaconMessages" period="5.0"/>
+	</measures>
+</experiment>

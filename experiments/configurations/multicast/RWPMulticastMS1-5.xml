@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<experiment tag="0.05" type="% nodes with parameters">
+	<staticConfig>
+		<!-- Script configuration variables -->
+		<entry key="nNodes">70</entry>
+		<entry key="finishTime">100.0</entry>
+		<entry key="gridW">265</entry>
+		<entry key="gridH">1058</entry>
+		<entry key="discardTime">0</entry>
+		<entry key="javaAgent">multicast.peer.Peer</entry>
+		
+		<entry key="mobilityModel">LoadMobilityModel</entry>
+		<entry key="minSpeed">0.001</entry>
+		<entry key="maxSpeed">5.0</entry>
+		<entry key="pauseTime">10.0</entry>
+		
+		<entry key="populator">ParameterPopulator</entry>
+		<entry key="nDistribution">((0.05, 10), (0.95, 0))</entry>
+		<entry key="gDistribution">(1.0, )</entry>
+		<entry key="tDistribution">('UNIQUE', )</entry>
+		
+		<entry key="nodeBehavior">SearchBehavior</entry>
+		<entry key="searchFreq">5.0</entry>
+		<entry key="timeRange">('START', 'END')</entry>
+		
+		<!-- Peer configuration variables -->
+		<entry key="reliableBroadcastPeer.delayedInit">1000</entry>
+		<entry key="reliableBroadcastPeer.maxTries">3</entry>
+		<entry key="beaconDetector.beaconTime">1000</entry>
+		<entry key="reactivePTableUPdate.maxDistance">10</entry>
+	</staticConfig>
+	<dynamicConfig/>
+	<repeat number="1"/>
+	<measures>
+		<measure type="generic.SentMessages" period="0.5"/>
+		<measure type="generic.ReceivedMessages" period="0.5"/>
+		<measure type="detection.AvgNeighbors" period="0.5"/>
+		<measure type="detection.NewNeighborsDetected" period="0.5"/>
+		<measure type="detection.LostNeighborsDetected" period="0.5"/>
+		<measure type="detection.SentBeaconMessages" period="0.5"/>
+		<measure type="detection.ReceivedBeaconMessages" period="0.5"/>
+		<measure type="dissemination.SentTableMessages" period="0.5"/>
+		<measure type="dissemination.ReceivedTableMessages" period="0.5"/>
+		<measure type="multicast.SentSearchMessages" period="0.5"/>
+		<measure type="multicast.SentSearchResponseMessages" period="0.5"/>
+		<measure type="multicast.SentRemoveParametersMessages" period="0.5"/>
+		<measure type="multicast.SentRemoveRoutesMessages" period="0.5"/>
+		<measure type="multicast.StartedSearches" period="0.5"/>
+		<measure type="multicast.AcceptedSearches" period="0.5"/>
+		<measure type="multicast.RespondedSearches" period="0.5"/>
+		<measure type="multicast.AcceptedSearchResponses" period="0.5"/>
+		<measure type="multicast.AvgFoundParameters" period="0.5"/>
+		<measure type="multicast.AvgSearchTime" period="0.5"/>
+	</measures>
+</experiment>
