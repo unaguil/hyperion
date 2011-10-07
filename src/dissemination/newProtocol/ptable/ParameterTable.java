@@ -19,6 +19,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -32,7 +33,6 @@ import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
-import util.logger.Logger;
 
 public class ParameterTable implements XMLSerialization {
 

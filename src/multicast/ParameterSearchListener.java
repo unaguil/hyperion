@@ -3,9 +3,9 @@ package multicast;
 import java.util.Map;
 import java.util.Set;
 
-import message.MessageID;
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchResponseMessage;
+import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import taxonomy.parameter.Parameter;
 

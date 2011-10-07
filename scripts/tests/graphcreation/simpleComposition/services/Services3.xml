@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<services>
-	<service id="Composition1-INIT">
-		<parameter id="O-A"/>
-	</service>
-	<service id="Composition1-GOAL">
-		<parameter id="I-C"/>
-	</service>
-</services>

@@ -23,9 +23,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import peer.Peer;
 import peer.PeerID;
-import util.logger.Logger;
 
 public class ForwardComposer {
 
@@ -52,12 +53,12 @@ public class ForwardComposer {
 			final Service service = entry.getKey();
 			// Only local services are taken into account
 			if (gCreator.getSDG().isLocal(service)) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " service " + service + " has new successors " + entry.getValue());
 				if (Utility.isINITService(service)) {
 					// the INIT node is always covered. Send the start
 					// composition message to new successors
-					if (Logger.TRACE)
+					
 						logger.trace("Peer " + peer.getPeerID() + " the service is an INIT service. Sending start messages.");
 					initFComposition(entry.getValue(), service);
 				} else {
@@ -98,16 +99,16 @@ public class ForwardComposer {
 	}
 
 	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
 
 			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
 
 			if (Utility.isGoalService(service)) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
 				notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition());
 			} else // send the forward composition message if TTL and search
@@ -118,9 +119,9 @@ public class ForwardComposer {
 				final Set<Service> services = Utility.getServices(successors);
 				final Set<Service> validSuccessors = getValidSuccessors(services, mergedForwardMessage.getComposition());
 				forwardCompositionMessage(mergedForwardMessage, validSuccessors);
-			} else if (Logger.TRACE)
+			} else 
 				logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
-		} else if (Logger.TRACE)
+		} else 
 			logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
 	}
 
@@ -128,7 +129,7 @@ public class ForwardComposer {
 		final List<FCompositionMessage> receivedMessages = fCompositionData.getReceivedMessages(service).get(searchID);
 		final FCompositionMessage fCompositionMessage = new FCompositionMessage(searchID, service, successors, getTTL(receivedMessages) - 1, fCompositionData.getRemainingTime(searchID));
 		// Merge all received compositions
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peerID + " merging all received compositions: " + receivedMessages.size() + " for service " + service + " in search: " + searchID);
 		for (final FCompositionMessage receivedMessage : receivedMessages)
 			fCompositionMessage.join(receivedMessage);
@@ -153,11 +154,11 @@ public class ForwardComposer {
 
 		for (final ServiceDistance sDistance : fCompositionMessage.getDestServices()) {
 			final Service service = sDistance.getService();
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " checking service " + service);
 			final SDG sdg = gCreator.getSDG();
 			if (sdg.isLocal(service)) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " added composition message to message table");
 
 				// Updating received messages for current service node
@@ -232,7 +233,7 @@ public class ForwardComposer {
 	}
 
 	private void notifyCompositionModification(final SearchID searchID, final Set<Service> removedServices, final FCompositionMessage fCompositionMessage) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " notifying composition modification " + searchID);
 		final Map<Service, Set<ServiceDistance>> distanceBetweenServices = fCompositionMessage.getSuccessorDistances();
 		final List<Service> notificationPath = ShortestPathCalculator.findShortestPath(distanceBetweenServices, peer.getPeerID(), gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
@@ -244,14 +245,14 @@ public class ForwardComposer {
 	}
 
 	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " lost ancestors " + lostAncestors);
 
 		processDisappearedAncestors(lostAncestors, new HashMap<SearchID, Set<Service>>());
 	}
 
 	private void forwardInvalidCompositionsMessage(final InvalidCompositionsMessage compositionModificationMessage, final Set<Service> services) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " forwarding invalid composition message " + compositionModificationMessage + " for successors " + services);
 		gCreator.forwardMessage(compositionModificationMessage, services);
 	}

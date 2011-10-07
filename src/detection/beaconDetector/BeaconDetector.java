@@ -8,14 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import message.BroadcastMessage;
-import message.MessageSentListener;
+import org.apache.log4j.Logger;
+
 import peer.Peer;
 import peer.PeerID;
 import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
+import peer.message.BroadcastMessage;
+import peer.message.MessageSentListener;
 import util.WaitableThread;
-import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
 import detection.NeighborEventsListener;
@@ -46,7 +47,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 			beaconDetector.sendBeacon();
 
 			while (!Thread.interrupted()) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " beacon thread running");
 
 				// Get the time elapsed since the last packet (beacon or not)
@@ -84,7 +85,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 		}
 		
 		private void finishBeaconThread() {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " beacon thread finalized");
 
 			this.threadFinished();
@@ -200,7 +201,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 
 		LOST_TIME = (BEACON_TIME + RANDOM_WAIT) * 2;
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
 		beaconMessage = new BeaconMessage(peer.getPeerID());
@@ -239,7 +240,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 
 			// Update sender of the received message
 			neighborsTable.put(message.getSender(), Long.valueOf(System.currentTimeMillis()));
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " has updated neighbor " + message.getSender());
 		}
 	}
@@ -247,7 +248,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 	@Override
 	public void messageSent(final BroadcastMessage message, final long sentTime) {
 		// A message has been sent by this peer. Record sent time.
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " detected sent message");
 		lastSentTime.set(sentTime);
 	}
@@ -270,7 +271,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 				final long timestamp = neighborsTable.get(neighbor).longValue();
 				final long elapsedTime = System.currentTimeMillis() - timestamp;
 				if (elapsedTime >= LOST_TIME) {
-					if (Logger.TRACE)
+					
 						logger.trace("Peer " + peer.getPeerID() + " removing neighbor " + neighbor + " elapsed time " + elapsedTime + " [" + System.currentTimeMillis() + " - " + timestamp + "]");
 					removedPeers.addPeer(neighbor);
 					it.remove();
@@ -289,7 +290,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 	// Notify appearance of neighbors to listeners
 	private void notifyAppearance(final PeerIDSet neighbors) {
 		logger.debug("Peer " + peer.getPeerID() + " has new neighbors: " + neighbors);
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " current neighbors: " + getCurrentNeighbors());
 		for (final NeighborEventsListener listener : neighborNotificationListeners)
 			listener.appearedNeighbors(neighbors);
@@ -298,7 +299,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 	// Notify disappearance of neighbors to listeners
 	private void notifyDissappearance(final PeerIDSet neighbors) {
 		logger.debug("Peer " + peer.getPeerID() + " has lost neighbors: " + neighbors);
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " current neighbors: " + getCurrentNeighbors());
 		for (final NeighborEventsListener listener : neighborNotificationListeners)
 			listener.dissapearedNeighbors(neighbors);

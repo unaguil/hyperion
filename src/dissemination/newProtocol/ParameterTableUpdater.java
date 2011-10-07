@@ -9,18 +9,19 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import message.BroadcastMessage;
+import org.apache.log4j.Logger;
+
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.PeerID;
 import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
+import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.UnmodifiableTaxonomy;
 import taxonomy.parameter.Parameter;
-import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborEventsListener;
 import dissemination.DistanceChange;
@@ -162,14 +163,14 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 		if (!addLocalParameters.isEmpty()) {
 			final UpdateTable updateTable = pTable.addLocalParameters(addLocalParameters);
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " added parameters " + addLocalParameters + " to local table");
 			finalUpdateTable.merge(updateTable);
 		}
 
 		if (!removeLocalParameters.isEmpty()) {
 			final UpdateTable updateTable = pTable.removeLocalParameters(removeLocalParameters);
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " removed parameters " + removeLocalParameters + " from local table");
 			finalUpdateTable.merge(updateTable);
 		}
@@ -278,7 +279,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 	@Override
 	public synchronized void appearedNeighbors(final PeerIDSet neighbors) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " detected appearance of neighbors: " + neighbors);
 		// Enqueue action only if table is not empty
 		final UpdateTable updateTable = pTable.getNewNeighborTable();
@@ -291,7 +292,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 	@Override
 	public synchronized void dissapearedNeighbors(final PeerIDSet neighbors) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " detected dissapearance of neighbors: " + neighbors);
 		// Remove entries in pTable which were obtained from disappeared
 		// neighbors and send message to neighbors
@@ -304,10 +305,10 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				finalUpdateTable.merge(updateTable);
 			}
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " table after removal: " + pTable);
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " update table: " + finalUpdateTable);
 
 		if (!finalUpdateTable.isEmpty())
@@ -349,7 +350,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		// Check if message is a table message
 		if (message instanceof TableMessage) {
 			final TableMessage tableMessage = (TableMessage) message;
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " received table message " + message);
 			processTableMessage(tableMessage);
 		}
@@ -385,7 +386,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 	private void processTableMessage(final TableMessage tableMessage) {
 		if (!tableMessage.getUpdateTable().isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " updating table " + pTable + " with update table " + tableMessage.getUpdateTable() + " from neighbor " + tableMessage.getSender());
 
 			// Get parameters before update
@@ -397,7 +398,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 			final UpdateTable updateTable = pTable.updateTable(tableMessage.getUpdateTable(), tableMessage.getSender());
 
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " local table after update " + pTable);
 
 			// Get parameters after update
@@ -436,7 +437,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			// Notify table changes to listeners
 			payload = notifyTableChangedListener(tableMessage.getSender(), addedParameters, removedParameters, new HashSet<Parameter>(), changedParameters, tableMessage.getPayload());
 
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " addedParameters: " + addedParameters + " removedParameters: " + removedParameters);
 			logger.trace("Peer " + peer.getPeerID() + " adding payload " + payload + " to table message");
 
@@ -454,11 +455,11 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 			tableMessage = new TableMessage(updateTable, peer.getPeerID(), payload);
 
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " sending update table message " + tableMessage);
 			// Perform the broadcasting of table message
 			peer.enqueueBroadcast(tableMessage);
-		} else if (Logger.TRACE)
+		} else 
 			logger.trace("Peer " + peer.getPeerID() + " update table is empty and is not sent");
 	}
 

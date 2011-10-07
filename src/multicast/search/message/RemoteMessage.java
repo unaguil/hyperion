@@ -1,9 +1,9 @@
 package multicast.search.message;
 
-import message.BroadcastMessage;
-import message.MessageID;
-import message.MessageIDGenerator;
 import peer.PeerID;
+import peer.message.BroadcastMessage;
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 
 /**
  * This abstract class defines those messages which can be sent to a node that

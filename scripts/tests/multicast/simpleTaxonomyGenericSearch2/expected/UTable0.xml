@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<unicastTable>
-	<route dest="8" parameter="I-A" through="1" type="SEARCH"/>
-</unicastTable>

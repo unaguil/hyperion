@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import message.MessageID;
 import peer.PeerID;
 import peer.PeerIDSet;
+import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import taxonomy.parameter.Parameter;
 

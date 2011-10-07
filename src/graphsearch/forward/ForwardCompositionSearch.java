@@ -13,9 +13,9 @@ import graphsearch.forward.message.InvalidCompositionsMessage;
 import java.util.Map;
 import java.util.Set;
 
-import message.BroadcastMessage;
 import peer.Peer;
 import peer.PeerID;
+import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
 
 public class ForwardCompositionSearch extends CommonCompositionSearch {

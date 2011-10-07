@@ -22,12 +22,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import message.BroadcastMessage;
 import multicast.MulticastMessageListener;
+
+import org.apache.log4j.Logger;
+
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
-import util.logger.Logger;
+import peer.message.BroadcastMessage;
 import config.Configuration;
 
 public abstract class CommonCompositionSearch implements CommunicationLayer, SearchExpiredListener, MulticastMessageListener, GraphCreationListener, CompositionSearch, ShortestPathListener {
@@ -176,7 +178,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 	}
 
 	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
 		final Service initService = Utility.createInitService(service, peer.getPeerID());
 		final Service goalService = Utility.createGoalService(service, peer.getPeerID());
@@ -189,9 +191,9 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		addedServices.addService(initService);
 		addedServices.addService(goalService);
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " added INIT service " + initService);
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " added GOAL service " + goalService);
 		gCreator.manageLocalServices(addedServices, new ServiceList());
 	}

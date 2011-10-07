@@ -2,9 +2,9 @@ package graphsearch;
 
 import java.io.Serializable;
 
-import message.MessageID;
-import message.MessageIDGenerator;
 import peer.PeerID;
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 
 public class SearchID implements Serializable {
 

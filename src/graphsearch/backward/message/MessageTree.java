@@ -10,9 +10,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import message.MessageID;
-import message.MessageIDGenerator;
 import peer.PeerID;
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 
 public class MessageTree {
 

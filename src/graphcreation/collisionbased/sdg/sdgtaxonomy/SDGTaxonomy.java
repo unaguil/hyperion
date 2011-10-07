@@ -17,13 +17,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import message.MessageID;
+import org.apache.log4j.Logger;
+
 import peer.PeerID;
+import peer.message.MessageID;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
-import util.logger.Logger;
 
 /**
  * This class manages the SDG graph.
@@ -180,7 +181,7 @@ public class SDGTaxonomy implements SDG {
 	public void removeServicesFromRoute(final MessageID routeID) {
 		if (collisionInfoTable.containsKey(routeID.getPeer())) {
 			final Set<ServiceDistance> lostServices = new HashSet<ServiceDistance>(collisionInfoTable.get(routeID.getPeer()).getServices());
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peerID + " removing remote services " + lostServices);
 
 			collisionInfoTable.remove(routeID.getPeer());

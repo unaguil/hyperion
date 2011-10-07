@@ -2,11 +2,12 @@ package peer;
 
 import java.util.Random;
 
-import message.BroadcastMessage;
-import message.BundleMessage;
+import org.apache.log4j.Logger;
+
 import peer.message.ACKMessage;
+import peer.message.BroadcastMessage;
+import peer.message.BundleMessage;
 import peer.reliableCounter.ReliableBroadcastCounter;
-import util.logger.Logger;
 import util.timer.Timer;
 import util.timer.TimerTask;
 import config.Configuration;
@@ -129,13 +130,13 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		}
 	}
 
-	private int getBackoffTime(int factor) {
+	private long getBackoffTime(int factor) {
 		final int slots = 2 << factor;
 		final int pos = r.nextInt(slots);
 		return BasicPeer.TRANSMISSION_TIME * pos;
 	}
 	
-	public int getResponseWaitTime() {
+	public long getResponseWaitTime() {
 		return BasicPeer.TRANSMISSION_TIME * (peer.getDetector().getCurrentNeighbors().size() + 1);
 	}
 	

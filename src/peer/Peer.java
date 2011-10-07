@@ -1,10 +1,11 @@
 package peer;
 
+import java.io.IOException;
 import java.util.Set;
 
-import message.BroadcastMessage;
-import message.MessageReceivedListener;
-import message.MessageSentListener;
+import peer.message.BroadcastMessage;
+import peer.message.MessageReceivedListener;
+import peer.message.MessageSentListener;
 import detection.NeighborDetector;
 
 public interface Peer {
@@ -25,9 +26,11 @@ public interface Peer {
 
 	public PeerID getPeerID();
 
-	public int getPort();
-
 	public NeighborDetector getDetector();
 
 	public void processMessage(BroadcastMessage message);
+	
+	public void initPeer(final String id) throws IOException;
+	
+	public void stopPeer();
 }

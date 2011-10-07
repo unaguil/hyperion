@@ -12,8 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import message.MessageID;
-import message.MessageIDGenerator;
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
@@ -22,6 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import peer.PeerID;
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;

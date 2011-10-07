@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import message.BroadcastMessage;
+import org.apache.log4j.Logger;
+
 import peer.Peer;
 import peer.PeerID;
+import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
 import taxonomy.Taxonomy;
-import util.logger.Logger;
 
 public class BidirectionalSearch extends CommonCompositionSearch {
 
@@ -72,7 +73,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 
 	@Override
 	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
 		final Service initService = Utility.createInitService(service, peer.getPeerID());
 		final Service goalService = Utility.createGoalService(service, peer.getPeerID());
@@ -86,9 +87,9 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 		addedServices.addService(initService);
 		addedServices.addService(goalService);
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " added INIT service " + initService);
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " added GOAL service " + goalService);
 		gCreator.manageLocalServices(addedServices, new ServiceList());
 	}

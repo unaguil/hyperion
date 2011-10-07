@@ -6,8 +6,9 @@ import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
 
 import java.util.Collections;
 
+import org.apache.log4j.Logger;
+
 import peer.PeerID;
-import util.logger.Logger;
 
 public class ShortestPathNotificator {
 
@@ -26,7 +27,7 @@ public class ShortestPathNotificator {
 	}
 
 	public void processShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peerID + " processing composition modification message " + shortestPathNotificationMessage);
 
 		final Service destination = shortestPathNotificationMessage.getDestination();
@@ -42,7 +43,7 @@ public class ShortestPathNotificator {
 		if (gCreator.getPSearch().knowsSearchRouteTo(destination.getPeerID())) {
 			final int multicastDistance = gCreator.getPSearch().getDistanceTo(destination.getPeerID());
 			if (multicastDistance <= pathDistance) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peerID + " has a shortest route to destination peer " + destination.getPeerID());
 				gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(destination));
 				return;
@@ -52,7 +53,7 @@ public class ShortestPathNotificator {
 		// propagate through next service
 		final Service nextService = shortestPathNotificationMessage.nextService();
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peerID + " forwarding composition through next service " + nextService);
 
 		gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(nextService));

@@ -1,8 +1,7 @@
 package peer.message;
 
-import message.BroadcastMessage;
-import message.MessageID;
 import peer.PeerID;
+
 
 public class ACKMessage extends BroadcastMessage {
 

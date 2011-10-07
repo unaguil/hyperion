@@ -3,8 +3,8 @@ package multicast.search.message;
 import java.util.HashSet;
 import java.util.Set;
 
-import message.MessageID;
 import peer.PeerID;
+import peer.message.MessageID;
 
 /**
  * This class defines a message which is used to remove invalid routes

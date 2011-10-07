@@ -6,12 +6,14 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 
-import message.BroadcastMessage;
-import message.BundleMessage;
 import multicast.search.message.RemoteMulticastMessage;
+
+import org.apache.log4j.Logger;
+
 import peer.message.ACKMessage;
+import peer.message.BroadcastMessage;
+import peer.message.BundleMessage;
 import util.WaitableThread;
-import util.logger.Logger;
 import config.Configuration;
 
 /**
@@ -141,8 +143,7 @@ public class MessageProcessor extends WaitableThread {
 	}
 	
 	private void finishThread() {
-		if (Logger.TRACE) 
-			logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
+		 logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
 
 		this.threadFinished();
 	}

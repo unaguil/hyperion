@@ -14,8 +14,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import message.MessageID;
-import message.MessageIDGenerator;
 import multicast.search.message.SearchResponseMessage;
 
 import org.junit.Before;
@@ -23,6 +21,8 @@ import org.junit.Test;
 
 import peer.PeerID;
 import peer.PeerIDSet;
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.TaxonomyException;

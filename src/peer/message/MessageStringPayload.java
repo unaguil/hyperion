@@ -1,7 +1,7 @@
 package peer.message;
 
-import message.MessageString;
 import peer.PeerID;
+
 
 public class MessageStringPayload extends MessageString implements PayloadMessage {
 

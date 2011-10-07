@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<services>
-	<service id="S2">
-		<parameter id="I-A"/>
-		<parameter id="O-C"/>
-	</service>
-</services>

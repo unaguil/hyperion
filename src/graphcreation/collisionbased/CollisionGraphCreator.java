@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import message.BroadcastMessage;
-import message.MessageID;
 import multicast.MulticastMessageListener;
 import multicast.ParameterSearch;
 import multicast.ParameterSearchListener;
@@ -38,14 +36,18 @@ import multicast.search.ParameterSearchImpl;
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
+
+import org.apache.log4j.Logger;
+
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.PeerID;
 import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
+import peer.message.BroadcastMessage;
+import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import taxonomy.parameter.Parameter;
-import util.logger.Logger;
 import dissemination.DistanceChange;
 import dissemination.ParameterDisseminator;
 import dissemination.TableChangedListener;
@@ -331,11 +333,11 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private void processConnectServicesMessage(final ConnectServicesMessage connectServicesMessage, final PeerID source) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " connecting compatible services RS: " + connectServicesMessage.getRemoteSuccessors() + " RA: " + connectServicesMessage.getRemoteAncestors() + " thanks to collision detected in peer "
 					+ connectServicesMessage.getSource());
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " current SDG" + sdg.toString());
 
 		final Map<Service, Set<ServiceDistance>> newSuccessors = new HashMap<Service, Set<ServiceDistance>>(connectServicesMessage.getRemoteSuccessors());
@@ -395,7 +397,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 
 		if (!newSuccessors.isEmpty() || !newAncestors.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
 
 			if (!newSuccessors.isEmpty())
@@ -407,10 +409,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private void processDisconnectServicesMessage(final DisconnectServicesMessage disconnectServicesMessage) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " disconnecting services " + disconnectServicesMessage.getLostServices() + " connected through collision detected in peer " + disconnectServicesMessage.getSource());
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " current SDG" + sdg.toString());
 
 		final Map<Service, Set<Service>> lostSuccessors = new HashMap<Service, Set<Service>>();
@@ -446,12 +448,12 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 					graphCreationListener.lostSuccessors(lostSuccessors);
 			}
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
 	}
 
 	private void processRemovedServicesMessage(final RemovedServicesMessage removedServicesMessage) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " received a message from " + removedServicesMessage.getSource() + " to services " + removedServicesMessage.getLostServices());
 
 		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeServices(removedServicesMessage.getLostServices(), removedServicesMessage.getSource());
@@ -459,7 +461,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private void processForwardMessage(final ForwardMessage forwardMessage) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " accepted a forward message from " + forwardMessage.getSource() + " to " + forwardMessage.getDestinations());
 
 		// get destinations from services
@@ -491,7 +493,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	@Override
 	public void parametersFound(final SearchResponseMessage message) {
 		if (message.getPayload() instanceof CollisionResponseMessage) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " accepted a collision response message " + message.getPayload() + " from " + message.getSource());
 
 			final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) message.getPayload();
@@ -509,7 +511,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 			for (final Entry<Connection, PeerIDSet> e : updatedConnections.entrySet()) {
 				final Connection connection = e.getKey();
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " connection " + connection + " updated");
 
 				final PeerIDSet partialPeers = e.getValue();
@@ -575,28 +577,28 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// sends a message including the passed connections
 	private void sendConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final PeerIDSet notifiedPeers) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " sending connect services message to " + notifiedPeers + " RS:" + remoteSuccessors + " RA:" + remoteAncestors);
 		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(remoteSuccessors, remoteAncestors, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForPeers);
 	}
 
 	private void sendDisconnectServicesMessage(final Set<Service> lostServices, final PeerIDSet notifiedPeers) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " sending disconnect services message to " + notifiedPeers + " with lost services " + lostServices);
 		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(lostServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendRemoveServicesMessage(final Set<Service> rServices, final PeerIDSet notifiedPeers) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " sending removed services message to " + notifiedPeers + " with removed services " + rServices);
 		final RemovedServicesMessage messageForOutputPeers = new RemovedServicesMessage(rServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendCollisionSearchMessage(final Set<Parameter> parameters) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " sending collision message while searching for parameters " + parameters);
 		final CollisionMessage collisionMessage = new CollisionMessage(peer.getPeerID());
 		pSearch.sendSearchMessage(parameters, collisionMessage, SearchType.Generic);
@@ -688,7 +690,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		final Set<Collision> collisions = new HashSet<Collision>();
 
 		if (!removedParameters.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
 
 			// obtain which previously detected collisions are affected by
@@ -714,7 +716,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 
 		if (!addedParameters.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
 
 			// obtain which collisions are caused by the new parameters addition
@@ -737,7 +739,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 
 		if (!changedParameters.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
 
 			// obtain those parameters whose estimated distance has been reduced
@@ -764,7 +766,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// new parameters
 		if (payload != null) {
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " received inhibition for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
 			inhibitedCollisions.addAll(inhibeCollisionsMessage.getInhibedCollisions());
 
@@ -774,7 +776,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		// if collisions were detected, notify them
 		if (!collisions.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " detected collisions " + collisions);
 
 			// Update the collisions detected by the current node
@@ -801,7 +803,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private Set<Collision> getReducedParametersCollisions(final Set<Parameter> reducedParameters) {
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " checking for collisions for reduced parameters: " + reducedParameters);
 		final Set<Collision> collisions = CollisionDetector.getParametersColliding(new HashSet<Parameter>(), pSearch.getDisseminationLayer().getParameters(), false, pSearch.getDisseminationLayer().getTaxonomy());
 
@@ -841,10 +843,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		final ParameterDisseminator dissemination = pSearch.getDisseminationLayer();
 
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " I:" + dissemination.getEstimatedDistance(collision.getInput()) + " O:" + dissemination.getEstimatedDistance(collision.getOutput()));
 		final int localSum = dissemination.getEstimatedDistance(collision.getInput()) + dissemination.getEstimatedDistance(collision.getOutput());
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " localSum: " + localSum);
 
 		// obtain the estimated distance for the colliding parameters according
@@ -853,9 +855,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		final int neighborOutput = (dissemination.getDistance(collision.getOutput(), neighbor) == 0) ? dissemination.getEstimatedDistance(collision.getOutput()) - 1 : dissemination.getDistance(collision.getOutput(), neighbor) + 1;
 
 		final int neighborSum = neighborInput + neighborOutput;
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " I:" + neighborInput + " O:" + neighborOutput);
-		if (Logger.TRACE)
+		
 			logger.trace("Peer " + peer.getPeerID() + " neighbor: " + neighbor + " sum: " + neighborSum);
 
 		// collision is valid if the local sum for colliding parameters is
@@ -875,7 +877,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public PayloadMessage searchMessageReceived(final SearchMessage message) {
 		// only messages containing a collision message as payload are valid
 		if (message.getPayload() instanceof CollisionMessage) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " received collision message " + message.getPayload());
 
 			// obtain those services which provide the searched parameters
@@ -887,7 +889,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 				serviceDistanceTable.put(service, Integer.valueOf(0));
 
 			final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(serviceDistanceTable, peer.getPeerID());
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " sending collision response with services" + serviceDistanceTable + " to " + message.getSource());
 			return collisionResponseMessage;
 		}
@@ -902,13 +904,13 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			final MessageID parameterRouteID = routeAssociations.get(searchRouteID);
 			// check if route was completely lost
 			if (lostParameterRoutes.contains(parameterRouteID)) {
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing responses from lost routes: " + lostParameterRoutes);
 				final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostParameterRoutes);
 				sendDisconnectNotifications(notifications);
 			} else {
 				final Set<Parameter> parameters = entry.getValue();
-				if (Logger.TRACE)
+				
 					logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing lost parameters: " + lostParameters);
 				final Map<PeerIDSet, Set<Service>> notifications = cManager.removeParameters(parameters, searchRouteID.getPeer());
 				sendDisconnectNotifications(notifications);
@@ -919,7 +921,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	@Override
 	public void changedSearchRoutes(final Map<MessageID, Set<Parameter>> changedSearchRoutes, final Set<MessageID> lostSearchRoutes) {
 		if (!lostSearchRoutes.isEmpty()) {
-			if (Logger.TRACE)
+			
 				logger.trace("Peer " + peer.getPeerID() + " checking for services connecting through lost search routes: " + lostSearchRoutes);
 
 			final Map<Service, Set<Service>> lostAncestors = new HashMap<Service, Set<Service>>();
@@ -959,10 +961,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 							lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
 						}
 
-					if (Logger.TRACE)
+					
 						logger.trace("Peer " + peer.getPeerID() + " removing services connected through route: " + routeID);
 					sdg.removeServicesFromRoute(routeID);
-					if (Logger.TRACE)
+					
 						logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
 				}
 

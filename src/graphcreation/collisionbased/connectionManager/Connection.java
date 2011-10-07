@@ -12,10 +12,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import message.MessageID;
 import multicast.search.message.SearchResponseMessage;
 import peer.PeerID;
 import peer.PeerIDSet;
+import peer.message.MessageID;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;

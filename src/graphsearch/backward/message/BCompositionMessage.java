@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import message.MessageID;
 import multicast.search.message.RemoteMessage;
 import peer.PeerID;
+import peer.message.MessageID;
 import peer.message.PayloadMessage;
 
 public class BCompositionMessage extends RemoteMessage implements PayloadMessage {

@@ -1,7 +1,7 @@
 package detection.message;
 
-import message.BroadcastMessage;
 import peer.PeerID;
+import peer.message.BroadcastMessage;
 
 /**
  * A broadcast message which works as beacon.

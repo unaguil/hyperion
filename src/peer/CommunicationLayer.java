@@ -1,6 +1,6 @@
 package peer;
 
-import message.MessageReceivedListener;
+import peer.message.MessageReceivedListener;
 
 /**
  * This interface defines a layer which can be registered in the reliable
