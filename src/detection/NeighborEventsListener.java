@@ -1,6 +1,6 @@
 package detection;
 
-import peer.PeerIDSet;
+import peer.peerid.PeerIDSet;
 
 /**
  * This interface defines those methods which are used to notify neighbor

@@ -1,8 +1,8 @@
 package graphcreation.collisionbased.message;
 
 import multicast.search.message.RemoteMessage;
-import peer.PeerID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class CollisionMessage extends RemoteMessage implements PayloadMessage {
 

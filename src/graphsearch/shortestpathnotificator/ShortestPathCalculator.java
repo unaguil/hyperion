@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import taxonomy.Taxonomy;
 
 public class ShortestPathCalculator {

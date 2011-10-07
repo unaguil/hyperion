@@ -12,7 +12,7 @@ import multicast.search.message.SearchMessage.SearchType;
 
 import org.junit.Test;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.TaxonomyException;

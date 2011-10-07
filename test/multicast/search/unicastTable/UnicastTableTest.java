@@ -19,9 +19,9 @@ import multicast.search.message.SearchResponseMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import peer.PeerID;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
+import peer.peerid.PeerID;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;

@@ -1,7 +1,7 @@
 package detection;
 
 import peer.CommunicationLayer;
-import peer.PeerIDSet;
+import peer.peerid.PeerIDSet;
 
 /**
  * Interface which defines the methods of neighbor detectors

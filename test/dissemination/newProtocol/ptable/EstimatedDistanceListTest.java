@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class EstimatedDistanceListTest {
 

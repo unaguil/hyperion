@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Set;
 
 import peer.Peer;
-import peer.PeerID;
 import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class ForwardCompositionSearch extends CommonCompositionSearch {
 

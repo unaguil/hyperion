@@ -2,7 +2,7 @@ package peer.message;
 
 import java.io.Serializable;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class MessageID implements Serializable, Comparable<MessageID> {
 

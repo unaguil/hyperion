@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.PeerID;
 import peer.message.EnvelopeMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, PayloadMessage {
 

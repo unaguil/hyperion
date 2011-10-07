@@ -1,4 +1,4 @@
-package peer;
+package peer.peerid;
 
 import java.io.Serializable;
 

@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import peer.PeerID;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
+import peer.peerid.PeerID;
 
 class MessagePart implements Serializable {
 

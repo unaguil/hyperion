@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 /**
  * The type of message which are sent by the reliable broadcasting.

@@ -6,6 +6,7 @@ import java.util.Set;
 import peer.message.BroadcastMessage;
 import peer.message.MessageReceivedListener;
 import peer.message.MessageSentListener;
+import peer.peerid.PeerID;
 import detection.NeighborDetector;
 
 public interface Peer {

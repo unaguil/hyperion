@@ -4,10 +4,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.message.MessageID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
 
 /**

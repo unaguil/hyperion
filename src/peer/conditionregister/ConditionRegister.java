@@ -1,4 +1,4 @@
-package peer.conditionRegister;
+package peer.conditionregister;
 
 import java.util.Collections;
 import java.util.HashSet;

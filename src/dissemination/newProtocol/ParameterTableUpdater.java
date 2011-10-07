@@ -13,11 +13,11 @@ import org.apache.log4j.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.UnmodifiableTaxonomy;

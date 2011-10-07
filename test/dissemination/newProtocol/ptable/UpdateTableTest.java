@@ -10,7 +10,7 @@ import java.io.ObjectOutputStream;
 
 import org.junit.Test;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.ParameterFactory;
 

@@ -12,9 +12,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.PeerID;
 import peer.message.MessageID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class BCompositionMessage extends RemoteMessage implements PayloadMessage {
 

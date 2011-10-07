@@ -1,9 +1,9 @@
 package dissemination.newProtocol.message;
 
-import peer.PeerID;
 import peer.message.BroadcastMessage;
 import peer.message.EnvelopeMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 import dissemination.newProtocol.ptable.UpdateTable;
 
 /**

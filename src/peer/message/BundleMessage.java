@@ -3,7 +3,7 @@ package peer.message;
 import java.util.ArrayList;
 import java.util.List;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class BundleMessage extends BroadcastMessage {
 

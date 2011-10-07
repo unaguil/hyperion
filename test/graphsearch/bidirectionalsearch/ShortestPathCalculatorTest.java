@@ -15,7 +15,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.ParameterFactory;

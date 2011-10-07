@@ -33,8 +33,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import peer.PeerID;
 import peer.message.MessageID;
+import peer.peerid.PeerID;
 import serialization.xml.XMLSerialization;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InvalidParameterIDException;

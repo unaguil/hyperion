@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import peer.PeerID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class CompositionNotificationMessage extends ShortestPathNotificationMessage {
 

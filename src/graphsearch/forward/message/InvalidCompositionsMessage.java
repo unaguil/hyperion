@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.PeerID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public class InvalidCompositionsMessage extends RemoteMessage implements PayloadMessage {
 

@@ -23,9 +23,9 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import peer.Peer;
-import peer.PeerID;
 import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 import taxonomy.Taxonomy;
 
 public class BidirectionalSearch extends CommonCompositionSearch {

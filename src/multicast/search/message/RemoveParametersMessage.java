@@ -3,8 +3,8 @@ package multicast.search.message;
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.PeerID;
 import peer.message.MessageID;
+import peer.peerid.PeerID;
 import taxonomy.parameter.Parameter;
 
 /**

@@ -5,8 +5,8 @@ import graphcreation.services.Service;
 
 import java.util.Set;
 
-import peer.PeerID;
 import peer.message.MessageID;
+import peer.peerid.PeerID;
 import serialization.xml.XMLSerialization;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.Parameter;

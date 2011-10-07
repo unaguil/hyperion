@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 /**
  * This class contains the list of estimated distances for a parameter. It does

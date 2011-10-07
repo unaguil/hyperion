@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
+import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import config.Configuration;
 

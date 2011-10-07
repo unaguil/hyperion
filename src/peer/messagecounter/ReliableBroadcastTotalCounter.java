@@ -1,4 +1,4 @@
-package peer.reliableCounter;
+package peer.messagecounter;
 
 import java.util.ArrayList;
 import java.util.Collections;

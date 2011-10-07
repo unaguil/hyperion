@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 class CollisionInfo {
 

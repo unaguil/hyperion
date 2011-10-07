@@ -19,8 +19,8 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import peer.PeerID;
 import peer.message.MessageID;
+import peer.peerid.PeerID;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;

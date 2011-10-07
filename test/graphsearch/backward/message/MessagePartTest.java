@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class MessagePartTest {
 

@@ -2,11 +2,11 @@ package multicast.search.message;
 
 import java.util.Collections;
 
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.message.EnvelopeMessage;
 import peer.message.MulticastMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 
 /**
  * This class defines a message which can be send to multiple remote nodes. It

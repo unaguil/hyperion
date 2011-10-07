@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 import peer.Peer;
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
 import peer.message.MessageSentListener;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import config.Configuration;
 import detection.NeighborDetector;

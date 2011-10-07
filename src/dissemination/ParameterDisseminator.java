@@ -2,7 +2,7 @@ package dissemination;
 
 import java.util.Set;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import serialization.xml.XMLSerialization;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;

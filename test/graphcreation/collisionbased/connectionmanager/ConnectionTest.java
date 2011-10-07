@@ -20,10 +20,10 @@ import multicast.search.message.SearchResponseMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.TaxonomyException;

@@ -6,7 +6,7 @@ import graphcreation.services.Service;
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 

@@ -1,7 +1,7 @@
 package multicast;
 
-import peer.PeerID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public interface MulticastMessageListener {
 

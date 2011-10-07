@@ -3,9 +3,9 @@ package multicast;
 import java.util.Set;
 
 import multicast.search.message.SearchMessage.SearchType;
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import serialization.xml.XMLSerialization;
 import taxonomy.parameter.Parameter;
 import dissemination.ParameterDisseminator;

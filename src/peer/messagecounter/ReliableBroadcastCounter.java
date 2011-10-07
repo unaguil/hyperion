@@ -1,4 +1,4 @@
-package peer.reliableCounter;
+package peer.messagecounter;
 
 /**
  * This class is used for gathering statistical information about sent and

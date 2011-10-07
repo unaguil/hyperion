@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.SearchResponseMessage;
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.message.MessageID;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;

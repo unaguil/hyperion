@@ -26,7 +26,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import peer.Peer;
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class ForwardComposer {
 

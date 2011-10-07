@@ -26,13 +26,13 @@ import org.apache.log4j.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;
-import peer.PeerID;
-import peer.PeerIDSet;
 import peer.RegisterCommunicationLayerException;
-import peer.conditionRegister.ConditionRegister;
+import peer.conditionregister.ConditionRegister;
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
 import config.Configuration;
 import detection.NeighborEventsListener;

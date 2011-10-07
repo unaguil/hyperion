@@ -1,6 +1,6 @@
 package peer.message;
 
-import peer.PeerIDSet;
+import peer.peerid.PeerIDSet;
 
 /**
  * This interface identifies those messages which are broadcasted to a set of

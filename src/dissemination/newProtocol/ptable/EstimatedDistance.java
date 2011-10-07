@@ -2,7 +2,7 @@ package dissemination.newProtocol.ptable;
 
 import java.io.Serializable;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 /**
  * This class represents an element in the estimated distance list of each

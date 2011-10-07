@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 
-import peer.conditionRegister.ConditionRegister;
+import peer.conditionregister.ConditionRegister;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
@@ -21,8 +21,9 @@ import peer.message.MessageID;
 import peer.message.MessageReceivedListener;
 import peer.message.MessageSentListener;
 import peer.message.MulticastMessage;
-import peer.messageCounter.MessageCounter;
-import peer.reliableCounter.ReliableBroadcastTotalCounter;
+import peer.messagecounter.MessageCounter;
+import peer.messagecounter.ReliableBroadcastTotalCounter;
+import peer.peerid.PeerID;
 import config.Configuration;
 import detection.NeighborDetector;
 import detection.beaconDetector.BeaconDetector;

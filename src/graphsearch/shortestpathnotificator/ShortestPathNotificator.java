@@ -8,7 +8,7 @@ import java.util.Collections;
 
 import org.apache.log4j.Logger;
 
-import peer.PeerID;
+import peer.peerid.PeerID;
 
 public class ShortestPathNotificator {
 

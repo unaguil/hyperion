@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.PeerID;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 
 public abstract class ShortestPathNotificationMessage extends RemoteMessage implements PayloadMessage {
 
