@@ -52,7 +52,6 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		this.peer = peer;
 
 		this.rebroadcastThread = new RebroadcastThread(CHECK_PERIOD, this);
-		peer.getDetector().addNeighborListener(this);
 	}
 
 	public void start() {
@@ -63,6 +62,8 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
+		
+		peer.getDetector().addNeighborListener(this);
 
 		rebroadcastThread.start();
 	}

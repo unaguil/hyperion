@@ -36,9 +36,6 @@ public class BasicPeer implements Peer {
 	// List of registered communication layers
 	private final List<CommunicationLayer> communicationLayers = new CopyOnWriteArrayList<CommunicationLayer>();
 
-	// Default neighbor detector
-	private final NeighborDetector detector = new BeaconDetector(this);
-
 	private final MessageProcessor messageProcessor = new MessageProcessor(this);
 
 	private final Random r = new Random();
@@ -65,6 +62,9 @@ public class BasicPeer implements Peer {
 		
 	// Receiving thread used for incoming messages
 	private ReceivingThread receivingThread;
+	
+	// Default neighbor detector
+	private NeighborDetector detector;
 	
 	//the peer id
 	private PeerID peerID;
@@ -235,6 +235,8 @@ public class BasicPeer implements Peer {
 		} catch (final Exception e) {
 			myLogger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
+		
+		detector = new BeaconDetector(this);
 
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
