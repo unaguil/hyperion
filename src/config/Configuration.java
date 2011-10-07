@@ -29,18 +29,16 @@ public class Configuration {
 
 	public String getProperty(final String key) throws Exception {
 		if (!configLoaded)
+			if (otherFile != null)
+				props.loadFromXML(new FileInputStream(otherFile));
+			
 			try {
 				// First attempt
 				props.loadFromXML(new FileInputStream(LOCAL_CONFIG_FILE));
 				configLoaded = true;
 			} catch (final Exception e) {
 				// Second attempt
-				try {
-					props.loadFromXML(new FileInputStream(GENERAL_CONFIG_FILE));
-				} catch (final Exception ex) {
-					if (otherFile != null)
-						props.loadFromXML(new FileInputStream(otherFile));
-				}
+				props.loadFromXML(new FileInputStream(GENERAL_CONFIG_FILE));
 			}
 		return props.getProperty(key);
 	}
