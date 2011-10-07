@@ -121,7 +121,7 @@ public class BasicPeer implements Peer {
 		
 		myLogger.trace("Peer " + peerID + " initializing");
 
-		peerBehavior.initCommunication();
+		peerBehavior.init();
 
 		myLogger.trace("Peer " + peerID + " starts receiving");
 		receivingThread = new ReceivingThread(this);

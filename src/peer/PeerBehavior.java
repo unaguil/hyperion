@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public interface PeerBehavior {
 
-	public void initCommunication() throws IOException;
+	public void init() throws IOException;
 	
 	public void broadcast(byte[] data) throws IOException;
 	
