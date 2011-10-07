@@ -30,6 +30,9 @@ class ReceivingThread extends WaitableThread {
 	public void run() {
 		// Reception thread main loop
 		while (!Thread.interrupted())
+			if (!peer.isInitialized())
+				return;
+			
 			try {
 				byte[] data = peer.getPeerBehavior().receiveData();
 				

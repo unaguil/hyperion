@@ -87,11 +87,11 @@ public class BasicPeer implements Peer {
 		this.peerBehavior = peerBehavior;
 	}
 	
-	protected synchronized boolean isInitialized() {
+	public synchronized boolean isInitialized() {
 		return initialized;
 	}
 
-	public synchronized void initialize() {
+	private synchronized void initialize() {
 		initialized = true;
 	}
 
@@ -394,9 +394,6 @@ public class BasicPeer implements Peer {
 	
 	public void processReceivedPacket(final BroadcastMessage message) {
 		// messages are only processed if node is initialized
-		if (!isInitialized())
-			return;
-
 		myLogger.debug("Peer " + peerID + " received " + message + " from node " + message.getSender());
 		msgCounter.addReceived(message.getClass());
 		

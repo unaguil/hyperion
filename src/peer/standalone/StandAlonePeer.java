@@ -11,23 +11,24 @@ import graphsearch.forward.ForwardCompositionSearch;
 import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
-
-import config.Configuration;
 
 import peer.BasicPeer;
 import peer.Peer;
 import peer.PeerBehavior;
 import peer.peerid.PeerID;
+import config.Configuration;
 
 public class StandAlonePeer implements PeerBehavior, CompositionListener {
 
@@ -35,7 +36,7 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	protected static final String TEMP_DIR = "tmp";
 
 	// local socket address
-	private java.net.InetSocketAddress socketAddress;
+	private InetSocketAddress socketAddress;
 	
 	private ServiceList findServices;
 
@@ -45,19 +46,19 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	protected final Peer peer;
 
 	// The UDP socket used by the peer for communication.
-	private DatagramSocket socket;
+	private MulticastSocket socket;
+	private InetAddress group;
 
 	private static final int SO_TIMEOUT = 5;
 
 	private static final int BUFF_SIZE = 65536; // TODO Check this value
 	private byte[] recvBuffer = new byte[BUFF_SIZE];
 
-	private static final int LISTEN_PORT = 5555;
-	private static final int DEST_PORT = 6666;
+	private static final int DEFAULT_PORT = 5555;
 
 	private CompositionSearch compositionSearch;
 	
-	private final String servicesDir;
+	private final String servicesDir; 
 
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
 
@@ -77,10 +78,11 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 
 	@Override
 	public void init() throws IOException {
-		socket = new DatagramSocket(LISTEN_PORT);
-		socketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), DEST_PORT);
+		group = InetAddress.getByName("228.5.6.7");
+		MulticastSocket s = new MulticastSocket(DEFAULT_PORT);
+		s.joinGroup(group);
 
-		logger.info("Starting peer " + peer.getPeerID() + " listening on port " + LISTEN_PORT);
+		logger.info("Starting peer " + peer.getPeerID() + " multicasting on port " + DEFAULT_PORT);
 		
 		loadData();
 	}
@@ -88,7 +90,7 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	@Override
 	public void broadcast(final byte[] data) throws IOException {
 		// Create a new datagram packet and send it using the socket
-		final DatagramPacket p = new DatagramPacket(data, data.length, socketAddress);
+		final DatagramPacket p = new DatagramPacket(data, data.length, group, DEFAULT_PORT);
 		socket.send(p);
 	}
 
@@ -152,7 +154,7 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
-	}
+	} 
 	
 	private String getServicesFilePath(final PeerID peerID) {
 		return servicesDir + File.separator + "Services" + peerID + ".xml";

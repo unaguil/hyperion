@@ -28,7 +28,7 @@ import config.Configuration;
 class MessageProcessor extends WaitableThread {
 
 	// the communication peer
-	private final Peer peer;
+	private final BasicPeer peer;
 
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
@@ -52,7 +52,7 @@ class MessageProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public MessageProcessor(final Peer peer) {
+	public MessageProcessor(final BasicPeer peer) {
 		this.peer = peer;
 
 		this.reliableBroadcast = new ReliableBroadcast(peer);
@@ -88,6 +88,9 @@ class MessageProcessor extends WaitableThread {
 	public void run() {
 		// Processor loop
 		while (!Thread.interrupted()) {
+			if (!peer.isInitialized())
+				return;
+			
 			final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 
 			synchronized (messageDeque) {
