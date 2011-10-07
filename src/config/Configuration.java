@@ -7,6 +7,8 @@ public class Configuration {
 
 	private final static String LOCAL_CONFIG_FILE = "./Configuration.xml";
 	private final static String GENERAL_CONFIG_FILE = "../Configuration.xml";
+	
+	private static String otherFile = null;
 
 	private final Properties props = new Properties();
 
@@ -20,6 +22,10 @@ public class Configuration {
 	public static Configuration getInstance() {
 		return config;
 	}
+	
+	public static void setFile(String filePath) {
+		otherFile = filePath;
+	}
 
 	public String getProperty(final String key) throws Exception {
 		if (!configLoaded)
@@ -29,7 +35,12 @@ public class Configuration {
 				configLoaded = true;
 			} catch (final Exception e) {
 				// Second attempt
-				props.loadFromXML(new FileInputStream(GENERAL_CONFIG_FILE));
+				try {
+					props.loadFromXML(new FileInputStream(GENERAL_CONFIG_FILE));
+				} catch (final Exception ex) {
+					if (otherFile != null)
+						props.loadFromXML(new FileInputStream(otherFile));
+				}
 			}
 		return props.getProperty(key);
 	}
