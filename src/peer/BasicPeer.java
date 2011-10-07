@@ -230,8 +230,8 @@ public class BasicPeer implements Peer {
 	private void init() {
 		try {
 			final String delayedInitStr = Configuration.getInstance().getProperty("basicPeer.delayedInit");
-
-			DELAYED_INIT = Integer.parseInt(delayedInitStr);
+			if (delayedInitStr != null)
+				DELAYED_INIT = Integer.parseInt(delayedInitStr);
 		} catch (final Exception e) {
 			myLogger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
