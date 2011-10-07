@@ -116,8 +116,8 @@ public class BasicPeer implements Peer {
 	
 	// Initializes the peer
 	@Override
-	public void initPeer(final String id) throws IOException {
-		this.peerID = new PeerID(id);
+	public void initPeer(final PeerID id) throws IOException {
+		this.peerID = id;
 		
 		myLogger.trace("Peer " + peerID + " initializing");
 

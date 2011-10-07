@@ -31,7 +31,7 @@ public interface Peer {
 
 	public void processMessage(BroadcastMessage message);
 	
-	public void initPeer(final String id) throws IOException;
+	public void initPeer(PeerID peerID) throws IOException;
 	
 	public void stopPeer();
 }
