@@ -79,10 +79,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		this.peer = peer;
 		this.tableChangedListener = tableChangedListener;
 		this.neighborListener = neighborListener;
-
-		// Sets neighbor listener for this layer using detector layer
-		peer.getDetector().addNeighborListener(this);
-
+		
 		// Register messages
 		final Set<Class<? extends BroadcastMessage>> messageClasses = new HashSet<Class<? extends BroadcastMessage>>();
 		messageClasses.add(TableMessage.class);
@@ -340,6 +337,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
+		
+		// Sets neighbor listener for this layer using detector layer
+		peer.getDetector().addNeighborListener(this);
 
 		// Create the parameter table using loaded configuration
 		pTable = new ParameterTable(MAX_DISTANCE, peer.getPeerID(), getTaxonomy());
