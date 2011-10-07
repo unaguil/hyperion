@@ -316,7 +316,8 @@ public class BasicPeer implements Peer {
 			logger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
 	}
 
-	protected void printStatistics() {
+	@Override
+	public void printStatistics() {
 		ReliableBroadcastTotalCounter.logStatistics();
 
 		logger.info("Simulation finished");

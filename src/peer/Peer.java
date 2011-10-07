@@ -34,4 +34,6 @@ public interface Peer {
 	public void initPeer(PeerID peerID) throws IOException;
 	
 	public void stopPeer();
+	
+	public void printStatistics();
 }
