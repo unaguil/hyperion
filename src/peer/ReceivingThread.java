@@ -33,9 +33,11 @@ class ReceivingThread extends WaitableThread {
 			try {
 				byte[] data = peer.getPeerBehavior().receiveData();
 				
-				final BroadcastMessage message = (BroadcastMessage) getObject(data);
-
-				peer.processReceivedPacket(message);
+				if (data != null) {				
+					final BroadcastMessage message = (BroadcastMessage) getObject(data);
+	
+					peer.processReceivedPacket(message);
+				}
 			} catch (final IOException e) {
 				e.printStackTrace();
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
