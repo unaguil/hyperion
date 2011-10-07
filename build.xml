@@ -36,12 +36,6 @@
 		<delete dir="bin" />
 		<delete dir="junit" />
 		<delete dir="dist" />
-		<delete>
-			<fileset dir="scripts" includes="**/agentjlogs/**" />
-		</delete>
-		<delete>
-			<fileset dir="scripts" includes="**/hs_err_pid*.log" />
-		</delete>
 	</target>
 	
 	<target depends="init" name="build">
@@ -52,14 +46,6 @@
 		</javac>
 		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="test" />
-			<classpath refid="Hyperion.classpath" />
-		</javac>
-		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
-			<src path="files" />
-			<classpath refid="Hyperion.classpath" />
-		</javac>
-		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
-			<src path="scripts" />
 			<classpath refid="Hyperion.classpath" />
 		</javac>
 		<jar jarfile="dist/hyperion.jar" basedir="bin"/>
