@@ -35,9 +35,7 @@ class ReceivingThread extends WaitableThread {
 				
 				if (data != null) {				
 					final BroadcastMessage message = (BroadcastMessage) getObject(data);
-					
-					if (message.getSender().equals(peer.getPeerID()))
-						return;
+
 	
 					peer.processReceivedPacket(message);
 				}
