@@ -23,6 +23,7 @@ import peer.message.MessageSentListener;
 import peer.message.MulticastMessage;
 import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastTotalCounter;
+import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
 import config.Configuration;
 import detection.NeighborDetector;
@@ -77,7 +78,6 @@ public class BasicPeer implements Peer {
 	
 	// Default reception buffer length
 	public static final int TRANSMISSION_TIME = 40;
-
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures
@@ -318,6 +318,7 @@ public class BasicPeer implements Peer {
 
 	@Override
 	public void printStatistics() {
+		TotalMessageCounter.logStatistics();
 		ReliableBroadcastTotalCounter.logStatistics();
 
 		logger.info("Simulation finished");
