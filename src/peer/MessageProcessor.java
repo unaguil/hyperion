@@ -87,10 +87,7 @@ class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {
-			if (!peer.isInitialized())
-				return;
-			
+		while (!Thread.interrupted()) {			
 			final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 
 			synchronized (messageDeque) {

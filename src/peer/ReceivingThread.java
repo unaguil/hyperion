@@ -29,10 +29,7 @@ class ReceivingThread extends WaitableThread {
 	@Override
 	public void run() {
 		// Reception thread main loop
-		while (!Thread.interrupted())
-			if (!peer.isInitialized())
-				return;
-			
+		while (!Thread.interrupted())			
 			try {
 				byte[] data = peer.getPeerBehavior().receiveData();
 				
