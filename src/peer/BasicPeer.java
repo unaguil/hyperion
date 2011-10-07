@@ -73,7 +73,7 @@ public class BasicPeer implements Peer {
 
 	private int DELAYED_INIT = 0;
 	
-	private final Logger myLogger = Logger.getLogger(BasicPeer.class);
+	private final Logger logger = Logger.getLogger(BasicPeer.class);
 	
 	// Default reception buffer length
 	public static final int TRANSMISSION_TIME = 40;
@@ -119,7 +119,7 @@ public class BasicPeer implements Peer {
 	public void initPeer(final PeerID id) throws IOException {
 		this.peerID = id;
 		
-		myLogger.trace("Peer " + peerID + " initializing");
+		logger.trace("Peer " + peerID + " initializing");
 		
 		init();
 		
@@ -127,7 +127,7 @@ public class BasicPeer implements Peer {
 		
 		receivingThread = new ReceivingThread(this);
 		receivingThread.start();
-		myLogger.trace("Peer " + peerID + " starts receiving");
+		logger.trace("Peer " + peerID + " starts receiving");
 	}
 	
 	/**
@@ -186,7 +186,7 @@ public class BasicPeer implements Peer {
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message) {
 		messageProcessor.addResponse(message);
-		myLogger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
+		logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
 		msgCounter.addSent(message.getClass());
 	}
 
@@ -202,7 +202,7 @@ public class BasicPeer implements Peer {
 		public void run() {
 			if (DELAYED_INIT > 0) {
 				final int initDelay = r.nextInt(DELAYED_INIT);
-				myLogger.info("Peer " + peer.getPeerID() + " initialization has been delayed " + initDelay + " ms");
+				logger.info("Peer " + peer.getPeerID() + " initialization has been delayed " + initDelay + " ms");
 
 				try {
 					Thread.sleep(initDelay);
@@ -226,7 +226,7 @@ public class BasicPeer implements Peer {
 			if (delayedInitStr != null)
 				DELAYED_INIT = Integer.parseInt(delayedInitStr);
 		} catch (final Exception e) {
-			myLogger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
+			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
 		
 		detector = new BeaconDetector(this);
@@ -242,7 +242,7 @@ public class BasicPeer implements Peer {
 	@Override
 	public void broadcast(final BroadcastMessage message) {
 		try {
-			myLogger.debug("Peer " + peerID + " sending " + message);
+			logger.debug("Peer " + peerID + " sending " + message);
 			msgCounter.addSent(message.getClass());
 
 			// Message is converted to byte array
@@ -257,7 +257,7 @@ public class BasicPeer implements Peer {
 
 		} catch (final IOException ioe) {
 			ioe.printStackTrace();
-			myLogger.error("Peer " + peerID + " broadcast error. " + ioe.getMessage());
+			logger.error("Peer " + peerID + " broadcast error. " + ioe.getMessage());
 		}
 	}
 	
@@ -285,22 +285,22 @@ public class BasicPeer implements Peer {
 		messageProcessor.stopAndWait();
 
 		
-		myLogger.trace("Peer " + peerID + " unprocessed messages: " + messageProcessor.getUnprocessedMessages());
+		logger.trace("Peer " + peerID + " unprocessed messages: " + messageProcessor.getUnprocessedMessages());
 
 		// Communication layers are stopped in reverse order of initialization
 		Collections.reverse(communicationLayers);
 		for (final CommunicationLayer layer : communicationLayers)
 			layer.stop();
 		
-		myLogger.trace("Peer " + peerID + " stopping receiving thread");
+		logger.trace("Peer " + peerID + " stopping receiving thread");
 		receivingThread.stopAndWait();
 	}
 
 	protected void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
 		
-		myLogger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
-		myLogger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
+		logger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
+		logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
 		if (broadcastMessage instanceof BeaconMessage)
 			return;
@@ -313,20 +313,20 @@ public class BasicPeer implements Peer {
 			// Put the message into the blocking queue for processing
 			messageProcessor.enqueue(broadcastMessage);
 		} else 
-			myLogger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
+			logger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
 	}
 
 	protected void printStatistics() {
 		ReliableBroadcastTotalCounter.logStatistics();
 
-		myLogger.info("Simulation finished");
+		logger.info("Simulation finished");
 	}
 
 	protected void processSimpleMessage(final BroadcastMessage broadcastMessage) {	
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
 			
-				myLogger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
+				logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
 			messageProcessor.addACKResponse((ACKMessage) broadcastMessage);
 			return;
 		}
@@ -368,7 +368,7 @@ public class BasicPeer implements Peer {
 	@Override
 	public void processMessage(final BroadcastMessage message) {
 		
-			myLogger.trace("Peer " + peerID + " processing message " + message);
+			logger.trace("Peer " + peerID + " processing message " + message);
 
 		// Check if message is a multicast message and is directed to this node
 		if (message instanceof MulticastMessage) {
@@ -394,7 +394,7 @@ public class BasicPeer implements Peer {
 	
 	public void processReceivedPacket(final BroadcastMessage message) {
 		// messages are only processed if node is initialized
-		myLogger.debug("Peer " + peerID + " received " + message + " from node " + message.getSender());
+		logger.debug("Peer " + peerID + " received " + message + " from node " + message.getSender());
 		msgCounter.addReceived(message.getClass());
 		
 		// Notify hear listeners indicating that a message was received
