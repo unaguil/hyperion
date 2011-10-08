@@ -1,4 +1,4 @@
-package peer.standalone;
+package standalone;
 
 import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
 import graphcreation.services.Service;
