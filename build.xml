@@ -13,6 +13,7 @@
 		<pathelement location="lib/jgrapht-jdk1.6.jar" />
 		<pathelement location="lib/junit-4.8.2.jar" />
 		<pathelement location="lib/log4j-1.2.16.jar" />
+		<pathelement location="bin" />
 	</path>
 	
 	<target name="init">
@@ -40,11 +41,11 @@
 	
 	<target depends="init" name="build">
 		<echo message="${ant.project.name}: ${ant.file}" />
-		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+		<javac destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="src" />
 			<classpath refid="Hyperion.classpath" />
 		</javac>
-		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+		<javac destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="test" />
 			<classpath refid="Hyperion.classpath" />
 		</javac>
@@ -53,7 +54,7 @@
 
 	<target name="test" depends="build">
 		<mkdir dir="${junit.output.dir}" />
-		<junit fork="yes" printSummary="withOutAndErr" haltonerror="true" showoutput="true">
+		<junit printSummary="on" haltonfailure="yes" showoutput="true">
 			<formatter type="${junit.formatter.type}" />
 			<batchtest todir="${junit.output.dir}">
 				<fileset dir="test/">
@@ -62,16 +63,6 @@
 			</batchtest>
 			<classpath refid="Hyperion.classpath" />
 		</junit>
-	</target>
-
-
-	<target name="junitreport">
-		<junitreport todir="${junit.output.dir}">
-			<fileset dir="${junit.output.dir}">
-				<include name="TEST-*.xml" />
-			</fileset>
-			<report format="frames" todir="${junit.output.dir}" />
-		</junitreport>
 	</target>
 
 </project>
