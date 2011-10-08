@@ -37,7 +37,7 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;

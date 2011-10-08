@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 public class BidirectionalBackwardComposer extends BackwardComposer {
 

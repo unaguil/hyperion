@@ -22,7 +22,7 @@ import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;

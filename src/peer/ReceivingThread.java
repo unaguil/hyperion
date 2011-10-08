@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.message.BroadcastMessage;
 import util.WaitableThread;

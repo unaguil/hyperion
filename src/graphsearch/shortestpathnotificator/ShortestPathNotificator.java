@@ -6,7 +6,7 @@ import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
 
 import java.util.Collections;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.peerid.PeerID;
 

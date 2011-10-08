@@ -12,17 +12,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.BasicPeer;
 import peer.Peer;
@@ -35,13 +29,6 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	// Directory used to output information
 	protected static final String TEMP_DIR = "tmp";
 
-	// local socket address
-	private InetSocketAddress socketAddress;
-	
-	private ServiceList findServices;
-
-	private final Map<SearchID, List<ExtendedServiceGraph>> receivedCompositions = new HashMap<SearchID, List<ExtendedServiceGraph>>();
-
 	// Basic peer
 	protected final Peer peer;
 
@@ -49,16 +36,16 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	private MulticastSocket socket;
 	private InetAddress group;
 
-	private static final int SO_TIMEOUT = 5;
+	private static final int SO_TIMEOUT = 5; 
 
 	private static final int BUFF_SIZE = 65536; // TODO Check this value
 	private byte[] recvBuffer = new byte[BUFF_SIZE];
 
-	private static final int DEFAULT_PORT = 5555;
-
 	private CompositionSearch compositionSearch;
 	
-	private final String servicesDir; 
+	private final String servicesDir;
+	
+	private static final int DEFAULT_PORT = 5555;
 
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
 
@@ -79,8 +66,8 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	@Override
 	public void init() throws IOException {
 		group = InetAddress.getByName("228.5.6.7");
-		MulticastSocket s = new MulticastSocket(DEFAULT_PORT);
-		s.joinGroup(group);
+		socket = new MulticastSocket();
+		socket.joinGroup(group);
 
 		logger.info("Starting peer " + peer.getPeerID() + " multicasting on port " + DEFAULT_PORT);
 		
@@ -102,8 +89,8 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 		byte[] data = null;
 		try {
 			socket.setSoTimeout(SO_TIMEOUT);
-			socket.receive(packet);
-			data = packet.getData();
+			socket.receive(packet);			
+			data = packet.getData();			
 		} catch (SocketException e) {} 
 		catch (IOException e) {}
 		

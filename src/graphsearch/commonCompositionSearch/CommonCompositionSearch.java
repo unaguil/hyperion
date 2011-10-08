@@ -24,7 +24,7 @@ import java.util.Set;
 
 import multicast.MulticastMessageListener;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.Peer;
 import peer.peerid.PeerID;

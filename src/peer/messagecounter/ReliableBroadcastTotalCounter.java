@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 /**
  * This class provides statistical information about total sent and received

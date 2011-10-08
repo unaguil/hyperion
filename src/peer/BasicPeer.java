@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.conditionregister.ConditionRegister;
 import peer.message.ACKMessage;

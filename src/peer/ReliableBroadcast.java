@@ -2,7 +2,7 @@ package peer;
 
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;

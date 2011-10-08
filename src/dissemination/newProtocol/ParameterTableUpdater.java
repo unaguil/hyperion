@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.CommunicationLayer;
 import peer.Peer;

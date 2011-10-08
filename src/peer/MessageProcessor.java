@@ -8,7 +8,7 @@ import java.util.Random;
 
 import multicast.search.message.RemoteMulticastMessage;
 
-import org.apache.log4j.Logger;
+import util.logger.Logger;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
