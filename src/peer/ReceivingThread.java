@@ -29,13 +29,18 @@ class ReceivingThread extends WaitableThread {
 	@Override
 	public void run() {
 		// Reception thread main loop
-		while (!Thread.interrupted())			
+		while (!Thread.interrupted()) {
+			byte[] data = null;
+			
 			try {
-				byte[] data = peer.getPeerBehavior().receiveData();
+				 data = peer.getCommProvider().receiveData();
+			} catch (IOException e) {}
 				
+			try {
 				if (data != null) {				
-					final BroadcastMessage message = (BroadcastMessage) getObject(data);	
-					peer.processReceivedPacket(message);
+					final BroadcastMessage message = (BroadcastMessage) getObject(data);
+					if (peer.getCommProvider().isValid(message))
+						peer.processReceivedPacket(message);
 				}
 			} catch (final IOException e) {
 				e.printStackTrace();
@@ -44,8 +49,9 @@ class ReceivingThread extends WaitableThread {
 				e.printStackTrace();
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
 			}
+		}
 		
-			logger.trace("Peer " + peer.getPeerID() + " receiving loop exited");
+		logger.trace("Peer " + peer.getPeerID() + " receiving loop exited");
 
 		this.threadFinished();
 	}

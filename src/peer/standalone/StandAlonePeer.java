@@ -13,18 +13,17 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
 import java.util.Set;
-
-import util.logger.Logger;
 
 import peer.BasicPeer;
 import peer.Peer;
-import peer.PeerBehavior;
+import peer.CommProvider;
+import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
+import util.logger.Logger;
 import config.Configuration;
 
-public class StandAlonePeer implements PeerBehavior, CompositionListener {
+public class StandAlonePeer implements CommProvider, CompositionListener {
 
 	// Directory used to output information
 	protected static final String TEMP_DIR = "tmp";
@@ -45,6 +44,7 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	
 	private final String servicesDir;
 	
+	private static final String MULTICAST_GROUP = "230.0.0.1";
 	private static final int DEFAULT_PORT = 5555;
 
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
@@ -64,12 +64,12 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	}
 
 	@Override
-	public void init() throws IOException {
-		group = InetAddress.getByName("228.5.6.7");
-		socket = new MulticastSocket();
+	public void initComm() throws IOException {
+		socket = new MulticastSocket(DEFAULT_PORT);
+		group = InetAddress.getByName(MULTICAST_GROUP);
 		socket.joinGroup(group);
 
-		logger.info("Starting peer " + peer.getPeerID() + " multicasting on port " + DEFAULT_PORT);
+		logger.info("Peer " + peer.getPeerID() + " joined to multicast group " + MULTICAST_GROUP + " on port " + DEFAULT_PORT);
 		
 		loadData();
 	}
@@ -82,19 +82,25 @@ public class StandAlonePeer implements PeerBehavior, CompositionListener {
 	}
 
 	@Override
-	public byte[] receiveData() {
+	public byte[] receiveData() throws IOException {
 		// Creates the reception buffer and packet
 		final DatagramPacket packet = new DatagramPacket(recvBuffer, recvBuffer.length);
-
-		byte[] data = null;
-		try {
-			socket.setSoTimeout(SO_TIMEOUT);
-			socket.receive(packet);			
-			data = packet.getData();			
-		} catch (SocketException e) {} 
-		catch (IOException e) {}
+		socket.setSoTimeout(SO_TIMEOUT);
+		socket.receive(packet);			
+		return packet.getData();			
+	}
+	
+	@Override
+	public boolean isValid(BroadcastMessage message) {
+		return !message.getSender().equals(peer.getPeerID());
+	}
+	
+	@Override
+	public void stopComm() throws IOException {
+		socket.leaveGroup(group);
+		socket.close();
 		
-		return data;
+		logger.info("Peer " + peer.getPeerID() + " leaved multicast group " + MULTICAST_GROUP);
 	}
 
 	public static void main(String args[]) throws IOException {

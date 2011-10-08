@@ -53,7 +53,7 @@ public class BasicPeer implements Peer {
 	private final List<MessageSentListener> messageSentListeners = new CopyOnWriteArrayList<MessageSentListener>(); 
 
 	//the communication peer
-	private PeerBehavior peerBehavior;
+	private CommProvider commProvider;
 	
 	// The instance of the message counter to be used.
 	private final MessageCounter msgCounter = new MessageCounter();
@@ -83,8 +83,8 @@ public class BasicPeer implements Peer {
 	 * Constructor of the class. It is the default constructor which configures
 	 * all internal properties.
 	 */
-	public BasicPeer(PeerBehavior peerBehavior) {
-		this.peerBehavior = peerBehavior;
+	public BasicPeer(CommProvider commProvider) {
+		this.commProvider = commProvider;
 	}
 	
 	public synchronized boolean isInitialized() {
@@ -123,7 +123,7 @@ public class BasicPeer implements Peer {
 		
 		init();
 		
-		peerBehavior.init();
+		commProvider.initComm();
 		
 		receivingThread = new ReceivingThread(this);
 		receivingThread.start();
@@ -250,7 +250,7 @@ public class BasicPeer implements Peer {
 			
 			msgCounter.addMessageSize(data.length);
 			
-			peerBehavior.broadcast(data);
+			commProvider.broadcast(data);
 
 			// Notify registered listeners
 			notifySentListeners(message);
@@ -283,9 +283,14 @@ public class BasicPeer implements Peer {
 
 		// Stop message processor
 		messageProcessor.stopAndWait();
-
 		
 		logger.trace("Peer " + peerID + " unprocessed messages: " + messageProcessor.getUnprocessedMessages());
+		
+		try {
+			commProvider.stopComm();
+		} catch (IOException e) {
+			logger.error("Peer " + peerID + " had problem finalizing communication " + e.getMessage());
+		}
 
 		// Communication layers are stopped in reverse order of initialization
 		Collections.reverse(communicationLayers);
@@ -414,8 +419,8 @@ public class BasicPeer implements Peer {
 			hearListener.messageReceived(message, receptionTime);
 	}
 
-	public PeerBehavior getPeerBehavior() {
-		return peerBehavior;
+	public CommProvider getCommProvider() {
+		return commProvider;
 	}
 
 	@Override
