@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties><entry key="nNodes">4</entry>
+<entry key="finishTime">50.0</entry>
+<entry key="gridW">70</entry>
+<entry key="gridH">70</entry>
+<entry key="discardTime">0</entry>
+<entry key="javaAgent">graphsearch.ForwardPeer</entry>
+<entry key="mobilityModel">RandomWaypoint</entry>
+<entry key="minSpeed">1.0</entry>
+<entry key="maxSpeed">10.0</entry>
+<entry key="pauseTime">10.0</entry>
+<entry key="populator">CompositionsPopulator</entry>
+<entry key="nCompositions">10</entry>
+<entry key="compositionIO">(1, 5)</entry>
+<entry key="dDistribution">((0.3, 5), (0.4, 4), (0.3, 2))</entry>
+<entry key="width">(1, 4)</entry>
+<entry key="nodeBehavior">CompositionSearchBehavior</entry>
+<entry key="searchFreq">0.00</entry>
+<entry key="timeRange">(3.0, 'END')</entry>
+<entry key="messageProcessor.randomWait">200</entry>
+<entry key="beaconDetector.beaconTime">1000</entry>
+<entry key="reliableBroadcast.maxTries">3</entry>
+<entry key="dissemination.maxDistance">5</entry>
+<entry key="parameterSearch.searchMessageTTL">5</entry>
+<entry key="graphsearch.maxTTL">10</entry>
+<entry key="graphsearch.searchExpiration">20000</entry>
+<entry key="NONE">1</entry>
+<entry key="taxonomyFile">taxonomy.xml</entry></properties>

@@ -1,0 +1,115 @@
+<?xml version="1.0" ?>
+<services>
+	<service id="Service-3">
+		<parameter id="I-3"/>
+		<parameter id="I-2"/>
+		<parameter id="O-8"/>
+		<parameter id="O-9"/>
+	</service>
+	<service id="Service-6">
+		<parameter id="I-10"/>
+		<parameter id="O-16"/>
+		<parameter id="O-17"/>
+		<parameter id="O-18"/>
+	</service>
+	<service id="Service-12">
+		<parameter id="I-31"/>
+		<parameter id="I-33"/>
+		<parameter id="I-32"/>
+		<parameter id="O-35"/>
+		<parameter id="O-36"/>
+		<parameter id="O-37"/>
+		<parameter id="O-38"/>
+	</service>
+	<service id="Service-22">
+		<parameter id="I-59"/>
+		<parameter id="I-58"/>
+		<parameter id="I-66"/>
+		<parameter id="I-67"/>
+		<parameter id="I-64"/>
+		<parameter id="I-62"/>
+		<parameter id="I-63"/>
+		<parameter id="I-61"/>
+		<parameter id="O-68"/>
+		<parameter id="O-69"/>
+	</service>
+	<service id="Service-31">
+		<parameter id="I-82"/>
+		<parameter id="I-83"/>
+		<parameter id="O-88"/>
+		<parameter id="O-89"/>
+		<parameter id="O-90"/>
+		<parameter id="O-91"/>
+	</service>
+	<service id="Service-41">
+		<parameter id="I-111"/>
+		<parameter id="O-114"/>
+		<parameter id="O-115"/>
+		<parameter id="O-116"/>
+		<parameter id="O-117"/>
+	</service>
+	<service id="Service-44">
+		<parameter id="I-114"/>
+		<parameter id="O-123"/>
+	</service>
+	<service id="Service-46">
+		<parameter id="I-115"/>
+		<parameter id="I-114"/>
+		<parameter id="O-128"/>
+		<parameter id="O-129"/>
+	</service>
+	<service id="Service-61">
+		<parameter id="I-158"/>
+		<parameter id="O-166"/>
+		<parameter id="O-167"/>
+		<parameter id="O-168"/>
+	</service>
+	<service id="Service-65">
+		<parameter id="I-173"/>
+		<parameter id="I-174"/>
+		<parameter id="O-179"/>
+	</service>
+	<service id="Service-67">
+		<parameter id="I-175"/>
+		<parameter id="I-176"/>
+		<parameter id="O-184"/>
+		<parameter id="O-185"/>
+	</service>
+	<service id="Service-68">
+		<parameter id="I-184"/>
+		<parameter id="O-186"/>
+	</service>
+	<service id="Service-82">
+		<parameter id="I-229"/>
+		<parameter id="O-230"/>
+	</service>
+	<service id="Service-90">
+		<parameter id="I-242"/>
+		<parameter id="I-241"/>
+		<parameter id="O-249"/>
+		<parameter id="O-250"/>
+		<parameter id="O-251"/>
+	</service>
+	<service id="Service-91">
+		<parameter id="I-245"/>
+		<parameter id="O-252"/>
+		<parameter id="O-253"/>
+		<parameter id="O-254"/>
+		<parameter id="O-255"/>
+	</service>
+	<service id="Service-94">
+		<parameter id="I-256"/>
+		<parameter id="I-257"/>
+		<parameter id="I-258"/>
+		<parameter id="I-259"/>
+		<parameter id="O-264"/>
+		<parameter id="O-265"/>
+	</service>
+	<service id="Service-95">
+		<parameter id="I-256"/>
+		<parameter id="I-259"/>
+		<parameter id="O-266"/>
+		<parameter id="O-267"/>
+		<parameter id="O-268"/>
+	</service>
+</services>
