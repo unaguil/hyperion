@@ -29,7 +29,7 @@ import detection.message.BeaconMessage;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class BeaconDetector implements NeighborDetector, MessageSentListener {
+public final class BeaconDetector implements NeighborDetector, MessageSentListener {
 
 	// This class is the thread which sends the beacons periodically
 	private class BeaconSendThread extends WaitableThread {
@@ -103,7 +103,6 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 	private final List<NeighborEventsListener> neighborNotificationListeners = new CopyOnWriteArrayList<NeighborEventsListener>();
 
 	// Map which contains current neighbors
-
 	private final Map<PeerID, Long> neighborsTable = new ConcurrentHashMap<PeerID, Long>();
 	private final PeerIDSet newNeighbors = new PeerIDSet();
 
@@ -251,7 +250,7 @@ public class BeaconDetector implements NeighborDetector, MessageSentListener {
 	}
 
 	@Override
-	public synchronized void stop() {
+	public void stop() {
 		neighborNotifier.stopAndWait();
 		beaconThread.stopAndWait();
 	}
