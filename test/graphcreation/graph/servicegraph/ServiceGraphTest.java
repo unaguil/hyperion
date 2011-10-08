@@ -11,15 +11,11 @@ import org.junit.Test;
 
 public class ServiceGraphTest {
 
-	private static final String GRAPH_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<graphml>" + "<graph edgedefault=\"directed\">" + "<node id=\"Service:S1:1\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>"
-			+ "<edge id=\"1\" source=\"Parameter:A\" target=\"Service:S1:1\"/>" + "<edge id=\"2\" source=\"Service:S1:1\" target=\"Parameter:B\"/>" + "<node id=\"Service:S2:2\"/>" + "<node id=\"Parameter:B\"/>" + "<node id=\"Parameter:C\"/>"
-			+ "<edge id=\"3\" source=\"Parameter:B\" target=\"Service:S2:2\"/>" + "<edge id=\"4\" source=\"Service:S2:2\" target=\"Parameter:C\"/>" + "<node id=\"Service:S1:4\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>"
-			+ "<edge id=\"5\" source=\"Parameter:A\" target=\"Service:S1:4\"/>" + "<edge id=\"6\" source=\"Service:S1:4\" target=\"Parameter:B\"/>" + "</graph>" + "</graphml>";
+	private static final String GRAPH_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<graphml>" + "<graph edgedefault=\"directed\">" + "<node id=\"Service:S1:1\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>" + "<edge id=\"1\" source=\"Parameter:A\" target=\"Service:S1:1\"/>" + "<edge id=\"2\" source=\"Service:S1:1\" target=\"Parameter:B\"/>" + "<node id=\"Service:S2:2\"/>" + "<node id=\"Parameter:B\"/>" + "<node id=\"Parameter:C\"/>"
+			+ "<edge id=\"3\" source=\"Parameter:B\" target=\"Service:S2:2\"/>" + "<edge id=\"4\" source=\"Service:S2:2\" target=\"Parameter:C\"/>" + "<node id=\"Service:S1:4\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>" + "<edge id=\"5\" source=\"Parameter:A\" target=\"Service:S1:4\"/>" + "<edge id=\"6\" source=\"Service:S1:4\" target=\"Parameter:B\"/>" + "</graph>" + "</graphml>";
 
-	private static final String GRAPH_XML2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<graphml>" + "<graph edgedefault=\"directed\">" + "<node id=\"Service:S1:1\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>"
-			+ "<edge id=\"1\" source=\"Parameter:A\" target=\"Service:S1:1\"/>" + "<edge id=\"2\" source=\"Service:S1:1\" target=\"Parameter:B\"/>" + "<node id=\"Service:S2:2\"/>" + "<node id=\"Parameter:B\"/>" + "<node id=\"Parameter:C\"/>"
-			+ "<edge id=\"3\" source=\"Service:S2:2\" target=\"Parameter:C\"/>" + "<node id=\"Service:S1:4\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>" + "<edge id=\"5\" source=\"Parameter:A\" target=\"Service:S1:4\"/>"
-			+ "<edge id=\"6\" source=\"Service:S1:4\" target=\"Parameter:B\"/>" + "</graph>" + "</graphml>";
+	private static final String GRAPH_XML2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<graphml>" + "<graph edgedefault=\"directed\">" + "<node id=\"Service:S1:1\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>" + "<edge id=\"1\" source=\"Parameter:A\" target=\"Service:S1:1\"/>" + "<edge id=\"2\" source=\"Service:S1:1\" target=\"Parameter:B\"/>" + "<node id=\"Service:S2:2\"/>" + "<node id=\"Parameter:B\"/>" + "<node id=\"Parameter:C\"/>"
+			+ "<edge id=\"3\" source=\"Service:S2:2\" target=\"Parameter:C\"/>" + "<node id=\"Service:S1:4\"/>" + "<node id=\"Parameter:A\"/>" + "<node id=\"Parameter:B\"/>" + "<edge id=\"5\" source=\"Parameter:A\" target=\"Service:S1:4\"/>" + "<edge id=\"6\" source=\"Service:S1:4\" target=\"Parameter:B\"/>" + "</graph>" + "</graphml>";
 
 	@Test
 	public void testXML() throws Exception {

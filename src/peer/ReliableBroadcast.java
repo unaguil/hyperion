@@ -2,13 +2,12 @@ package peer;
 
 import java.util.Random;
 
-import util.logger.Logger;
-
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.ReliableBroadcastCounter;
 import peer.peerid.PeerIDSet;
+import util.logger.Logger;
 import util.timer.Timer;
 import util.timer.TimerTask;
 import config.Configuration;
@@ -33,18 +32,18 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private final static long CHECK_PERIOD = 10;
 
 	private final ReliableBroadcastCounter reliableBroadcastCounter = new ReliableBroadcastCounter();
-	
+
 	private final Object mutex = new Object();
 	private boolean processingMessage = false;
 	private boolean rebroadcast = true;
-	
+
 	private final Random r = new Random();
-	
+
 	private int tryNumber;
 	private long broadcastStartTime;
 	private long lastBroadcastTime;
 
-	private int MAX_TRIES = 3; 
+	private int MAX_TRIES = 3;
 
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
@@ -62,7 +61,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
-		
+
 		peer.getDetector().addNeighborListener(this);
 
 		rebroadcastThread.start();
@@ -73,7 +72,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	private boolean mustWait() {
-		synchronized(mutex) {
+		synchronized (mutex) {
 			return processingMessage;
 		}
 	}
@@ -83,16 +82,17 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		while (mustWait())
 			Thread.yield();
 
-		// bundle messages containing beacon messages only are directly broadcasted
+		// bundle messages containing beacon messages only are directly
+		// broadcasted
 		if (broadcastMessage instanceof BundleMessage && containsOnlyBeaconMessages((BundleMessage) broadcastMessage)) {
 			peer.broadcast(broadcastMessage);
 			return;
 		}
-		
+
 		// messages with empty destinations are not reliable broadcasted
 		if (broadcastMessage.getExpectedDestinations().isEmpty())
 			return;
-		
+
 		synchronized (mutex) {
 			currentMessage = broadcastMessage;
 			broadcastStartTime = lastBroadcastTime = System.currentTimeMillis();
@@ -101,7 +101,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			rebroadcast = false;
 			processingMessage = true;
 		}
-		
+
 		reliableBroadcastCounter.addBroadcastedMessage();
 		peer.broadcast(broadcastMessage);
 	}
@@ -116,7 +116,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void addACKResponse(final ACKMessage ackMessage) {
 		// check if message is responded by the current ACK message
 		synchronized (mutex) {
-			if (processingMessage) {
+			if (processingMessage)
 				if (ackMessage.getRespondedMessageID().equals(currentMessage.getMessageID())) {
 					currentMessage.removeExpectedDestination(ackMessage.getSender());
 					logger.debug("Peer " + peer.getPeerID() + " added response from " + ackMessage.getSender() + " for " + currentMessage.getMessageID());
@@ -128,20 +128,19 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 						processingMessage = false;
 					}
 				}
-			}
 		}
 	}
 
-	private long getBackoffTime(int factor) {
+	private long getBackoffTime(final int factor) {
 		final int slots = 2 << factor;
 		final int pos = r.nextInt(slots);
 		return BasicPeer.TRANSMISSION_TIME * pos;
 	}
-	
+
 	public long getResponseWaitTime() {
 		return BasicPeer.TRANSMISSION_TIME * (peer.getDetector().getCurrentNeighbors().size() + 1);
 	}
-	
+
 	private boolean mustRebroadcast() {
 		synchronized (mutex) {
 			return rebroadcast;
@@ -150,19 +149,19 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	@Override
 	public void perform() throws InterruptedException {
-		int neighbors = peer.getDetector().getCurrentNeighbors().size();
+		final int neighbors = peer.getDetector().getCurrentNeighbors().size();
 		long elapsedTime = 0;
 		long responseWaitTime = 0;
 		long backoffTime = 0;
-		
+
 		synchronized (mutex) {
-			if (processingMessage) {				
+			if (processingMessage) {
 				// calculate elapsed time since last broadcast
 				responseWaitTime = getResponseWaitTime();
 				elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
 				if (elapsedTime >= responseWaitTime) {
 					backoffTime = getBackoffTime(tryNumber);
-					
+
 					if (tryNumber == MAX_TRIES) {
 						// maximum tries reached. failed broadcast
 						processingMessage = false;
@@ -170,17 +169,17 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 						logger.debug("Peer " + peer.getPeerID() + " failed reliable broadcast " + currentMessage.getMessageID());
 						return;
 					}
-					
+
 					rebroadcast = true;
-				}	
+				}
 			}
 		}
-		
+
 		if (mustRebroadcast() && backoffTime > 0) {
 			logger.debug("Peer " + peer.getPeerID() + " sleeping " + backoffTime + " ms for message " + currentMessage.getMessageID());
 			Thread.sleep(backoffTime);
 		}
-			
+
 		synchronized (mutex) {
 			if (processingMessage && rebroadcast) {
 				peer.broadcast(currentMessage);
@@ -197,7 +196,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			if (processingMessage) {
 				// remove disappeared neighbors
 				currentMessage.removeExpectedDestinations(disappearedNeighbors.getPeerSet());
-		
+
 				if (currentMessage.getExpectedDestinations().isEmpty())
 					processingMessage = false;
 			}
@@ -213,7 +212,7 @@ class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		removeNeighbors(neighbors);
 	}
 
-	public void sendACKMessage(BroadcastMessage broadcastMessage) {
+	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
 		peer.broadcast(ackMessage);

@@ -2,7 +2,6 @@ package peer.message;
 
 import peer.peerid.PeerID;
 
-
 public class MessageStringPayload extends MessageString implements PayloadMessage {
 
 	/**

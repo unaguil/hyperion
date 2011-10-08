@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Random;
 
 import multicast.search.message.RemoteMulticastMessage;
-
-import util.logger.Logger;
-
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
+import util.logger.Logger;
 import config.Configuration;
 
 /**
@@ -87,7 +85,7 @@ class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {			
+		while (!Thread.interrupted()) {
 			final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 
 			synchronized (messageDeque) {
@@ -110,14 +108,14 @@ class MessageProcessor extends WaitableThread {
 			if (!messagesToSend.isEmpty()) {
 				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 				final PeerIDSet destinations = new PeerIDSet();
-				
+
 				for (final BroadcastMessage broadcastMessage : messagesToSend) {
 					if (broadcastMessage instanceof RemoteMulticastMessage) {
-						RemoteMulticastMessage remoteMulticastMessage = (RemoteMulticastMessage)broadcastMessage;
+						final RemoteMulticastMessage remoteMulticastMessage = (RemoteMulticastMessage) broadcastMessage;
 						destinations.addPeers(remoteMulticastMessage.getThroughPeers());
 					} else
 						destinations.addPeers(peer.getDetector().getCurrentNeighbors());
-					
+
 					bundleMessages.add(broadcastMessage);
 				}
 
@@ -128,7 +126,7 @@ class MessageProcessor extends WaitableThread {
 					finishThread();
 					return;
 				}
-				
+
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), bundleMessages);
 				bundleMessage.setExpectedDestinations(destinations.getPeerSet());
 
@@ -142,9 +140,9 @@ class MessageProcessor extends WaitableThread {
 
 		finishThread();
 	}
-	
+
 	private void finishThread() {
-		 logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
+		logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
 
 		this.threadFinished();
 	}
@@ -180,7 +178,7 @@ class MessageProcessor extends WaitableThread {
 	public void addACKResponse(final ACKMessage ackMessage) {
 		reliableBroadcast.addACKResponse(ackMessage);
 	}
-	
+
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
 		reliableBroadcast.sendACKMessage(broadcastMessage);
 	}

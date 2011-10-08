@@ -60,7 +60,7 @@ public class ReliableBroadcastTotalCounter {
 			for (final ReliableBroadcastCounter msgCounter : msgCounters)
 				total += msgCounter.getAvgDeliveringTime();
 		}
-		return total / msgCounters.size();	
+		return total / msgCounters.size();
 	}
 
 	public static void logStatistics() {

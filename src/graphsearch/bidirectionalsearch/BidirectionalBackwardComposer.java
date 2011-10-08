@@ -49,16 +49,16 @@ public class BidirectionalBackwardComposer extends BackwardComposer {
 	}
 
 	private Set<Service> checkForwardMessages(final BCompositionMessage bCompositionMessage, final Service service, final MessageTree modifiedTree) {
-		
-			logger.trace("Peer " + peerID + " checking forward messages for service " + service + " in search " + bCompositionMessage.getSearchID());
+
+		logger.trace("Peer " + peerID + " checking forward messages for service " + service + " in search " + bCompositionMessage.getSearchID());
 
 		final Set<Service> exploredAncestors = new HashSet<Service>();
 
 		if (modifiedTree.isComplete()) {
 			final SearchID searchID = bCompositionMessage.getSearchID();
 			if (fCompositionData.areAllInputsCovered(searchID, service)) {
-				
-					logger.trace("Peer " + peerID + " all inputs covered for service " + service + " in search " + bCompositionMessage.getSearchID());
+
+				logger.trace("Peer " + peerID + " all inputs covered for service " + service + " in search " + bCompositionMessage.getSearchID());
 				final Map<Service, Set<ServiceDistance>> distanceBetweenServices = new HashMap<Service, Set<ServiceDistance>>();
 
 				final Set<ServiceDistance> successors = gCreator.getSDG().getSuccessors(service);
@@ -83,9 +83,9 @@ public class BidirectionalBackwardComposer extends BackwardComposer {
 				Util.addServiceDistances(distanceBetweenServices, modifiedTree.getAncestorDistances());
 
 				((BidirectionalSearch) commonCompositionSearch).notifyComposition(searchID, distanceBetweenServices, peerID, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
-			} else 
+			} else
 				logger.trace("Peer " + peerID + " all inputs NOT covered for service " + service + " in search " + bCompositionMessage.getSearchID());
-		} else 
+		} else
 			logger.trace("Peer " + peerID + " backward message tree not completed for search " + bCompositionMessage.getSearchID());
 
 		return exploredAncestors;
@@ -106,7 +106,7 @@ public class BidirectionalBackwardComposer extends BackwardComposer {
 				it.remove();
 		}
 
-		 {
+		{
 			final SearchID searchID = bCompositionMessage.getSearchID();
 			logger.trace("Peer " + peerID + " processing messages for active search: " + searchID);
 		}

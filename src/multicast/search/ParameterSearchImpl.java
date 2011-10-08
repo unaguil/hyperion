@@ -21,9 +21,6 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
-
-import util.logger.Logger;
-
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
@@ -34,6 +31,7 @@ import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
+import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborEventsListener;
 import dissemination.DistanceChange;
@@ -145,8 +143,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	private void repropagateSearches(final PeerIDSet neighbors) {
 		// Active searches are resent to new nodes
-		
-			logger.trace("Peer " + peer.getPeerID() + " propagating searches for new neighbors " + neighbors);
+
+		logger.trace("Peer " + peer.getPeerID() + " propagating searches for new neighbors " + neighbors);
 		for (final SearchMessage searchMessage : uTable.getActiveSearches())
 			propagateSearchMessage(searchMessage);
 	}
@@ -161,8 +159,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	@Override
-	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters,
-			final PayloadMessage payload) {
+	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
 		// Check if the added parameters are local
 
 		final Set<Parameter> localAddedParameters = new HashSet<Parameter>();
@@ -202,8 +199,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				routeIDs.add(activeSearch.getRemoteMessageID());
 		}
 
-		
-			logger.trace("Peer " + peer.getPeerID() + " canceling searches " + routeIDs + " parameters " + parameters);
+		logger.trace("Peer " + peer.getPeerID() + " canceling searches " + routeIDs + " parameters " + parameters);
 		sendRemoveParametersMessage(parameters, routeIDs);
 	}
 
@@ -222,8 +218,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				if (activeSearch.getSearchType().equals(SearchType.Generic))
 					routeIDs.add(activeSearch.getRemoteMessageID());
 		}
-		
-			logger.trace("Peer " + peer.getPeerID() + " generalizing searches " + routeIDs + " with parameters " + generalizedParameters);
+
+		logger.trace("Peer " + peer.getPeerID() + " generalizing searches " + routeIDs + " with parameters " + generalizedParameters);
 		sendGeneralizeSearchMessage(generalizedParameters, routeIDs);
 	}
 
@@ -251,8 +247,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		// Notify peers with search response messages
 		for (final Entry<SearchMessage, Set<Parameter>> entry : parametersTable.entrySet()) {
 			final SearchMessage searchMessage = entry.getKey();
-			
-				logger.trace("Peer " + peer.getPeerID() + " enqueued search message action" + searchMessage);
+
+			logger.trace("Peer " + peer.getPeerID() + " enqueued search message action" + searchMessage);
 			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), null, searchMessage.getRemoteMessageID());
 		}
 	}
@@ -340,8 +336,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	@Override
 	public void sendMulticastMessage(final PeerIDSet destinations, final PayloadMessage payload) {
 		final RemoteMulticastMessage msg = new RemoteMulticastMessage(destinations, payload, peer.getPeerID());
-		
-			logger.trace("Peer " + peer.getPeerID() + " sending remote multicast message " + msg + " to " + destinations);
+
+		logger.trace("Peer " + peer.getPeerID() + " sending remote multicast message " + msg + " to " + destinations);
 		processMulticastMessage(msg);
 	}
 
@@ -354,8 +350,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	@Override
 	public void sendUnicastMessage(final PeerID destination, final PayloadMessage payload) {
 		final RemoteMulticastMessage msg = new RemoteMulticastMessage(new PeerIDSet(Collections.singleton(destination)), payload, peer.getPeerID());
-		
-			logger.trace("Peer " + peer.getPeerID() + " sending remote unicast message " + msg + " to " + destination);
+
+		logger.trace("Peer " + peer.getPeerID() + " sending remote unicast message " + msg + " to " + destination);
 		processMulticastMessage(msg);
 	}
 
@@ -380,8 +376,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void acceptMulticastMessage(final RemoteMulticastMessage multicastMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
 		final PayloadMessage payload = multicastMessage.getPayload();
 		searchListener.multicastMessageAccepted(multicastMessage.getSource(), payload.copy(), multicastMessage.getDistance());
 	}
@@ -389,8 +385,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// this method is called when a search message is accepted by the current
 	// node
 	private void acceptSearchMessage(final SearchMessage searchMessage, final Set<Parameter> foundParameters) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " accepted search message " + searchMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " accepted search message " + searchMessage);
 		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getMessageID());
 
 		// Call listener and get user response payload
@@ -411,8 +407,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// process the multicast messages in the current node
 	private void processMulticastMessage(final RemoteMulticastMessage multicastMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing multicast message " + multicastMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing multicast message " + multicastMessage);
 		// Check if the current peer is valid to pass through the multicast
 		// message
 		if (!multicastMessage.getThroughPeers().contains(peer.getPeerID()))
@@ -453,16 +449,16 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 			if (multicastMessage instanceof SearchResponseMessage) {
 				final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage((SearchResponseMessage) multicastMessage, peer.getPeerID(), throughPeers.iterator().next(), getNewDistance(multicastMessage));
-				
-					logger.trace("Peer " + peer.getPeerID() + " multicasting search response " + newSearchResponseMessage);
+
+				logger.trace("Peer " + peer.getPeerID() + " multicasting search response " + newSearchResponseMessage);
 				peer.enqueueBroadcast(newSearchResponseMessage);
 			} else {
 				final RemoteMulticastMessage newRemoteMulticastMessage = new RemoteMulticastMessage(multicastMessage, peer.getPeerID(), throughPeers, getNewDistance(multicastMessage));
-				
-					logger.trace("Peer " + peer.getPeerID() + " multicasting message " + newRemoteMulticastMessage);
+
+				logger.trace("Peer " + peer.getPeerID() + " multicasting message " + newRemoteMulticastMessage);
 				peer.enqueueBroadcast(newRemoteMulticastMessage);
 			}
-		} else 
+		} else
 			logger.trace("Peer " + peer.getPeerID() + " discarded multicast message " + multicastMessage + ". No more valid destinations.");
 
 		// Finally accept message by current node if needed
@@ -471,8 +467,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void processRemoveParametersMessage(final RemoveParametersMessage removeParametersMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing remove parameters message " + removeParametersMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing remove parameters message " + removeParametersMessage);
 
 		final Set<MessageID> removedSearchRoutes = new HashSet<MessageID>();
 		final Set<MessageID> removedParameterRoutes = new HashSet<MessageID>();
@@ -519,33 +515,32 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			notifyRouteListeners(removeParametersMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch, associatedRoutes);
 
 			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), getNewDistance(removeParametersMessage));
-			
-				logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
+
+			logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
 			peer.enqueueBroadcast(newRemoveParametersMessage);
 		}
 	}
 
-	private void notifyRouteListeners(final PeerID source, final Set<MessageID> removedSearchRoutes, final Set<MessageID> removedParameterRoutes, final Map<MessageID, Set<Parameter>> lostParameters,
-			final Map<MessageID, Set<Parameter>> canceledParameterSearch, final Map<MessageID, MessageID> associatedRoutes) {
+	private void notifyRouteListeners(final PeerID source, final Set<MessageID> removedSearchRoutes, final Set<MessageID> removedParameterRoutes, final Map<MessageID, Set<Parameter>> lostParameters, final Map<MessageID, Set<Parameter>> canceledParameterSearch, final Map<MessageID, MessageID> associatedRoutes) {
 		if (!lostParameters.isEmpty()) {
 			logger.debug("Peer " + peer.getPeerID() + " lost parameters " + lostParameters + " in node " + source);
-			
-				logger.trace("Peer " + peer.getPeerID() + " removedParameterRoutes " + removedParameterRoutes);
+
+			logger.trace("Peer " + peer.getPeerID() + " removedParameterRoutes " + removedParameterRoutes);
 			searchListener.changedParameterRoutes(lostParameters, removedParameterRoutes, associatedRoutes);
 		}
 
 		if (!canceledParameterSearch.isEmpty()) {
-			
-				logger.trace("Peer " + peer.getPeerID() + " canceledParameterSearch " + canceledParameterSearch);
-			
-				logger.trace("Peer " + peer.getPeerID() + " removedSearchRoutes " + removedSearchRoutes);
+
+			logger.trace("Peer " + peer.getPeerID() + " canceledParameterSearch " + canceledParameterSearch);
+
+			logger.trace("Peer " + peer.getPeerID() + " removedSearchRoutes " + removedSearchRoutes);
 			searchListener.changedSearchRoutes(canceledParameterSearch, removedSearchRoutes);
 		}
 	}
 
 	private void processGeneralizeSearchMessage(final GeneralizeSearchMessage generalizeSearchMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing generalize search message " + generalizeSearchMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing generalize search message " + generalizeSearchMessage);
 
 		boolean notifyNeighbors = false;
 
@@ -581,18 +576,18 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		if (notifyNeighbors) {
 			final GeneralizeSearchMessage newGeneralizeSearchMessage = new GeneralizeSearchMessage(generalizeSearchMessage, peer.getPeerID(), getNewDistance(generalizeSearchMessage));
-			
-				logger.trace("Peer " + peer.getPeerID() + " sending generalize search message " + newGeneralizeSearchMessage);
+
+			logger.trace("Peer " + peer.getPeerID() + " sending generalize search message " + newGeneralizeSearchMessage);
 			peer.enqueueBroadcast(newGeneralizeSearchMessage);
-			
-				logger.trace("Peer " + peer.getPeerID() + " sent generalize search message " + newGeneralizeSearchMessage);
+
+			logger.trace("Peer " + peer.getPeerID() + " sent generalize search message " + newGeneralizeSearchMessage);
 		}
 	}
 
 	// Processes a remove route message
 	private void processRemoveRouteMessage(final RemoveRouteMessage removeRouteMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing remove route message " + removeRouteMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing remove route message " + removeRouteMessage);
 
 		final Map<MessageID, Set<Parameter>> lostParameters = new HashMap<MessageID, Set<Parameter>>();
 		final Map<MessageID, Set<Parameter>> canceledParameterSearch = new HashMap<MessageID, Set<Parameter>>();
@@ -641,15 +636,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			notifyRouteListeners(removeRouteMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch, associatedRoutes);
 
 			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), getNewDistance(removeRouteMessage));
-			
-				logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
+
+			logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
 			peer.enqueueBroadcast(newRemoveRouteMessage);
 		}
 	}
 
 	private void processSearchMessage(final SearchMessage searchMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
 
 		// Update route table with the information contained in the message
 		if (uTable.updateUnicastTable(searchMessage)) {
@@ -684,8 +679,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	public void sendSearchMessage(final Set<Parameter> parameters, final PayloadMessage payload, final SearchType searchType) {
 		final SearchMessage msg = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
 		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + msg.getRemoteMessageID());
-		
-			logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + msg);
+
+		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + msg);
 		processSearchMessage(msg);
 	}
 
@@ -704,8 +699,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// indicating that the following parameters have been found
 	private void sendSearchResponseMessage(final PeerID destination, final Set<Parameter> parameters, final PayloadMessage payload, final MessageID respondedRouteID) {
 		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(destination, parameters, payload, peer.getPeerID(), respondedRouteID);
-		
-			logger.trace("Peer " + peer.getPeerID() + " sending search response message " + searchResponseMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " sending search response message " + searchResponseMessage);
 		logger.debug("Peer " + peer.getPeerID() + " sending response message to search " + searchResponseMessage.getRespondedRouteID());
 		processMulticastMessage(searchResponseMessage);
 	}
@@ -718,8 +713,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// Called when search is a propagated search
 	private void propagateSearchMessage(final SearchMessage searchMessage) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " propagating search " + searchMessage);
+
+		logger.trace("Peer " + peer.getPeerID() + " propagating search " + searchMessage);
 		// Create a copy of the message for broadcasting using the current node
 		// as the new sender. This message responds to the received one
 		final SearchMessage newMsg = new SearchMessage(searchMessage, peer.getPeerID(), getNewDistance(searchMessage));
@@ -730,15 +725,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			if (previousDistance <= tableDistance && !(previousDistance == 0 && tableDistance == 0)) {
 				// The message is getting closer to a parameter. TTL is restored
 				newMsg.restoreTTL(p, MAX_TTL);
-				
-					logger.trace("Peer " + peer.getPeerID() + " restored message " + newMsg + " TTL. Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
+
+				logger.trace("Peer " + peer.getPeerID() + " restored message " + newMsg + " TTL. Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
 			} else // The message is getting farer (or there is no information)
 			// from the parameter and the message was not received from the
 			// current node
 			if (!searchMessage.getSource().equals(peer.getPeerID())) {
 				newMsg.decTTL(p);
-				
-					logger.trace("Peer " + peer.getPeerID() + " decremented TTL of message " + newMsg + " to " + newMsg.getTTL(p) + ". Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
+
+				logger.trace("Peer " + peer.getPeerID() + " decremented TTL of message " + newMsg + " to " + newMsg.getTTL(p) + ". Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
 			}
 
 			// Set the message parameter distance as known by the current node
@@ -750,13 +745,12 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		// thrown
 		if (newMsg.hasTTL()) {
 			peer.enqueueBroadcast(newMsg);
-			
-				logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newMsg);
+
+			logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newMsg);
 			return;
 		}
 
-		
-			logger.trace("Peer " + peer.getPeerID() + " has thrown message " + newMsg + " due TTL");
+		logger.trace("Peer " + peer.getPeerID() + " has thrown message " + newMsg + " due TTL");
 	}
 
 	@Override

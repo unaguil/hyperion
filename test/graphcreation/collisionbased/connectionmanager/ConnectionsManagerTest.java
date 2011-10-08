@@ -129,8 +129,7 @@ public class ConnectionsManagerTest {
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S6", new PeerID("6")));
-		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"),
-				MessageIDGenerator.getNewID()));
+		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
 		updatedConnections = cManager.updateConnections(searchResponseMessage6);
 
 		assertTrue(updatedConnections.containsKey(connection2));
@@ -308,8 +307,7 @@ public class ConnectionsManagerTest {
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S6", new PeerID("6")));
-		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"),
-				MessageIDGenerator.getNewID()));
+		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
 		updatedConnections = cManagerWithTaxonomy.updateConnections(searchResponseMessage6);
 
 		assertTrue(updatedConnections.containsKey(connection2));

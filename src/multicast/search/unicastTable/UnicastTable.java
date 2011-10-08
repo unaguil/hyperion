@@ -27,7 +27,6 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 
-import util.logger.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -40,6 +39,7 @@ import taxonomy.Taxonomy;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
+import util.logger.Logger;
 
 /**
  * This class contains the information about routes. It maintains a table of
@@ -199,14 +199,12 @@ public class UnicastTable implements XMLSerialization {
 				// which sent the message
 				addSearchRoute(searchMessage.getRemoteMessageID(), p, searchMessage.getSource(), searchMessage.getSender(), local, searchMessage.getDistance());
 
-			
-				logger.trace("Peer " + peerID + " utable " + this);
+			logger.trace("Peer " + peerID + " utable " + this);
 
 			return true;
 		}
 
-		
-			logger.trace("Peer " + peerID + " discarded search message " + searchMessage + " because it was an active search");
+		logger.trace("Peer " + peerID + " discarded search message " + searchMessage + " because it was an active search");
 
 		return false;
 	}

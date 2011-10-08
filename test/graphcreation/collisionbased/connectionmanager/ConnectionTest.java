@@ -131,8 +131,7 @@ public class ConnectionTest {
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S6", new PeerID("6")));
-		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"),
-				MessageIDGenerator.getNewID()));
+		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
 		notifiedPeers = connection2.addSearchResponse(searchResponseMessage6);
 		assertEquals(3, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("2")));
@@ -157,8 +156,7 @@ public class ConnectionTest {
 		foundParameters.add(ParameterFactory.createParameter("I-A"));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S3", new PeerID("2")));
-		final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("2"), new MessageID(new PeerID("2"),
-				MessageIDGenerator.getNewID()));
+		final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("2"), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 		connection3.addSearchResponse(newSearchResponseMessage);
 
 		assertTrue(connection3.isConnected());
@@ -362,8 +360,7 @@ public class ConnectionTest {
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S6", new PeerID("6")));
-		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"),
-				MessageIDGenerator.getNewID()));
+		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new PeerID("6"), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
 		notifiedPeers = connection2.addSearchResponse(searchResponseMessage6);
 		assertEquals(3, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("2")));

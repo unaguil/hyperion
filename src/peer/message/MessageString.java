@@ -2,7 +2,6 @@ package peer.message;
 
 import peer.peerid.PeerID;
 
-
 /**
  * Example implementation of a message.
  * 

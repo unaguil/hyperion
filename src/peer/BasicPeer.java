@@ -11,8 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import util.logger.Logger;
-
 import peer.conditionregister.ConditionRegister;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -25,6 +23,7 @@ import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastTotalCounter;
 import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
+import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
 import detection.beaconDetector.BeaconDetector;
@@ -43,39 +42,39 @@ public class BasicPeer implements Peer {
 
 	// used to discard already received messages
 	private final ConditionRegister<MessageID> receivedMessages = new ConditionRegister<MessageID>(CLEAN_REC_MSGS);
-	
+
 	// A map containing entries per message class referencing listeners for the
 	// received messages
 	private final ConcurrentHashMap<Class<? extends BroadcastMessage>, MessageReceivedListener> receivingListenersTable = new ConcurrentHashMap<Class<? extends BroadcastMessage>, MessageReceivedListener>();
-	
+
 	// A list containing the listeners which will be notified when the
 	// DatagramSocket sent() method is sent.
-	private final List<MessageSentListener> messageSentListeners = new CopyOnWriteArrayList<MessageSentListener>(); 
+	private final List<MessageSentListener> messageSentListeners = new CopyOnWriteArrayList<MessageSentListener>();
 
-	//the communication peer
-	private CommProvider commProvider;
-	
+	// the communication peer
+	private final CommProvider commProvider;
+
 	// The instance of the message counter to be used.
 	private final MessageCounter msgCounter = new MessageCounter();
-		
+
 	// Sets the message hearing listener
 	private MessageReceivedListener hearListener = null;
-		
+
 	// Receiving thread used for incoming messages
 	private ReceivingThread receivingThread;
-	
+
 	// Default neighbor detector
 	private NeighborDetector detector;
-	
-	//the peer id
+
+	// the peer id
 	private PeerID peerID;
 
 	private boolean initialized = false;
 
 	private int DELAYED_INIT = 0;
-	
+
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
-	
+
 	// Default reception buffer length
 	public static final int TRANSMISSION_TIME = 40;
 
@@ -83,10 +82,10 @@ public class BasicPeer implements Peer {
 	 * Constructor of the class. It is the default constructor which configures
 	 * all internal properties.
 	 */
-	public BasicPeer(CommProvider commProvider) {
+	public BasicPeer(final CommProvider commProvider) {
 		this.commProvider = commProvider;
 	}
-	
+
 	public synchronized boolean isInitialized() {
 		return initialized;
 	}
@@ -113,23 +112,23 @@ public class BasicPeer implements Peer {
 			throw new RegisterCommunicationLayerException(arle);
 		}
 	}
-	
+
 	// Initializes the peer
 	@Override
 	public void initPeer(final PeerID id) throws IOException {
 		this.peerID = id;
-		
+
 		logger.trace("Peer " + peerID + " initializing");
-		
+
 		init();
-		
+
 		commProvider.initComm();
-		
+
 		receivingThread = new ReceivingThread(this);
 		receivingThread.start();
 		logger.trace("Peer " + peerID + " starts receiving");
 	}
-	
+
 	/**
 	 * Adds a message receiving listener which will be called every time a
 	 * message of the specified class is received by the node. Only one listener
@@ -228,9 +227,9 @@ public class BasicPeer implements Peer {
 		} catch (final Exception e) {
 			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
-		
+
 		detector = new BeaconDetector(this);
-		
+
 		// Initialize all layers
 		for (final CommunicationLayer layer : communicationLayers)
 			layer.init();
@@ -238,7 +237,7 @@ public class BasicPeer implements Peer {
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
 	}
-	
+
 	@Override
 	public void broadcast(final BroadcastMessage message) {
 		try {
@@ -247,9 +246,9 @@ public class BasicPeer implements Peer {
 
 			// Message is converted to byte array
 			final byte[] data = toByteArray(message);
-			
+
 			msgCounter.addMessageSize(data.length);
-			
+
 			commProvider.broadcast(data);
 
 			// Notify registered listeners
@@ -260,12 +259,12 @@ public class BasicPeer implements Peer {
 			logger.error("Peer " + peerID + " broadcast error. " + ioe.getMessage());
 		}
 	}
-	
+
 	private void notifySentListeners(final BroadcastMessage message) {
 		for (final MessageSentListener sentListenerListener : messageSentListeners)
 			sentListenerListener.messageSent(message, System.currentTimeMillis());
 	}
-	
+
 	// Converts an object to its byte array representation
 	private byte[] toByteArray(final Object o) throws IOException {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -277,18 +276,18 @@ public class BasicPeer implements Peer {
 	@Override
 	public void stopPeer() {
 		unitialize();
-		
+
 		// stop received messages table thread
 		receivedMessages.stopAndWait();
 
 		// Stop message processor
 		messageProcessor.stopAndWait();
-		
+
 		logger.trace("Peer " + peerID + " unprocessed messages: " + messageProcessor.getUnprocessedMessages());
-		
+
 		try {
 			commProvider.stopComm();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			logger.error("Peer " + peerID + " had problem finalizing communication " + e.getMessage());
 		}
 
@@ -296,14 +295,14 @@ public class BasicPeer implements Peer {
 		Collections.reverse(communicationLayers);
 		for (final CommunicationLayer layer : communicationLayers)
 			layer.stop();
-		
+
 		logger.trace("Peer " + peerID + " stopping receiving thread");
 		receivingThread.stopAndWait();
 	}
 
 	protected void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
-		
+
 		logger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
 		logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
@@ -317,7 +316,7 @@ public class BasicPeer implements Peer {
 
 			// Put the message into the blocking queue for processing
 			messageProcessor.enqueue(broadcastMessage);
-		} else 
+		} else
 			logger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
 	}
 
@@ -329,15 +328,15 @@ public class BasicPeer implements Peer {
 		logger.info("Simulation finished");
 	}
 
-	protected void processSimpleMessage(final BroadcastMessage broadcastMessage) {	
+	protected void processSimpleMessage(final BroadcastMessage broadcastMessage) {
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
-			
-				logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
+
+			logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
 			messageProcessor.addACKResponse((ACKMessage) broadcastMessage);
 			return;
 		}
-		
+
 		if (!broadcastMessage.getExpectedDestinations().isEmpty() && !broadcastMessage.getExpectedDestinations().contains(peerID))
 			return;
 
@@ -353,7 +352,7 @@ public class BasicPeer implements Peer {
 			return;
 
 		receivedMessages.addEntry(bundleMessage.getMessageID());
-		
+
 		if (!bundleMessage.getExpectedDestinations().isEmpty() && !bundleMessage.getExpectedDestinations().contains(peerID))
 			return;
 
@@ -366,16 +365,15 @@ public class BasicPeer implements Peer {
 	}
 
 	private void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		if (USE_RELIABLE_BROADCAST) {
+		if (USE_RELIABLE_BROADCAST)
 			messageProcessor.sendACKMessage(broadcastMessage);
-		}
 	}
 
 	// Used by the message processor to process each dequeued message
 	@Override
 	public void processMessage(final BroadcastMessage message) {
-		
-			logger.trace("Peer " + peerID + " processing message " + message);
+
+		logger.trace("Peer " + peerID + " processing message " + message);
 
 		// Check if message is a multicast message and is directed to this node
 		if (message instanceof MulticastMessage) {
@@ -388,7 +386,7 @@ public class BasicPeer implements Peer {
 		// Notify registered receiving listener
 		notifyReceivingListener(message, System.currentTimeMillis());
 	}
-	
+
 	protected void notifyReceivingListener(final BroadcastMessage message, final long receptionTime) {
 		if (receivingListenersTable.containsKey(message.getClass())) {
 			final MessageReceivedListener listener = receivingListenersTable.get(message.getClass());
@@ -398,12 +396,12 @@ public class BasicPeer implements Peer {
 			msgCounter.addProcessTime(elapsedTime);
 		}
 	}
-	
+
 	public void processReceivedPacket(final BroadcastMessage message) {
 		// messages are only processed if node is initialized
 		logger.debug("Peer " + peerID + " received " + message + " from node " + message.getSender());
 		msgCounter.addReceived(message.getClass());
-		
+
 		// Notify hear listeners indicating that a message was received
 		notifyHearListener(message, System.currentTimeMillis());
 
@@ -413,7 +411,7 @@ public class BasicPeer implements Peer {
 		else
 			processSimpleMessage(message);
 	}
-	
+
 	protected void notifyHearListener(final BroadcastMessage message, final long receptionTime) {
 		if (hearListener != null)
 			hearListener.messageReceived(message, receptionTime);

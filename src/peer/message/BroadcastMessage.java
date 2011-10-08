@@ -22,7 +22,7 @@ public abstract class BroadcastMessage implements Serializable {
 
 	// the identification of the message (peer, id)
 	private final MessageID messageID;
-	
+
 	private Set<PeerID> expectedDestinations = new HashSet<PeerID>();
 
 	/**
@@ -51,19 +51,19 @@ public abstract class BroadcastMessage implements Serializable {
 	public String getType() {
 		return getClass().getName();
 	}
-	
-	public void setExpectedDestinations(Set<PeerID> expectedDestinations) {
+
+	public void setExpectedDestinations(final Set<PeerID> expectedDestinations) {
 		this.expectedDestinations = new HashSet<PeerID>(expectedDestinations);
 	}
-	
-	public void removeExpectedDestination(PeerID peerID) {
+
+	public void removeExpectedDestination(final PeerID peerID) {
 		expectedDestinations.remove(peerID);
 	}
-	
-	public void removeExpectedDestinations(Set<PeerID> peerIDSet) {
+
+	public void removeExpectedDestinations(final Set<PeerID> peerIDSet) {
 		expectedDestinations.removeAll(peerIDSet);
 	}
-	
+
 	public Set<PeerID> getExpectedDestinations() {
 		return Collections.unmodifiableSet(expectedDestinations);
 	}

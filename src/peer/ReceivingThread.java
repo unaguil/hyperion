@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-import util.logger.Logger;
-
 import peer.message.BroadcastMessage;
 import util.WaitableThread;
+import util.logger.Logger;
 
 /**
  * This class is used to implement the message receiving thread.
@@ -19,11 +18,11 @@ import util.WaitableThread;
 class ReceivingThread extends WaitableThread {
 
 	private final BasicPeer peer;
-	
+
 	private final Logger logger = Logger.getLogger(ReceivingThread.class);
 
 	public ReceivingThread(final BasicPeer peer) {
-		this.peer = peer; 
+		this.peer = peer;
 	}
 
 	@Override
@@ -31,13 +30,14 @@ class ReceivingThread extends WaitableThread {
 		// Reception thread main loop
 		while (!Thread.interrupted()) {
 			byte[] data = null;
-			
+
 			try {
-				 data = peer.getCommProvider().receiveData();
-			} catch (IOException e) {}
-				
+				data = peer.getCommProvider().receiveData();
+			} catch (final IOException e) {
+			}
+
 			try {
-				if (data != null) {				
+				if (data != null) {
 					final BroadcastMessage message = (BroadcastMessage) getObject(data);
 					if (peer.getCommProvider().isValid(message))
 						peer.processReceivedPacket(message);
@@ -50,12 +50,12 @@ class ReceivingThread extends WaitableThread {
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
 			}
 		}
-		
+
 		logger.trace("Peer " + peer.getPeerID() + " receiving loop exited");
 
 		this.threadFinished();
 	}
-	
+
 	// Creates an object from its byte array representation
 	private Object getObject(final byte[] bytes) throws IOException, ClassNotFoundException {
 		final ByteArrayInputStream bios = new ByteArrayInputStream(bytes);

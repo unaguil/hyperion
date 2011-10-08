@@ -14,7 +14,7 @@ public class BundleMessage extends BroadcastMessage {
 
 	private final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 
-	public BundleMessage(final PeerID sender, List<BroadcastMessage> messages) {
+	public BundleMessage(final PeerID sender, final List<BroadcastMessage> messages) {
 		super(sender);
 		this.messages.addAll(messages);
 	}

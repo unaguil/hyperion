@@ -16,8 +16,8 @@ import java.net.MulticastSocket;
 import java.util.Set;
 
 import peer.BasicPeer;
-import peer.Peer;
 import peer.CommProvider;
+import peer.Peer;
 import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
 import util.logger.Logger;
@@ -35,35 +35,35 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	private MulticastSocket socket;
 	private InetAddress group;
 
-	private static final int SO_TIMEOUT = 5; 
+	private static final int SO_TIMEOUT = 5;
 
 	private static final int BUFF_SIZE = 65536; // TODO Check this value
-	private byte[] recvBuffer = new byte[BUFF_SIZE];
+	private final byte[] recvBuffer = new byte[BUFF_SIZE];
 
-	private CompositionSearch compositionSearch;
-	
+	private final CompositionSearch compositionSearch;
+
 	private final String servicesDir;
-	
+
 	private static final String MULTICAST_GROUP = "230.0.0.1";
 	private static final int DEFAULT_PORT = 5555;
 
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
 
-	public StandAlonePeer(String configurationFile, String servicesDir) {
+	public StandAlonePeer(final String configurationFile, final String servicesDir) {
 		Logger.setDeltaTime(System.currentTimeMillis());
 		Configuration.setFile(configurationFile);
-		
+
 		this.servicesDir = servicesDir;
-		
+
 		peer = new BasicPeer(this);
-		
+
 		compositionSearch = new ForwardCompositionSearch(peer, this);
 	}
 
-	public void start(PeerID peerID) throws IOException {
+	public void start(final PeerID peerID) throws IOException {
 		peer.initPeer(peerID);
 	}
-	
+
 	protected void stop() {
 		peer.stopPeer();
 		peer.printStatistics();
@@ -76,7 +76,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 		socket.joinGroup(group);
 
 		logger.info("Peer " + peer.getPeerID() + " joined to multicast group " + MULTICAST_GROUP + " on port " + DEFAULT_PORT);
-		
+
 		loadData();
 	}
 
@@ -92,66 +92,66 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 		// Creates the reception buffer and packet
 		final DatagramPacket packet = new DatagramPacket(recvBuffer, recvBuffer.length);
 		socket.setSoTimeout(SO_TIMEOUT);
-		socket.receive(packet);			
-		return packet.getData();			
+		socket.receive(packet);
+		return packet.getData();
 	}
-	
+
 	@Override
-	public boolean isValid(BroadcastMessage message) {
+	public boolean isValid(final BroadcastMessage message) {
 		return !message.getSender().equals(peer.getPeerID());
 	}
-	
+
 	@Override
 	public void stopComm() throws IOException {
 		socket.leaveGroup(group);
 		socket.close();
-		
+
 		logger.info("Peer " + peer.getPeerID() + " leaved multicast group " + MULTICAST_GROUP);
 	}
 
-	public static void main(String args[]) throws IOException {
+	public static void main(final String args[]) throws IOException {
 		if (args.length < 3) {
 			System.out.println("Usage: StandAlonePeer [PeerID] [ConfigurationFile] [ServicesDir]");
 			System.exit(0);
 		}
 
 		final StandAlonePeer peer = new StandAlonePeer(args[1], args[2]);
-		
+
 		Runtime.getRuntime().addShutdownHook(new Thread() {
-			
+
 			@Override
-		    public void run() {
-		    	peer.stop();
-		    }
-		 });
+			public void run() {
+				peer.stop();
+			}
+		});
 
 		peer.start(new PeerID(args[0]));
 	}
 
 	@Override
-	public void compositionFound(ExtendedServiceGraph composition, SearchID searchID) {
+	public void compositionFound(final ExtendedServiceGraph composition, final SearchID searchID) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void compositionTimeExpired(SearchID searchID) {
+	public void compositionTimeExpired(final SearchID searchID) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void compositionsLost(SearchID searchID, ExtendedServiceGraph invalidComposition) {
+	public void compositionsLost(final SearchID searchID, final ExtendedServiceGraph invalidComposition) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void compositionModified(SearchID searchID, Set<Service> removedServices) {
+	public void compositionModified(final SearchID searchID, final Set<Service> removedServices) {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	public void loadData() {
 		try {
 			final String xmlPath = getServicesFilePath(peer.getPeerID());
@@ -162,8 +162,8 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
-	} 
-	
+	}
+
 	private String getServicesFilePath(final PeerID peerID) {
 		return servicesDir + File.separator + "Services" + peerID + ".xml";
 	}

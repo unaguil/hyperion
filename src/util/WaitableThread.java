@@ -18,7 +18,7 @@ public abstract class WaitableThread extends Thread {
 				try {
 					o.wait();
 				} catch (final InterruptedException e) {
-					//do nothing
+					// do nothing
 				}
 		}
 	}

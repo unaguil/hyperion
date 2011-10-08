@@ -41,7 +41,7 @@ public class MessageCounter {
 
 	private long totalProcessTime = 0;
 	private long totalProcessedMessages = 0;
-	
+
 	private long maxMessageSize = 0;
 	private long totalSize = 0;
 
@@ -56,21 +56,21 @@ public class MessageCounter {
 	public void addSent(final Class<? extends BroadcastMessage> clazz) {
 		inc(sent, clazz);
 	}
-	
-	public void addMessageSize(int size) {
-		maxMessageSize = size > maxMessageSize?size:maxMessageSize;
+
+	public void addMessageSize(final int size) {
+		maxMessageSize = size > maxMessageSize ? size : maxMessageSize;
 		totalSize += size;
 	}
 
 	public synchronized void addProcessTime(final long processTime) {
 		totalProcessTime += processTime;
 		totalProcessedMessages++;
-	} 
+	}
 
 	private void inc(final Map<Class<? extends BroadcastMessage>, Info> map, final Class<? extends BroadcastMessage> clazz) {
 		if (!map.containsKey(clazz))
 			map.put(clazz, new Info());
-		
+
 		final Info info = map.get(clazz);
 		info.inc();
 	}
@@ -96,15 +96,15 @@ public class MessageCounter {
 	public long getSent() {
 		return sumCollection(sent.values());
 	}
-	
+
 	public long getMaxMessageSize() {
 		return maxMessageSize;
 	}
-	
+
 	public float getAvgMessageSize() {
 		if (getSent() == 0)
 			return 0.0f;
-		
+
 		return totalSize / (float) getSent();
 	}
 

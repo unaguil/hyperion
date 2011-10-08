@@ -6,9 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import util.logger.Logger;
-
 import peer.message.BroadcastMessage;
+import util.logger.Logger;
 
 /**
  * This class provides statistical information about total sent and received
@@ -53,7 +52,7 @@ public class TotalMessageCounter {
 		for (final MessageCounter msgCounter : msgCounters)
 			total += msgCounter.getSent(clazz);
 		return total;
-	} 
+	}
 
 	public static long getLastTimeReceived(final Class<? extends BroadcastMessage> clazz) {
 		final List<Long> values = new ArrayList<Long>();
@@ -89,21 +88,21 @@ public class TotalMessageCounter {
 
 		return (totalProcessTime / (float) msgCounters.size()) / 1000000.0f;
 	}
-	
+
 	public static float getAvgMessageSize() {
 		if (msgCounters.isEmpty())
 			return 0.0f;
-		
+
 		float total = 0.0f;
 		for (final MessageCounter msgCounter : msgCounters)
 			total += msgCounter.getAvgMessageSize();
 		return total / msgCounters.size();
 	}
-	
+
 	public static long getMaxMessageSize() {
 		long maxMessageSize = 0;
 		for (final MessageCounter msgCounter : msgCounters)
-			maxMessageSize = msgCounter.getMaxMessageSize() > maxMessageSize?msgCounter.getMaxMessageSize():maxMessageSize;
+			maxMessageSize = msgCounter.getMaxMessageSize() > maxMessageSize ? msgCounter.getMaxMessageSize() : maxMessageSize;
 		return maxMessageSize;
 	}
 

@@ -30,10 +30,10 @@ public interface Peer {
 	public NeighborDetector getDetector();
 
 	public void processMessage(BroadcastMessage message);
-	
+
 	public void initPeer(PeerID peerID) throws IOException;
-	
+
 	public void stopPeer();
-	
+
 	public void printStatistics();
 }

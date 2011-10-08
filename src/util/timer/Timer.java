@@ -14,7 +14,7 @@ public class Timer extends WaitableThread {
 
 	@Override
 	public void run() {
-		while (!Thread.interrupted()) {
+		while (!Thread.interrupted())
 			try {
 				Thread.sleep(period);
 
@@ -23,7 +23,6 @@ public class Timer extends WaitableThread {
 			} catch (final InterruptedException e) {
 				break;
 			}
-		}
 
 		this.threadFinished();
 	}

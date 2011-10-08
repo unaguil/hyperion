@@ -35,11 +35,11 @@ class BidirectionalForwardComposer extends ForwardComposer {
 
 	@Override
 	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
+
+		logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
-			
-				logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
+
+			logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
 
 			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
 
@@ -58,23 +58,23 @@ class BidirectionalForwardComposer extends ForwardComposer {
 					validSuccessors.removeAll(exploredSuccessors);
 
 					forwardCompositionMessage(mergedForwardMessage, validSuccessors);
-				} else 
+				} else
 					logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
 			}
-		} else 
+		} else
 			logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
 	}
 
 	private Set<Service> checkBackwardMessages(final FCompositionMessage fCompositionMessage, final Set<ServiceDistance> successors) {
-		
-			logger.trace("Peer " + peer.getPeerID() + " checking received backward messages for search " + fCompositionMessage.getSearchID());
+
+		logger.trace("Peer " + peer.getPeerID() + " checking received backward messages for search " + fCompositionMessage.getSearchID());
 		final Set<MessageTree> completeTrees = bCompositionData.getCompleteTrees(fCompositionMessage.getSearchID(), fCompositionMessage.getSourceService());
 
 		final Set<Service> exploredSuccessors = new HashSet<Service>();
 
 		if (!completeTrees.isEmpty()) {
-			
-				logger.trace("Peer " + peer.getPeerID() + " found complete trees for search " + fCompositionMessage.getSearchID());
+
+			logger.trace("Peer " + peer.getPeerID() + " found complete trees for search " + fCompositionMessage.getSearchID());
 
 			final Map<Service, Set<ServiceDistance>> distanceBetweenServices = new HashMap<Service, Set<ServiceDistance>>();
 
@@ -114,18 +114,17 @@ class BidirectionalForwardComposer extends ForwardComposer {
 			final Set<Service> directSuccessors = getSuccessors(Util.getAllServices(distanceBetweenServices), fCompositionMessage.getSourceService());
 
 			boolean notify = false;
-			for (final ServiceDistance sDistance : successors) {
+			for (final ServiceDistance sDistance : successors)
 				if (directSuccessors.contains(sDistance.getService())) {
 					notify = true;
 					break;
 				}
-			}
 
 			if (notify) {
 				final SearchID searchID = fCompositionMessage.getSearchID();
 				((BidirectionalSearch) commonCompositionSearch).notifyComposition(searchID, distanceBetweenServices, peer.getPeerID(), gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 			}
-		} else 
+		} else
 			logger.trace("Peer " + peer.getPeerID() + " complete trees NOT found for search " + fCompositionMessage.getSearchID());
 
 		return exploredSuccessors;

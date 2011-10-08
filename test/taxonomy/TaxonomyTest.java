@@ -97,8 +97,7 @@ public class TaxonomyTest {
 
 	@Test
 	public void testReadFromXML() throws IOException {
-		final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + "<taxonomy root=\"A\">" + "<element id=\"A\">" + "<child id=\"B\"/>" + "<child id=\"C\"/>" + "</element>" + "<element id=\"B\">" + "<child id=\"D\"/>"
-				+ "<child id=\"E\"/>" + "</element>" + "<element id=\"E\"/>" + "<element id=\"C\">" + "<child id=\"F\"/>" + "<child id=\"G\"/>" + "</element>" + "<element id=\"F\"/>" + "<element id=\"G\"/>" + "</taxonomy>";
+		final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + "<taxonomy root=\"A\">" + "<element id=\"A\">" + "<child id=\"B\"/>" + "<child id=\"C\"/>" + "</element>" + "<element id=\"B\">" + "<child id=\"D\"/>" + "<child id=\"E\"/>" + "</element>" + "<element id=\"E\"/>" + "<element id=\"C\">" + "<child id=\"F\"/>" + "<child id=\"G\"/>" + "</element>" + "<element id=\"F\"/>" + "<element id=\"G\"/>" + "</taxonomy>";
 
 		final BasicTaxonomy otherTaxonomy = new BasicTaxonomy();
 		otherTaxonomy.readFromXML(new ByteArrayInputStream(xml.getBytes()));

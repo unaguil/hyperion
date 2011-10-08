@@ -17,9 +17,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import util.logger.Logger;
-
 import peer.peerid.PeerID;
+import util.logger.Logger;
 
 public class BackwardComposer {
 
@@ -50,8 +49,8 @@ public class BackwardComposer {
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
 		for (final Service service : newAncestors.keySet())
 			if (gCreator.getSDG().isLocal(service)) {
-				
-					logger.trace("Peer " + peerID + " service " + service + " has new ancestors " + newAncestors.get(service));
+
+				logger.trace("Peer " + peerID + " service " + service + " has new ancestors " + newAncestors.get(service));
 
 				// Obtain the current ancestors set for the service
 				final Set<Set<ServiceDistance>> currentCoveringSets = bCompositionData.getCoveringSets(service);
@@ -59,8 +58,8 @@ public class BackwardComposer {
 				final Set<ServiceDistance> ancestors = gCreator.getSDG().getAncestors(service);
 				// Calculate the current power set of the service
 				final Set<Set<ServiceDistance>> newCoveringSets = CoveringSets.calculateCoveringSets(service, currentCoveringSets, ancestors, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
-				
-					logger.trace("Peer " + peerID + " service " + service + " covering sets: " + currentCoveringSets + " news: " + newCoveringSets);
+
+				logger.trace("Peer " + peerID + " service " + service + " covering sets: " + currentCoveringSets + " news: " + newCoveringSets);
 
 				// Update the covering sets for the service
 				bCompositionData.addCoveringSets(service, newCoveringSets);
@@ -72,8 +71,8 @@ public class BackwardComposer {
 					// Get the current messages and propagate them
 					final Map<SearchID, List<BCompositionMessage>> receivedMessages = bCompositionData.getReceivedMessages(service);
 					if (!receivedMessages.isEmpty()) {
-						
-							logger.trace("Peer " + peerID + " processing messages for searchs " + receivedMessages.keySet());
+
+						logger.trace("Peer " + peerID + " processing messages for searchs " + receivedMessages.keySet());
 						for (final List<BCompositionMessage> messages : receivedMessages.values())
 							for (final BCompositionMessage message : messages)
 								sendBCompositionMessages(service, newCoveringSets, message);
@@ -87,8 +86,8 @@ public class BackwardComposer {
 		if (searchID != null) {
 			final int maxTTL = bCompositionData.getMaxTTL(searchID);
 			final long searchTime = bCompositionData.getRemainingInitTime(searchID);
-			
-				logger.trace("Peer " + peerID + " the service is a GOAL service. Sending start messages.");
+
+			logger.trace("Peer " + peerID + " the service is a GOAL service. Sending start messages.");
 			final BCompositionMessage message = new BCompositionMessage(searchID, service, new HashSet<ServiceDistance>(), maxTTL, searchTime, peerID);
 			sendBCompositionMessages(service, newCoveringSets, message);
 		}
@@ -96,8 +95,8 @@ public class BackwardComposer {
 
 	protected void sendBCompositionMessages(final Service service, final Set<Set<ServiceDistance>> coveringSets, final BCompositionMessage receivedCompositionMessage) {
 		for (final Set<ServiceDistance> coveringSet : coveringSets) {
-			
-				logger.trace("Peer " + peerID + " spliting message " + receivedCompositionMessage + " for covering set: " + coveringSet);
+
+			logger.trace("Peer " + peerID + " spliting message " + receivedCompositionMessage + " for covering set: " + coveringSet);
 			final Map<Service, BCompositionMessage> messages = receivedCompositionMessage.split(service, coveringSet, peerID, receivedCompositionMessage.getRemainingTime());
 
 			// TODO messages should be multicasted to a group of services to
@@ -106,30 +105,30 @@ public class BackwardComposer {
 				final Service antecessor = entry.getKey();
 				final BCompositionMessage message = entry.getValue();
 				if (message.getTTL() > 0) {
-					
-						logger.trace("Peer " + peerID + " enqueuing message forwarding " + message + " for successors " + Collections.singleton(antecessor));
+
+					logger.trace("Peer " + peerID + " enqueuing message forwarding " + message + " for successors " + Collections.singleton(antecessor));
 					final Set<Service> destServices = Utility.getServices(coveringSet);
 					gCreator.forwardMessage(message, destServices);
-				} else 
+				} else
 					logger.trace("Peer " + peerID + " discarded search message due to TTL");
 			}
 		}
 	}
 
 	public void receivedBComposition(final BCompositionMessage bCompositionMessage) {
-		
-			logger.trace("Peer " + peerID + " received backward composition search " + bCompositionMessage.getSearchID() + " from service " + bCompositionMessage.getSourceService());
+
+		logger.trace("Peer " + peerID + " received backward composition search " + bCompositionMessage.getSearchID() + " from service " + bCompositionMessage.getSourceService());
 
 		for (final ServiceDistance sDistance : bCompositionMessage.getDestServices()) {
-			
-				logger.trace("Peer " + peerID + " checking service " + sDistance.getService());
+
+			logger.trace("Peer " + peerID + " checking service " + sDistance.getService());
 			final Service service = sDistance.getService();
 
 			if (gCreator.getSDG().isLocal(service)) {
 				// Updating received messages for current service node
 				final MessageTree modifiedTree = bCompositionData.addReceivedMessage(service, bCompositionMessage);
-				
-					logger.trace("Peer " + peerID + " added composition message to message table");
+
+				logger.trace("Peer " + peerID + " added composition message to message table");
 
 				if (Utility.isINITService(service))
 					checkCompositionFinished(bCompositionMessage, service, modifiedTree);
@@ -143,7 +142,7 @@ public class BackwardComposer {
 		// Get the covering sets for this services
 		final Set<Set<ServiceDistance>> coveringSets = bCompositionData.getCoveringSets(service);
 
-		 {
+		{
 			final SearchID searchID = bCompositionMessage.getSearchID();
 			logger.trace("Peer " + peerID + " processing messages for active search: " + searchID);
 		}
@@ -151,13 +150,13 @@ public class BackwardComposer {
 	}
 
 	private void checkCompositionFinished(final BCompositionMessage bCompositionMessage, final Service service, final MessageTree modifiedTree) {
-		
-			logger.trace("Peer " + peerID + " INIT service " + service + " received the message");
+
+		logger.trace("Peer " + peerID + " INIT service " + service + " received the message");
 		// check for message tree completion
 		if (modifiedTree.isComplete()) {
 			final Set<Service> composition = modifiedTree.getServices();
-			
-				logger.trace("Peer " + peerID + " tree is complete. Composition: " + composition);
+
+			logger.trace("Peer " + peerID + " tree is complete. Composition: " + composition);
 			final Service goalService = commonCompositionSearch.getGoalService(composition);
 			if (Utility.connected(service, goalService))
 				notifyComposition(bCompositionMessage.getSearchID(), composition);
