@@ -24,7 +24,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 
 /**
  * A class which defines a set of peer ids (non-duplicates).
@@ -32,7 +32,7 @@ import serialization.xml.XMLSerialization;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class PeerIDSet implements Serializable, Iterable<PeerID>, XMLSerialization {
+public class PeerIDSet implements Serializable, Iterable<PeerID>, XMLSerializable {
 
 	/**
 	 * 

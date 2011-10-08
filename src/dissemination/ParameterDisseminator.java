@@ -3,12 +3,12 @@ package dissemination;
 import java.util.Set;
 
 import peer.peerid.PeerID;
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 import dissemination.newProtocol.ParameterTableUpdater.CommitedParameters;
 
-public interface ParameterDisseminator extends XMLSerialization {
+public interface ParameterDisseminator extends XMLSerializable {
 
 	/**
 	 * Adds a local parameter to the local parameter table. After finalizing a

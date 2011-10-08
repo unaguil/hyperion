@@ -1,8 +1,8 @@
 package taxonomy;
 
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 
-public interface Taxonomy extends XMLSerialization {
+public interface Taxonomy extends XMLSerializable {
 
 	public void setRoot(String rootID);
 

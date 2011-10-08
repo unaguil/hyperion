@@ -6,11 +6,11 @@ import multicast.search.message.SearchMessage.SearchType;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.parameter.Parameter;
 import dissemination.ParameterDisseminator;
 
-public interface ParameterSearch extends XMLSerialization {
+public interface ParameterSearch extends XMLSerializable {
 
 	/**
 	 * Adds a local parameter to the local parameter table. After finalizing a

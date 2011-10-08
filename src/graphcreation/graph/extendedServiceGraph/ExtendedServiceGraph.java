@@ -32,14 +32,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.ParameterFactory;
 
-public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode> implements XMLSerialization {
+public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode> implements XMLSerializable {
 
 	private final static String NODE_TAG = "node";
 	private final static String EDGE_TAG = "edge";

@@ -34,7 +34,7 @@ import org.xml.sax.SAXException;
 
 import peer.message.MessageID;
 import peer.peerid.PeerID;
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
@@ -48,7 +48,7 @@ import util.logger.Logger;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class UnicastTable implements XMLSerialization {
+public class UnicastTable implements XMLSerializable {
 
 	class Route implements Comparable<Route> {
 

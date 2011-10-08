@@ -25,7 +25,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import peer.peerid.PeerID;
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.InvalidParameterIDException;
@@ -34,7 +34,7 @@ import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
 import util.logger.Logger;
 
-public class ParameterTable implements XMLSerialization {
+public class ParameterTable implements XMLSerializable {
 
 	private final static String PARAMETER_TABLE = "parameterTable";
 	private final static String PARAMETER = "parameter";

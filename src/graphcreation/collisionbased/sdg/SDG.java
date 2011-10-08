@@ -7,11 +7,11 @@ import java.util.Set;
 
 import peer.message.MessageID;
 import peer.peerid.PeerID;
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.Parameter;
 
-public interface SDG extends XMLSerialization {
+public interface SDG extends XMLSerializable {
 
 	/**
 	 * Adds the passed service to the SDG.

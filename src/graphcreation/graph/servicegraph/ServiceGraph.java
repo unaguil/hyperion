@@ -29,10 +29,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import serialization.xml.XMLSerialization;
+import serialization.xml.XMLSerializable;
 import taxonomy.parameter.Parameter;
 
-public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> implements XMLSerialization {
+public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> implements XMLSerializable {
 
 	private final static String NODE_TAG = "node";
 	private final static String EDGE_TAG = "edge";
