@@ -171,8 +171,9 @@ public class ParameterTable implements XMLSerializable {
 		for (final Parameter localParameter : localParameters)
 			// check that the parameter has the same type that the current one
 			// (input/output)
-			if ((isInput(localParameter) && isInput(p)) || (isOutput(localParameter) && isOutput(p)) && taxonomy.areRelated(localParameter.getID(), p.getID()))
-				counter++;
+			if ((isInput(localParameter) && isInput(p)) || (isOutput(localParameter) && isOutput(p)))
+				if (taxonomy.areRelated(localParameter.getID(), p.getID()))
+					counter++;
 		return counter;
 	}
 
