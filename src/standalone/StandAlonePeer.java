@@ -63,6 +63,11 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	public void start(PeerID peerID) throws IOException {
 		peer.initPeer(peerID);
 	}
+	
+	protected void stop() {
+		peer.stopPeer();
+		peer.printStatistics();
+	}
 
 	@Override
 	public void initComm() throws IOException {
@@ -110,7 +115,15 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 			System.exit(0);
 		}
 
-		StandAlonePeer peer = new StandAlonePeer(args[1], args[2]);
+		final StandAlonePeer peer = new StandAlonePeer(args[1], args[2]);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			
+			@Override
+		    public void run() {
+		    	peer.stop();
+		    }
+		 });
 
 		peer.start(new PeerID(args[0]));
 	}
