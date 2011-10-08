@@ -50,6 +50,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	private final Logger logger = Logger.getLogger(StandAlonePeer.class);
 
 	public StandAlonePeer(String configurationFile, String servicesDir) {
+		Logger.setDeltaTime(System.currentTimeMillis());
 		Configuration.setFile(configurationFile);
 		
 		this.servicesDir = servicesDir;
