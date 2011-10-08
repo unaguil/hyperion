@@ -369,7 +369,6 @@ public final class BasicPeer implements Peer {
 	}
 
 	// Used by the message processor to process each dequeued message
-	@Override
 	public void processMessage(final BroadcastMessage message) {
 		logger.trace("Peer " + peerID + " processing message " + message);
 
