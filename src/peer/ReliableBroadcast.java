@@ -68,6 +68,9 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	public void stopAndWait() {
+		synchronized (mutex) {
+			processingMessage = false;
+		}
 		rebroadcastThread.stopAndWait();
 	}
 

@@ -49,8 +49,7 @@ final class ReceivingThread extends WaitableThread {
 			}
 		}
 
-		logger.trace("Peer " + peer.getPeerID() + " receiving loop exited");
-
+		logger.trace("Peer " + peer.getPeerID() + " receiving thread finalized");
 		this.threadFinished();
 	}
 

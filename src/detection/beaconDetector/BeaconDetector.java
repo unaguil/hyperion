@@ -46,7 +46,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			beaconDetector.sendBeacon();
 
 			while (!Thread.interrupted()) {
-
 				logger.trace("Peer " + peer.getPeerID() + " beacon thread running");
 
 				// Get the time elapsed since the last packet (beacon or not)
@@ -74,19 +73,23 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 				try {
 					Thread.sleep(sleepTime);
 				} catch (final InterruptedException e) {
-					finishBeaconThread();
+					finishThread();
 					return;
 				}
 			}
-
-			finishBeaconThread();
+			
+			finishThread();
 		}
 
-		private void finishBeaconThread() {
-
+		private void finishThread() {
 			logger.trace("Peer " + peer.getPeerID() + " beacon thread finalized");
-
 			this.threadFinished();
+		}
+		
+		@Override
+		public void stopAndWait() {
+			logger.info("Peer " + peer.getPeerID() + " interrupting beacon thread");
+			super.stopAndWait();
 		}
 	}
 

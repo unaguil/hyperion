@@ -143,7 +143,6 @@ final class MessageProcessor extends WaitableThread {
 
 	private void finishThread() {
 		logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
-
 		this.threadFinished();
 	}
 
@@ -154,6 +153,8 @@ final class MessageProcessor extends WaitableThread {
 	 */
 	@Override
 	public void stopAndWait() {
+		reliableBroadcast.stopAndWait();
+		
 		super.stopAndWait();
 
 		synchronized (messageDeque) {

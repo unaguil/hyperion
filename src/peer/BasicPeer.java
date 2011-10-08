@@ -275,28 +275,33 @@ public final class BasicPeer implements Peer {
 	@Override
 	public void stopPeer() {
 		unitialize();
+		
+		// Communication layers are stopped in reverse order of initialization
+		logger.trace("Peer " + peerID + " stopping communication layers");
+		Collections.reverse(communicationLayers);
+		for (final CommunicationLayer layer : communicationLayers)
+			layer.stop();
+		
+		logger.trace("Peer " + peerID + " communication layers stopped");
+		
+		//stop receiving thread
+		logger.trace("Peer " + peerID + " stopping receiving thread");
+		receivingThread.stopAndWait();
 
 		// stop received messages table thread
+		logger.trace("Peer " + peerID + " stopping received messages thread");
 		receivedMessages.stopAndWait();
-
+		
 		// Stop message processor
+		logger.trace("Peer " + peerID + " stopping message processor thread");
 		messageProcessor.stopAndWait();
 
-		logger.trace("Peer " + peerID + " unprocessed messages: " + messageProcessor.getUnprocessedMessages());
-
 		try {
+			logger.trace("Peer " + peerID + " finalizing communication provider");
 			commProvider.stopComm();
 		} catch (final IOException e) {
 			logger.error("Peer " + peerID + " had problem finalizing communication " + e.getMessage());
 		}
-
-		// Communication layers are stopped in reverse order of initialization
-		Collections.reverse(communicationLayers);
-		for (final CommunicationLayer layer : communicationLayers)
-			layer.stop();
-
-		logger.trace("Peer " + peerID + " stopping receiving thread");
-		receivingThread.stopAndWait();
 	}
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
