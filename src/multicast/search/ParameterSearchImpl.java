@@ -99,7 +99,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		try {
 			peer.addCommunicationLayer(this, messageClasses);
 		} catch (final RegisterCommunicationLayerException rce) {
-			rce.printStackTrace();
+			logger.error("Peer " + peer.getPeerID() + " had problem registering communication layer: " + rce.getMessage());
 		}
 	}
 

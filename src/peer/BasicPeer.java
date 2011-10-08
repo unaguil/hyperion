@@ -255,7 +255,6 @@ public class BasicPeer implements Peer {
 			notifySentListeners(message);
 
 		} catch (final IOException ioe) {
-			ioe.printStackTrace();
 			logger.error("Peer " + peerID + " broadcast error. " + ioe.getMessage());
 		}
 	}

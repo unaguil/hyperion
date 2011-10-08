@@ -160,7 +160,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 			compositionSearch.manageLocalServices(sList, new ServiceList());
 
 		} catch (final Exception e) {
-			e.printStackTrace();
+			logger.error("Peer " + peer.getPeerID() + " error loading data." + e.getMessage());
 		}
 	}
 

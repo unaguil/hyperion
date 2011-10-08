@@ -43,10 +43,8 @@ class ReceivingThread extends WaitableThread {
 						peer.processReceivedPacket(message);
 				}
 			} catch (final IOException e) {
-				e.printStackTrace();
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
 			} catch (final ClassNotFoundException e) {
-				e.printStackTrace();
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
 			}
 		}
