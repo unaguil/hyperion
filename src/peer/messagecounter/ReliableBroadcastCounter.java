@@ -7,7 +7,7 @@ package peer.messagecounter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class ReliableBroadcastCounter {
+public final class ReliableBroadcastCounter {
 
 	private long broadcastedMessages = 0;
 	private long deliveredMessages = 0;

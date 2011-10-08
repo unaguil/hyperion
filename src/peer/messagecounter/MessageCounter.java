@@ -15,9 +15,9 @@ import peer.message.BroadcastMessage;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class MessageCounter {
+public final class MessageCounter {
 
-	static class Info {
+	final static class Info {
 
 		private long numMessages = 0;
 		private long updateTime = 0;

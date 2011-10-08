@@ -13,7 +13,7 @@ import util.logger.Logger;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class ReliableBroadcastTotalCounter {
+public final class ReliableBroadcastTotalCounter {
 
 	private static final List<ReliableBroadcastCounter> msgCounters = Collections.synchronizedList(new ArrayList<ReliableBroadcastCounter>());
 

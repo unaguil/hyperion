@@ -32,7 +32,7 @@ import serialization.xml.XMLSerializable;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class PeerIDSet implements Serializable, Iterable<PeerID>, XMLSerializable {
+public final class PeerIDSet implements Serializable, Iterable<PeerID>, XMLSerializable {
 
 	/**
 	 * 

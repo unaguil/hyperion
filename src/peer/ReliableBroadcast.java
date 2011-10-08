@@ -14,9 +14,9 @@ import config.Configuration;
 import detection.NeighborEventsListener;
 import detection.message.BeaconMessage;
 
-class ReliableBroadcast implements TimerTask, NeighborEventsListener {
+final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
-	private static class RebroadcastThread extends Timer {
+	private final static class RebroadcastThread extends Timer {
 
 		public RebroadcastThread(final long period, final TimerTask timerTask) {
 			super(period, timerTask);

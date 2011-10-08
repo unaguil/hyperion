@@ -19,7 +19,7 @@ import util.timer.TimerTask;
  *            the type of objects to be stored in the timed register which must
  *            correctly implement hashCode() and equals().
  */
-public class ConditionRegister<T> implements TimerTask {
+public final class ConditionRegister<T> implements TimerTask {
 
 	// Inner class used to store data and time stamp information.
 	private class Entry<O> {

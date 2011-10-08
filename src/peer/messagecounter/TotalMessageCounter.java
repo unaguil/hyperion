@@ -16,7 +16,7 @@ import util.logger.Logger;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class TotalMessageCounter {
+public final class TotalMessageCounter {
 
 	private static final List<MessageCounter> msgCounters = Collections.synchronizedList(new ArrayList<MessageCounter>());
 

@@ -15,7 +15,7 @@ import util.logger.Logger;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-class ReceivingThread extends WaitableThread {
+final class ReceivingThread extends WaitableThread {
 
 	private final BasicPeer peer;
 

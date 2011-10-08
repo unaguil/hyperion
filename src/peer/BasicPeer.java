@@ -29,7 +29,7 @@ import detection.NeighborDetector;
 import detection.beaconDetector.BeaconDetector;
 import detection.message.BeaconMessage;
 
-public class BasicPeer implements Peer {
+public final class BasicPeer implements Peer {
 
 	private static final int CLEAN_REC_MSGS = 5000;
 
@@ -86,7 +86,7 @@ public class BasicPeer implements Peer {
 		this.commProvider = commProvider;
 	}
 
-	public synchronized boolean isInitialized() {
+	private synchronized boolean isInitialized() {
 		return initialized;
 	}
 
@@ -189,7 +189,7 @@ public class BasicPeer implements Peer {
 		msgCounter.addSent(message.getClass());
 	}
 
-	class DelayedRandomInit extends Thread {
+	private class DelayedRandomInit extends Thread {
 
 		private final BasicPeer peer;
 
@@ -299,7 +299,7 @@ public class BasicPeer implements Peer {
 		receivingThread.stopAndWait();
 	}
 
-	protected void messageReceived(final BroadcastMessage broadcastMessage) {
+	private void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
 
 		logger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
@@ -327,7 +327,7 @@ public class BasicPeer implements Peer {
 		logger.info("Simulation finished");
 	}
 
-	protected void processSimpleMessage(final BroadcastMessage broadcastMessage) {
+	private void processSimpleMessage(final BroadcastMessage broadcastMessage) {
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
 
@@ -345,7 +345,7 @@ public class BasicPeer implements Peer {
 		messageReceived(broadcastMessage);
 	}
 
-	protected void processBundleMessage(final BundleMessage bundleMessage) {
+	private void processBundleMessage(final BundleMessage bundleMessage) {
 		// previously received bundle messages are not processed again
 		if (receivedMessages.contains(bundleMessage.getMessageID()))
 			return;
@@ -371,7 +371,6 @@ public class BasicPeer implements Peer {
 	// Used by the message processor to process each dequeued message
 	@Override
 	public void processMessage(final BroadcastMessage message) {
-
 		logger.trace("Peer " + peerID + " processing message " + message);
 
 		// Check if message is a multicast message and is directed to this node
@@ -386,7 +385,7 @@ public class BasicPeer implements Peer {
 		notifyReceivingListener(message, System.currentTimeMillis());
 	}
 
-	protected void notifyReceivingListener(final BroadcastMessage message, final long receptionTime) {
+	private void notifyReceivingListener(final BroadcastMessage message, final long receptionTime) {
 		if (receivingListenersTable.containsKey(message.getClass())) {
 			final MessageReceivedListener listener = receivingListenersTable.get(message.getClass());
 			final long time = System.nanoTime();
@@ -411,7 +410,7 @@ public class BasicPeer implements Peer {
 			processSimpleMessage(message);
 	}
 
-	protected void notifyHearListener(final BroadcastMessage message, final long receptionTime) {
+	private void notifyHearListener(final BroadcastMessage message, final long receptionTime) {
 		if (hearListener != null)
 			hearListener.messageReceived(message, receptionTime);
 	}
