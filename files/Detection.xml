@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<tests>
-	<test workingDir="scripts/tests/detection/verysimple" script="Script.tcl"/>
-	<test workingDir="scripts/tests/detection/simple" script="Script.tcl"/>
-	<test workingDir="scripts/tests/detection/basic" script="Script.tcl"/>
-	<test workingDir="scripts/tests/detection/loop" script="Script.tcl"/>
-	<test workingDir="scripts/tests/detection/simpleNewNetworkAppears" script="Script.tcl"/>
-	<test workingDir="scripts/tests/detection/simpleBreakNetwork" script="Script.tcl"/>
-</tests>
