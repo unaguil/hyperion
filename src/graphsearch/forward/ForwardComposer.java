@@ -51,12 +51,10 @@ public class ForwardComposer {
 			final Service service = entry.getKey();
 			// Only local services are taken into account
 			if (gCreator.isLocal(service)) {
-
 				logger.trace("Peer " + peer.getPeerID() + " service " + service + " has new successors " + entry.getValue());
 				if (Utility.isINITService(service)) {
 					// the INIT node is always covered. Send the start
 					// composition message to new successors
-
 					logger.trace("Peer " + peer.getPeerID() + " the service is an INIT service. Sending start messages.");
 					initFComposition(entry.getValue(), service);
 				} else {
@@ -97,7 +95,6 @@ public class ForwardComposer {
 	}
 
 	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
 
@@ -230,7 +227,6 @@ public class ForwardComposer {
 	}
 
 	private void notifyCompositionModification(final SearchID searchID, final Set<Service> removedServices, final FCompositionMessage fCompositionMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " notifying composition modification " + searchID);
 		final Map<Service, Set<ServiceDistance>> distanceBetweenServices = fCompositionMessage.getSuccessorDistances();
 		final List<Service> notificationPath = ShortestPathCalculator.findShortestPath(distanceBetweenServices, peer.getPeerID(), gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
@@ -242,14 +238,12 @@ public class ForwardComposer {
 	}
 
 	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
-
 		logger.trace("Peer " + peer.getPeerID() + " lost ancestors " + lostAncestors);
 
 		processDisappearedAncestors(lostAncestors, new HashMap<SearchID, Set<Service>>());
 	}
 
 	private void forwardInvalidCompositionsMessage(final InvalidCompositionsMessage compositionModificationMessage, final Set<Service> services) {
-
 		logger.trace("Peer " + peer.getPeerID() + " forwarding invalid composition message " + compositionModificationMessage + " for successors " + services);
 		gCreator.forwardMessage(compositionModificationMessage, services);
 	}

@@ -81,7 +81,6 @@ public class ForwardCompositionData extends CompositionData {
 
 	public Map<SearchID, List<FCompositionMessage>> getReceivedMessages(final Service service) {
 		final Map<SearchID, List<FCompositionMessage>> receivedMessages = new HashMap<SearchID, List<FCompositionMessage>>();
-
 		synchronized (entries) {
 			for (final SearchID searchID : entries.keySet()) {
 				final List<FCompositionMessage> messages = entries.get(searchID).getMessages(service);

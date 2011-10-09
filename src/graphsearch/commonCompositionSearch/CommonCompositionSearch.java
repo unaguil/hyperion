@@ -176,7 +176,6 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 	}
 
 	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
-
 		logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
 		final Service initService = Utility.createInitService(service, peer.getPeerID());
 		final Service goalService = Utility.createGoalService(service, peer.getPeerID());
