@@ -3,9 +3,11 @@ package multicast.search;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -140,22 +142,27 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	public void appearedNeighbors(final PeerIDSet neighbors) {
 		repropagateSearches(neighbors);
 	}
-
-	private void repropagateSearches(final PeerIDSet neighbors) {
-		// Active searches are resent to new nodes
-
-		logger.trace("Peer " + peer.getPeerID() + " propagating searches for new neighbors " + neighbors);
-		for (final SearchMessage searchMessage : uTable.getActiveSearches())
-			propagateSearchMessage(searchMessage);
-	}
-
+	
 	@Override
 	public void dissapearedNeighbors(final PeerIDSet neighbors) {
 		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		for (final PeerID neighbor : neighbors)
-			lostRoutes.addAll(uTable.getRoutesThrough(neighbor));
+		
+		synchronized (uTable) { 
+			for (final PeerID neighbor : neighbors)
+				lostRoutes.addAll(uTable.getRoutesThrough(neighbor));
+		}
 
 		sendRemoveRouteMessage(lostRoutes);
+	}
+
+	private void repropagateSearches(final PeerIDSet neighbors) {
+		// Active searches are resent to new nodes
+		logger.trace("Peer " + peer.getPeerID() + " propagating searches for new neighbors " + neighbors);
+		
+		synchronized (uTable) {
+			for (final SearchMessage searchMessage : uTable.getActiveSearches())
+				propagateSearchMessage(searchMessage);
+		}
 	}
 
 	@Override
@@ -193,10 +200,13 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		logger.debug("Peer " + peer.getPeerID() + " canceling searches for parameters " + parameters);
 
 		final Set<MessageID> routeIDs = new HashSet<MessageID>();
-		for (final Parameter removedParameter : parameters) {
-			final Set<SearchMessage> activeSearches = uTable.getActiveSearches(removedParameter, peer.getPeerID());
-			for (final SearchMessage activeSearch : activeSearches)
-				routeIDs.add(activeSearch.getRemoteMessageID());
+		
+		synchronized (uTable) {
+			for (final Parameter removedParameter : parameters) {
+				final Set<SearchMessage> activeSearches = uTable.getActiveSearches(removedParameter, peer.getPeerID());
+				for (final SearchMessage activeSearch : activeSearches)
+					routeIDs.add(activeSearch.getRemoteMessageID());
+			}
 		}
 
 		logger.trace("Peer " + peer.getPeerID() + " canceling searches " + routeIDs + " parameters " + parameters);
@@ -212,11 +222,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	public void sendGeneralizeSearchMessage(final Set<Parameter> generalizedParameters) {
 		logger.debug("Peer " + peer.getPeerID() + " enqueuing generalize search for parameters " + generalizedParameters);
 		final Set<MessageID> routeIDs = new HashSet<MessageID>();
-		for (final Parameter generalizedParameter : generalizedParameters) {
-			final Set<SearchMessage> activeSearches = uTable.getSubsumedActiveSearches(generalizedParameter, peer.getPeerID(), pDisseminator.getTaxonomy());
-			for (final SearchMessage activeSearch : activeSearches)
-				if (activeSearch.getSearchType().equals(SearchType.Generic))
-					routeIDs.add(activeSearch.getRemoteMessageID());
+		
+		synchronized (uTable) {
+			for (final Parameter generalizedParameter : generalizedParameters) {
+				final Set<SearchMessage> activeSearches = uTable.getSubsumedActiveSearches(generalizedParameter, peer.getPeerID(), pDisseminator.getTaxonomy());
+				for (final SearchMessage activeSearch : activeSearches) {
+					if (activeSearch.getSearchType().equals(SearchType.Generic))
+						routeIDs.add(activeSearch.getRemoteMessageID());
+				}
+			}
 		}
 
 		logger.trace("Peer " + peer.getPeerID() + " generalizing searches " + routeIDs + " with parameters " + generalizedParameters);
@@ -226,21 +240,27 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private void processLocalRemovedParameters(final Set<Parameter> localRemovedParameters) {
 		// Group removal messages by route
 		final Set<MessageID> routeIDs = new HashSet<MessageID>();
-		for (final Parameter removedParameter : localRemovedParameters)
-			routeIDs.addAll(uTable.getLocalParameterRoutes(removedParameter));
+		
+		synchronized (uTable) {
+			for (final Parameter removedParameter : localRemovedParameters)
+				routeIDs.addAll(uTable.getLocalParameterRoutes(removedParameter));
+		}
 
 		sendRemoveParametersMessage(localRemovedParameters, routeIDs);
 	}
 
 	private void processLocalAddedParameters(final Set<Parameter> localAddedParameters) {
 		final Map<SearchMessage, Set<Parameter>> parametersTable = new HashMap<SearchMessage, Set<Parameter>>();
-		for (final Parameter localParameter : localAddedParameters) {
-			// Get active searches searching for this parameter
-			final Set<SearchMessage> activeSearches = uTable.getActiveSearches(localParameter);
-			for (final SearchMessage activeSearch : activeSearches) {
-				if (!parametersTable.containsKey(activeSearch))
-					parametersTable.put(activeSearch, new HashSet<Parameter>());
-				parametersTable.get(activeSearch).add(localParameter);
+		
+		synchronized (uTable) {
+			for (final Parameter localParameter : localAddedParameters) {
+				// Get active searches searching for this parameter
+				final Set<SearchMessage> activeSearches = uTable.getActiveSearches(localParameter);
+				for (final SearchMessage activeSearch : activeSearches) {
+					if (!parametersTable.containsKey(activeSearch))
+						parametersTable.put(activeSearch, new HashSet<Parameter>());
+					parametersTable.get(activeSearch).add(localParameter);
+				}
 			}
 		}
 
@@ -256,7 +276,13 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private void processNonLocalAddedParameters(final Set<Parameter> nonLocalAddedParameters) {
 		final Set<SearchMessage> propagatedSearches = new HashSet<SearchMessage>();
 		// Find all active searches containing the added parameters
-		for (final SearchMessage searchMessage : uTable.getActiveSearches()) {
+		
+		List<SearchMessage> searchMessages = new ArrayList<SearchMessage>();
+		synchronized (uTable) {
+			searchMessages.addAll(uTable.getActiveSearches());
+		}
+		
+		for (final SearchMessage searchMessage : searchMessages) {
 			final Set<Parameter> searchedParameters = new HashSet<Parameter>(searchMessage.getSearchedParameters());
 			// Get the intersection
 			searchedParameters.retainAll(nonLocalAddedParameters);
@@ -362,12 +388,16 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public boolean knowsSearchRouteTo(final PeerID dest) {
-		return uTable.knowsSearchRouteTo(dest);
+		synchronized (uTable) {
+			return uTable.knowsSearchRouteTo(dest);
+		}
 	}
 
 	@Override
 	public int getDistanceTo(final PeerID peerID) {
-		return uTable.getDistanceTo(peerID);
+		synchronized (uTable) {
+			return uTable.getDistanceTo(peerID);
+		}
 	}
 
 	@Override
@@ -376,7 +406,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void acceptMulticastMessage(final RemoteMulticastMessage multicastMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
 		final PayloadMessage payload = multicastMessage.getPayload();
 		searchListener.multicastMessageAccepted(multicastMessage.getSource(), payload.copy(), multicastMessage.getDistance());
@@ -385,7 +414,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// this method is called when a search message is accepted by the current
 	// node
 	private void acceptSearchMessage(final SearchMessage searchMessage, final Set<Parameter> foundParameters) {
-
 		logger.trace("Peer " + peer.getPeerID() + " accepted search message " + searchMessage);
 		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getMessageID());
 
@@ -407,16 +435,17 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// process the multicast messages in the current node
 	private void processMulticastMessage(final RemoteMulticastMessage multicastMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing multicast message " + multicastMessage);
 		// Check if the current peer is valid to pass through the multicast
 		// message
 		if (!multicastMessage.getThroughPeers().contains(peer.getPeerID()))
 			return;
 
-		// Update route table if message contains route information
-		if (multicastMessage instanceof SearchResponseMessage)
-			uTable.updateUnicastTable((SearchResponseMessage) multicastMessage);
+		synchronized (uTable) {
+			// Update route table if message contains route information
+			if (multicastMessage instanceof SearchResponseMessage)
+				uTable.updateUnicastTable((SearchResponseMessage) multicastMessage);
+		}
 
 		// Check if message must be accepted
 		boolean messageAccepted = false;
@@ -434,17 +463,23 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		// Remove invalid destinations. A destination is invalid if cannot be
 		// reached from current peer according to route table
-		for (final PeerID destination : multicastMessage.getRemoteDestinations())
-			if (!uTable.knowsRouteTo(destination))
-				multicastMessage.removeRemoteDestination(destination);
+		
+		synchronized (uTable) {
+			for (final PeerID destination : multicastMessage.getRemoteDestinations())
+				if (!uTable.knowsRouteTo(destination))
+					multicastMessage.removeRemoteDestination(destination);
+		}
 
 		// Check if more destinations are available after purging invalid ones
 		if (!multicastMessage.getRemoteDestinations().isEmpty()) {
 			// Get the new list of neighbors used to send the message
 			final PeerIDSet throughPeers = new PeerIDSet();
-			for (final PeerID destination : multicastMessage.getRemoteDestinations()) {
-				final PeerID through = uTable.getNeighbor(destination);
-				throughPeers.addPeer(through);
+			
+			synchronized (uTable) {
+				for (final PeerID destination : multicastMessage.getRemoteDestinations()) {
+					final PeerID through = uTable.getNeighbor(destination);
+					throughPeers.addPeer(through);
+				}
 			}
 
 			if (multicastMessage instanceof SearchResponseMessage) {
@@ -467,7 +502,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void processRemoveParametersMessage(final RemoveParametersMessage removeParametersMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing remove parameters message " + removeParametersMessage);
 
 		final Set<MessageID> removedSearchRoutes = new HashSet<MessageID>();
@@ -478,36 +512,39 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		final Map<MessageID, MessageID> associatedRoutes = new HashMap<MessageID, MessageID>();
 
 		boolean notify = false;
-		for (final MessageID routeID : removeParametersMessage.getRouteIDs()) {
-			final boolean searchRoute = uTable.isSearchRoute(routeID);
-			final boolean existed = uTable.isRoute(routeID);
-
-			final MessageID searchRouteID = uTable.getAssociatedSearchRoute(routeID);
-			if (searchRouteID != null)
-				associatedRoutes.put(searchRouteID, routeID);
-
-			final Set<Parameter> removedParameters = uTable.removeParameters(removeParametersMessage.getParameters(), routeID);
-
-			// If parameters were removed notify listeners and neighbors
-			if (!removedParameters.isEmpty()) {
-				if (searchRoute)
-					canceledParameterSearch.put(routeID, removedParameters);
-				else {
-					// notify only parameters which are currently searched
-					removedParameters.retainAll(uTable.getSearchedParameters());
-
-					if (!removedParameters.isEmpty())
-						lostParameters.put(searchRouteID, removedParameters);
-				}
-
-				// Check if route was removed
-				if (existed && !uTable.isRoute(routeID))
+		
+		synchronized (uTable) {
+			for (final MessageID routeID : removeParametersMessage.getRouteIDs()) {
+				final boolean searchRoute = uTable.isSearchRoute(routeID);
+				final boolean existed = uTable.isRoute(routeID);
+	
+				final MessageID searchRouteID = uTable.getAssociatedSearchRoute(routeID);
+				if (searchRouteID != null)
+					associatedRoutes.put(searchRouteID, routeID);
+	
+				final Set<Parameter> removedParameters = uTable.removeParameters(removeParametersMessage.getParameters(), routeID);
+	
+				// If parameters were removed notify listeners and neighbors
+				if (!removedParameters.isEmpty()) {
 					if (searchRoute)
-						removedSearchRoutes.add(routeID);
-					else
-						removedParameterRoutes.add(routeID);
-
-				notify = true;
+						canceledParameterSearch.put(routeID, removedParameters);
+					else {
+						// notify only parameters which are currently searched
+						removedParameters.retainAll(uTable.getSearchedParameters());
+	
+						if (!removedParameters.isEmpty())
+							lostParameters.put(searchRouteID, removedParameters);
+					}
+	
+					// Check if route was removed
+					if (existed && !uTable.isRoute(routeID))
+						if (searchRoute)
+							removedSearchRoutes.add(routeID);
+						else
+							removedParameterRoutes.add(routeID);
+	
+					notify = true;
+				}
 			}
 		}
 
@@ -539,37 +576,38 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void processGeneralizeSearchMessage(final GeneralizeSearchMessage generalizeSearchMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing generalize search message " + generalizeSearchMessage);
 
 		boolean notifyNeighbors = false;
 
-		for (final MessageID routeID : generalizeSearchMessage.getRouteIDs()) {
-			final Map<Parameter, Parameter> generalizations = uTable.generalizeSearch(generalizeSearchMessage.getParameters(), routeID, pDisseminator.getTaxonomy());
-			// If parameters were affected, propagate message
-			if (!generalizations.isEmpty()) {
-				notifyNeighbors = true;
-
-				// Send response messages for those parameters not previously
-				// responded
-				// Check if the peer provides any of the new searched parameters
-				final Set<Parameter> foundParameters = new HashSet<Parameter>();
-				for (final Parameter p : generalizations.values()) {
-					final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
-					foundParameters.addAll(subsumedParameters);
-				}
-
-				// However remove all those parameters which already found with
-				// the previous parameter values
-				for (final Parameter p : generalizations.keySet()) {
-					final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
-					foundParameters.removeAll(subsumedParameters);
-				}
-
-				// Notify new found parameters
-				if (!foundParameters.isEmpty()) {
-					final SearchMessage searchMessage = uTable.getActiveSearch(routeID);
-					acceptSearchMessage(searchMessage, foundParameters);
+		synchronized (uTable) {
+			for (final MessageID routeID : generalizeSearchMessage.getRouteIDs()) {
+				final Map<Parameter, Parameter> generalizations = uTable.generalizeSearch(generalizeSearchMessage.getParameters(), routeID, pDisseminator.getTaxonomy());
+				// If parameters were affected, propagate message
+				if (!generalizations.isEmpty()) {
+					notifyNeighbors = true;
+	
+					// Send response messages for those parameters not previously
+					// responded
+					// Check if the peer provides any of the new searched parameters
+					final Set<Parameter> foundParameters = new HashSet<Parameter>();
+					for (final Parameter p : generalizations.values()) {
+						final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
+						foundParameters.addAll(subsumedParameters);
+					}
+	
+					// However remove all those parameters which already found with
+					// the previous parameter values
+					for (final Parameter p : generalizations.keySet()) {
+						final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
+						foundParameters.removeAll(subsumedParameters);
+					}
+	
+					// Notify new found parameters
+					if (!foundParameters.isEmpty()) {
+						final SearchMessage searchMessage = uTable.getActiveSearch(routeID);
+						acceptSearchMessage(searchMessage, foundParameters);
+					}
 				}
 			}
 		}
@@ -586,7 +624,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// Processes a remove route message
 	private void processRemoveRouteMessage(final RemoveRouteMessage removeRouteMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing remove route message " + removeRouteMessage);
 
 		final Map<MessageID, Set<Parameter>> lostParameters = new HashMap<MessageID, Set<Parameter>>();
@@ -598,33 +635,36 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		final Map<MessageID, MessageID> associatedRoutes = new HashMap<MessageID, MessageID>();
 
 		boolean notify = false;
-		for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {
-			final boolean searchRoute = uTable.isSearchRoute(routeID);
-
-			final MessageID searchRouteID = uTable.getAssociatedSearchRoute(routeID);
-			if (searchRouteID != null)
-				associatedRoutes.put(searchRouteID, routeID);
-
-			if (searchRoute) {
-				final Set<Parameter> canceledParameters = uTable.getSearchedParameters(routeID);
-				final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
-				if (!lostDestination.equals(PeerID.VOID_PEERID)) {
-					canceledParameterSearch.put(routeID, canceledParameters);
-					removedSearchRoutes.add(routeID);
-					notify = true;
-				}
-
-			} else {
-				final Set<Parameter> removedParameters = uTable.getParameters(routeID);
-				final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
-				if (!lostDestination.equals(PeerID.VOID_PEERID)) {
-					removedParameters.retainAll(uTable.getSearchedParameters());
-
-					// get the search route associated with this route
-					if (!removedParameters.isEmpty())
-						lostParameters.put(routeID, removedParameters);
-					removedParameterRoutes.add(searchRouteID);
-					notify = true;
+		
+		synchronized (uTable) {
+			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {
+				final boolean searchRoute = uTable.isSearchRoute(routeID);
+	
+				final MessageID searchRouteID = uTable.getAssociatedSearchRoute(routeID);
+				if (searchRouteID != null)
+					associatedRoutes.put(searchRouteID, routeID);
+	
+				if (searchRoute) {
+					final Set<Parameter> canceledParameters = uTable.getSearchedParameters(routeID);
+					final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
+					if (!lostDestination.equals(PeerID.VOID_PEERID)) {
+						canceledParameterSearch.put(routeID, canceledParameters);
+						removedSearchRoutes.add(routeID);
+						notify = true;
+					}
+	
+				} else {
+					final Set<Parameter> removedParameters = uTable.getParameters(routeID);
+					final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
+					if (!lostDestination.equals(PeerID.VOID_PEERID)) {
+						removedParameters.retainAll(uTable.getSearchedParameters());
+	
+						// get the search route associated with this route
+						if (!removedParameters.isEmpty())
+							lostParameters.put(routeID, removedParameters);
+						removedParameterRoutes.add(searchRouteID);
+						notify = true;
+					}
 				}
 			}
 		}
@@ -643,11 +683,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void processSearchMessage(final SearchMessage searchMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
 
 		// Update route table with the information contained in the message
-		if (uTable.updateUnicastTable(searchMessage)) {
+		boolean updated;
+		synchronized (uTable) {
+			updated = uTable.updateUnicastTable(searchMessage);
+		}
+		
+		if (updated) {
 			// If the current peer provides any of the searched parameters
 			// accept the message
 			final Set<Parameter> foundParameters = new HashSet<Parameter>();
@@ -713,8 +757,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// Called when search is a propagated search
 	private void propagateSearchMessage(final SearchMessage searchMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " propagating search " + searchMessage);
+		
 		// Create a copy of the message for broadcasting using the current node
 		// as the new sender. This message responds to the received one
 		final SearchMessage newMsg = new SearchMessage(searchMessage, peer.getPeerID(), getNewDistance(searchMessage));
@@ -755,7 +799,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	@Override
 	public void saveToXML(final OutputStream os) throws IOException {
-		uTable.saveToXML(os);
+		synchronized (uTable) {
+			uTable.saveToXML(os);
+		}
 	}
 
 	@Override
