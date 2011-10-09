@@ -1,6 +1,11 @@
 package peer.peerid;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+import serialization.binary.FinalFieldSetter;
 
 /**
  * This class is used for peer identification. It is implemented through the
@@ -9,12 +14,17 @@ import java.io.Serializable;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public final class PeerID implements Serializable, Comparable<PeerID> {
+public final class PeerID implements Externalizable, Comparable<PeerID> {
 
 	private static final long serialVersionUID = 1L;
+	
 	private final String id;
 
 	public static final PeerID VOID_PEERID = new PeerID("VOID");
+	
+	public PeerID() {
+		id = null;
+	}
 
 	public PeerID(final String id) {
 		this.id = id;
@@ -41,5 +51,15 @@ public final class PeerID implements Serializable, Comparable<PeerID> {
 	@Override
 	public int compareTo(final PeerID peerID) {
 		return this.id.compareTo(peerID.id);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		FinalFieldSetter.setFinalField(PeerID.class, this, "id", in.readUTF());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeUTF(id);
 	}
 }

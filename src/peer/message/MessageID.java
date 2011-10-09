@@ -1,10 +1,14 @@
 package peer.message;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import peer.peerid.PeerID;
+import serialization.binary.FinalFieldSetter;
 
-public class MessageID implements Serializable, Comparable<MessageID> {
+public class MessageID implements Externalizable, Comparable<MessageID> {
 
 	/**
 	 * 
@@ -14,6 +18,11 @@ public class MessageID implements Serializable, Comparable<MessageID> {
 	private final PeerID peer;
 
 	private final long id;
+	
+	public MessageID() {
+		peer = null;
+		id = 0;
+	}
 
 	public MessageID(final PeerID peer, final long id) {
 		this.peer = peer;
@@ -63,5 +72,17 @@ public class MessageID implements Serializable, Comparable<MessageID> {
 		}
 
 		return peer.compareTo(messageID.peer);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		FinalFieldSetter.setFinalField(MessageID.class, this, "peer", in.readObject());
+		FinalFieldSetter.setFinalField(MessageID.class, this, "id", in.readLong());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(peer);
+		out.writeLong(id);
 	}
 }

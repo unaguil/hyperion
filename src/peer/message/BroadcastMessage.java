@@ -1,11 +1,16 @@
 package peer.message;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import peer.peerid.PeerID;
+import serialization.binary.FinalFieldSetter;
 
 /**
  * The type of message which are sent by the reliable broadcasting.
@@ -13,7 +18,7 @@ import peer.peerid.PeerID;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public abstract class BroadcastMessage implements Serializable {
+public abstract class BroadcastMessage implements Externalizable {
 
 	/**
 	 * 
@@ -25,13 +30,11 @@ public abstract class BroadcastMessage implements Serializable {
 
 	private Set<PeerID> expectedDestinations = new HashSet<PeerID>();
 
-	/**
-	 * Constructor of the broadcast message. Generates a message which is
-	 * identified by sender and a local message id generated automatically.
-	 * 
-	 * @param sender
-	 *            the sender of the message
-	 */
+	
+	public BroadcastMessage() {
+		messageID = null;
+	}
+	
 	public BroadcastMessage(final PeerID sender) {
 		this.messageID = new MessageID(sender, MessageIDGenerator.getNewID());
 	}
@@ -85,5 +88,17 @@ public abstract class BroadcastMessage implements Serializable {
 	@Override
 	public String toString() {
 		return messageID.toString();
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		FinalFieldSetter.setFinalField(BroadcastMessage.class, this, "messageID", in.readObject());
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(messageID);
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 	}
 }

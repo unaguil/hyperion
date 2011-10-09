@@ -15,6 +15,10 @@ public class BeaconMessage extends BroadcastMessage {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public BeaconMessage() {
+		
+	}
 
 	/**
 	 * Constructs a beacon message.
