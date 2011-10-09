@@ -21,6 +21,9 @@ import graphcreation.graph.servicegraph.node.ServiceNode;
 import graphcreation.services.Service;
 import graphcreation.services.ServiceList;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +47,7 @@ import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.Parameter;
 import util.logger.Logger;
 import dissemination.DistanceChange;
@@ -112,18 +116,22 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {
 		// Get the intermediate/collision nodes and group them
 		final Map<PeerID, Set<Service>> forwardTable = new HashMap<PeerID, Set<Service>>();
-		for (final Service service : destinations)
-			if (service.getPeerID().equals(peer.getPeerID()))
-				pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(peer.getPeerID())), payload);
-			else {
-				final Set<PeerID> intermediateNodes = sdg.getThroughCollisionNodes(service);
-				if (!intermediateNodes.isEmpty()) {
-					final PeerID intermediateNode = intermediateNodes.iterator().next();
-					if (!forwardTable.containsKey(intermediateNode))
-						forwardTable.put(intermediateNode, new HashSet<Service>());
-					forwardTable.get(intermediateNode).add(service);
+		
+		synchronized (sdg) {
+			for (final Service service : destinations) {
+				if (service.getPeerID().equals(peer.getPeerID()))
+					pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(peer.getPeerID())), payload);
+				else {
+					final Set<PeerID> intermediateNodes = sdg.getThroughCollisionNodes(service);
+					if (!intermediateNodes.isEmpty()) {
+						final PeerID intermediateNode = intermediateNodes.iterator().next();
+						if (!forwardTable.containsKey(intermediateNode))
+							forwardTable.put(intermediateNode, new HashSet<Service>());
+						forwardTable.get(intermediateNode).add(service);
+					}
 				}
 			}
+		}
 
 		for (final Entry<PeerID, Set<Service>> entry : forwardTable.entrySet()) {
 			logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getClass().getName());
@@ -148,41 +156,49 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		logger.debug("Peer " + peer.getPeerID() + " adding local services " + addedServices);
 		logger.debug("Peer " + peer.getPeerID() + " removing local services " + removedServices);
 		
-		final Map<Service, Set<ServiceDistance>> connectionTable = new HashMap<Service, Set<ServiceDistance>>();
-
-		// Obtain those remote services connected with the removed ones
-		for (final Service service : removedServices) {
-			final Set<ServiceDistance> remoteConnectedServices = sdg.getRemoteConnectedServices(service);
-			connectionTable.put(service, remoteConnectedServices);
-		}
-
-		commit(addedServices, removedServices);
-
-		// Those services which after removal have some parameters still present
-		// or subsumed in the parameter table are notified
 		final Map<PeerID, Set<Service>> notifications = new HashMap<PeerID, Set<Service>>();
-		boolean notify = false;
-		for (final Entry<Service, Set<ServiceDistance>> entry : connectionTable.entrySet()) {
-			final Service localService = entry.getKey();
-			for (final Parameter localParameter : pSearch.getDisseminationLayer().getLocalParameters())
-				for (final Parameter serviceParameter : localService.getParameters())
-					if (!pSearch.getDisseminationLayer().getTaxonomy().subsumes(localParameter.getID(), serviceParameter.getID())) {
-						notify = true;
-						break;
-					}
+		
+		synchronized (sdg) {
+			final Map<Service, Set<ServiceDistance>> connectionTable = new HashMap<Service, Set<ServiceDistance>>();
+			
+			// Obtain those remote services connected with the removed ones
+			for (final Service service : removedServices) {
+				final Set<ServiceDistance> remoteConnectedServices = sdg.getRemoteConnectedServices(service);
+				connectionTable.put(service, remoteConnectedServices);
+			}
 
-			if (notify)
-				// Get the collision nodes which give access to the service
-				// connected services
-				for (final ServiceDistance remoteService : entry.getValue()) {
-					final Set<PeerID> collisionNodes = sdg.getThroughCollisionNodes(remoteService.getService());
-					for (final PeerID collisionNode : collisionNodes) {
-						if (!notifications.containsKey(collisionNode))
-							notifications.put(collisionNode, new HashSet<Service>());
-
-						notifications.get(collisionNode).add(localService);
+			try {
+				commit(addedServices, removedServices);
+			} catch (NonLocalServiceException e) {
+				
+			}
+	
+			// Those services which after removal have some parameters still present
+			// or subsumed in the parameter table are notified
+			boolean notify = false;
+			for (final Entry<Service, Set<ServiceDistance>> entry : connectionTable.entrySet()) {
+				final Service localService = entry.getKey();
+				for (final Parameter localParameter : pSearch.getDisseminationLayer().getLocalParameters())
+					for (final Parameter serviceParameter : localService.getParameters())
+						if (!pSearch.getDisseminationLayer().getTaxonomy().subsumes(localParameter.getID(), serviceParameter.getID())) {
+							notify = true;
+							break;
+						}
+	
+				if (notify) {
+					// Get the collision nodes which give access to the service
+					// connected services
+					for (final ServiceDistance remoteService : entry.getValue()) {
+						final Set<PeerID> collisionNodes = sdg.getThroughCollisionNodes(remoteService.getService());
+						for (final PeerID collisionNode : collisionNodes) {
+							if (!notifications.containsKey(collisionNode))
+								notifications.put(collisionNode, new HashSet<Service>());
+	
+							notifications.get(collisionNode).add(localService);
+						}
 					}
 				}
+			}
 		}
 
 		// Enqueue remove service messages
@@ -191,6 +207,36 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			peers.addPeer(entry.getKey());
 			sendRemoveServicesMessage(entry.getValue(), peers);
 		}
+	}
+	
+	private void commit(Set<Service> addedServices, Set<Service> removedServices) throws NonLocalServiceException{
+		for (final Service addedService : addedServices) {
+			// Increment parameter references
+			for (final Parameter parameter : addedService.getParameters()) {
+				incReference(parameter);
+
+				// Is the first addition of the parameter
+				if (refCount(parameter) == 1)
+					pSearch.addLocalParameter(parameter);
+			}
+
+			sdg.addLocalService(addedService);
+		}
+
+		for (final Service removedService : removedServices)
+			if (sdg.isLocal(removedService)) {
+				for (final Parameter parameter : removedService.getParameters()) {
+					decReference(parameter);
+
+					// Only remove parameter if reference count is 0
+					if (refCount(parameter) == 0)
+						pSearch.removeLocalParameter(parameter);
+				}
+
+				sdg.removeLocalService(removedService);
+			}
+
+		pSearch.commit();
 	}
 
 	private void incReference(final Parameter p) {
@@ -216,54 +262,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		pReferences.put(p, Integer.valueOf(currentValue.intValue() - 1));
 	}
 
-	/**
-	 * Commits the changes performed using addLocalService() method.
-	 */
-	private void commit(Set<Service> addedServices, Set<Service> removedServices) {
-		logger.debug("Peer " + peer.getPeerID() + " commiting local services changes");
-		for (final Service addedService : addedServices) {
-			// Increment parameter references
-			for (final Parameter parameter : addedService.getParameters()) {
-				incReference(parameter);
-
-				// Is the first addition of the parameter
-				if (refCount(parameter) == 1)
-					pSearch.addLocalParameter(parameter);
-			}
-
-			try {
-				sdg.addLocalService(addedService);
-			} catch (final NonLocalServiceException nse) {
-				logger.error("Peer " + peer.getPeerID() + " added tried to add a remote service as local one");
-			}
-		}
-
-		for (final Service removedService : removedServices)
-			if (sdg.isLocal(removedService)) {
-				for (final Parameter parameter : removedService.getParameters()) {
-					decReference(parameter);
-
-					// Only remove parameter if reference count is 0
-					if (refCount(parameter) == 0)
-						pSearch.removeLocalParameter(parameter);
-				}
-
-				sdg.removeLocalService(removedService);
-			}
-
-		pSearch.commit();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see graphcreation.collisiondetection.GCreation#getSDG()
-	 */
-	@Override
-	public SDG getSDG() {
-		return sdg;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -285,70 +283,66 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private void processConnectServicesMessage(final ConnectServicesMessage connectServicesMessage, final PeerID source) {
-
 		logger.trace("Peer " + peer.getPeerID() + " connecting compatible services RS: " + connectServicesMessage.getRemoteSuccessors() + " RA: " + connectServicesMessage.getRemoteAncestors() + " thanks to collision detected in peer " + connectServicesMessage.getSource());
-
-		logger.trace("Peer " + peer.getPeerID() + " current SDG" + sdg.toString());
 
 		final Map<Service, Set<ServiceDistance>> newSuccessors = new HashMap<Service, Set<ServiceDistance>>(connectServicesMessage.getRemoteSuccessors());
 		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>(connectServicesMessage.getRemoteAncestors());
+		
+		traceSDG();
 
-		for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = newSuccessors.entrySet().iterator(); it.hasNext();) {
-			final Entry<Service, Set<ServiceDistance>> entry = it.next();
-			final Service service = entry.getKey();
-			try {
-				if (sdg.isLocal(service)) {
-
-					final Set<ServiceDistance> alreadySuccessors = new HashSet<ServiceDistance>();
-
-					// only maintain new successors
-					for (final ServiceDistance sDistance : entry.getValue())
-						if (sdg.getSuccessors(service).contains(sDistance))
-							alreadySuccessors.add(sDistance);
-
-					sdg.connectRemoteServices(service, entry.getValue(), new HashSet<ServiceDistance>(), source);
-
-					entry.getValue().removeAll(alreadySuccessors);
-
-					if (entry.getValue().isEmpty())
+		synchronized (sdg) {
+			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = newSuccessors.entrySet().iterator(); it.hasNext();) {
+				final Entry<Service, Set<ServiceDistance>> entry = it.next();
+				final Service service = entry.getKey();
+				try {
+					if (sdg.isLocal(service)) {
+	
+						final Set<ServiceDistance> alreadySuccessors = new HashSet<ServiceDistance>();
+	
+						// only maintain new successors
+						for (final ServiceDistance sDistance : entry.getValue())
+							if (sdg.getSuccessors(service).contains(sDistance))
+								alreadySuccessors.add(sDistance);
+	
+						sdg.connectRemoteServices(service, entry.getValue(), new HashSet<ServiceDistance>(), source);
+	
+						entry.getValue().removeAll(alreadySuccessors);
+	
+						if (entry.getValue().isEmpty())
+							it.remove();
+					} else
+						// remove non local services
 						it.remove();
-				} else
-					// remove non local services
-					it.remove();
-			} catch (final NonLocalServiceException nlse) {
-				logger.error("Peer " + peer.getPeerID() + " trying to connect non local service " + service);
+				} catch (final NonLocalServiceException nlse) {}
 			}
-		}
-
-		for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = newAncestors.entrySet().iterator(); it.hasNext();) {
-			final Entry<Service, Set<ServiceDistance>> entry = it.next();
-			final Service service = entry.getKey();
-			try {
-				if (sdg.isLocal(service)) {
-					final Set<ServiceDistance> alreadyAncestors = new HashSet<ServiceDistance>();
-
-					// only maintain new ancestors
-					for (final ServiceDistance sDistance : entry.getValue())
-						if (sdg.getAncestors(service).contains(sDistance))
-							alreadyAncestors.add(sDistance);
-
-					sdg.connectRemoteServices(service, new HashSet<ServiceDistance>(), entry.getValue(), source);
-
-					newAncestors.get(service).removeAll(alreadyAncestors);
-
-					if (entry.getValue().isEmpty())
+	
+			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = newAncestors.entrySet().iterator(); it.hasNext();) {
+				final Entry<Service, Set<ServiceDistance>> entry = it.next();
+				final Service service = entry.getKey();
+				try {
+					if (sdg.isLocal(service)) {
+						final Set<ServiceDistance> alreadyAncestors = new HashSet<ServiceDistance>();
+	
+						// only maintain new ancestors
+						for (final ServiceDistance sDistance : entry.getValue())
+							if (sdg.getAncestors(service).contains(sDistance))
+								alreadyAncestors.add(sDistance);
+	
+						sdg.connectRemoteServices(service, new HashSet<ServiceDistance>(), entry.getValue(), source);
+	
+						newAncestors.get(service).removeAll(alreadyAncestors);
+	
+						if (entry.getValue().isEmpty())
+							it.remove();
+					} else
+						// remove non local services
 						it.remove();
-				} else
-					// remove non local services
-					it.remove();
-			} catch (final NonLocalServiceException nlse) {
-				logger.error("Peer " + peer.getPeerID() + " trying to connect non local service " + service);
+				} catch (final NonLocalServiceException nlse) {}
 			}
 		}
 
 		if (!newSuccessors.isEmpty() || !newAncestors.isEmpty()) {
-
-			logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
+			traceSDG();
 
 			if (!newSuccessors.isEmpty())
 				graphCreationListener.newSuccessors(newSuccessors);
@@ -358,14 +352,23 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 	}
 
+	private void traceSDG() {
+		String currentSDG;
+		
+		synchronized (sdg) {
+			currentSDG = sdg.toString();
+		}
+		
+		logger.trace("Peer " + peer.getPeerID() + " SDG" + currentSDG);
+	}
+
 	private void processDisconnectServicesMessage(final DisconnectServicesMessage disconnectServicesMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " disconnecting services " + disconnectServicesMessage.getLostServices() + " connected through collision detected in peer " + disconnectServicesMessage.getSource());
-
-		logger.trace("Peer " + peer.getPeerID() + " current SDG" + sdg.toString());
 
 		final Map<Service, Set<Service>> lostSuccessors = new HashMap<Service, Set<Service>>();
 		final Map<Service, Set<Service>> lostAncestors = new HashMap<Service, Set<Service>>();
+		
+		traceSDG();
 
 		for (final Service remoteService : disconnectServicesMessage.getLostServices())
 			// test that service really exists in graph before removal
@@ -397,19 +400,21 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 					graphCreationListener.lostSuccessors(lostSuccessors);
 			}
 
-		logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
+		traceSDG();
 	}
 
 	private void processRemovedServicesMessage(final RemovedServicesMessage removedServicesMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " received a message from " + removedServicesMessage.getSource() + " to services " + removedServicesMessage.getLostServices());
-
-		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeServices(removedServicesMessage.getLostServices(), removedServicesMessage.getSource());
+ 
+		Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
+		synchronized (cManager) {
+			notifications.putAll(cManager.removeServices(removedServicesMessage.getLostServices(), removedServicesMessage.getSource()));
+		}
+		
 		sendDisconnectNotifications(notifications);
 	}
 
 	private void processForwardMessage(final ForwardMessage forwardMessage) {
-
 		logger.trace("Peer " + peer.getPeerID() + " accepted a forward message from " + forwardMessage.getSource() + " to " + forwardMessage.getDestinations());
 
 		// get destinations from services
@@ -426,9 +431,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			processRemovedServicesMessage((RemovedServicesMessage) payload);
 		else if (payload instanceof ForwardMessage)
 			processForwardMessage((ForwardMessage) payload);
-		else
+		else {
 			// the message must be processed by the upper layers
 			mMessageListener.multicastMessageAccepted(source, payload, distance);
+		}
 	}
 
 	private PeerIDSet getDestinations(final Set<Service> services) {
@@ -441,7 +447,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	@Override
 	public void parametersFound(final SearchResponseMessage message) {
 		if (message.getPayload() instanceof CollisionResponseMessage) {
-
 			logger.trace("Peer " + peer.getPeerID() + " accepted a collision response message " + message.getPayload() + " from " + message.getSource());
 
 			final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) message.getPayload();
@@ -450,7 +455,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 			// obtain the peers which must be notified with the found services
 			// information
-			final Map<Connection, PeerIDSet> updatedConnections = cManager.updateConnections(message);
+			final Map<Connection, PeerIDSet> updatedConnections = new HashMap<Connection, PeerIDSet>();
+			synchronized (cManager) {
+				updatedConnections.putAll(cManager.updateConnections(message));
+			}
 
 			final PeerIDSet notifiedPeers = new PeerIDSet();
 
@@ -459,7 +467,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 			for (final Entry<Connection, PeerIDSet> e : updatedConnections.entrySet()) {
 				final Connection connection = e.getKey();
-
 				logger.trace("Peer " + peer.getPeerID() + " connection " + connection + " updated");
 
 				final PeerIDSet partialPeers = e.getValue();
@@ -525,28 +532,24 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// sends a message including the passed connections
 	private void sendConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final PeerIDSet notifiedPeers) {
-
 		logger.trace("Peer " + peer.getPeerID() + " sending connect services message to " + notifiedPeers + " RS:" + remoteSuccessors + " RA:" + remoteAncestors);
 		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(remoteSuccessors, remoteAncestors, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForPeers);
 	}
 
 	private void sendDisconnectServicesMessage(final Set<Service> lostServices, final PeerIDSet notifiedPeers) {
-
 		logger.trace("Peer " + peer.getPeerID() + " sending disconnect services message to " + notifiedPeers + " with lost services " + lostServices);
 		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(lostServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendRemoveServicesMessage(final Set<Service> rServices, final PeerIDSet notifiedPeers) {
-
 		logger.trace("Peer " + peer.getPeerID() + " sending removed services message to " + notifiedPeers + " with removed services " + rServices);
 		final RemovedServicesMessage messageForOutputPeers = new RemovedServicesMessage(rServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendCollisionSearchMessage(final Set<Parameter> parameters) {
-
 		logger.trace("Peer " + peer.getPeerID() + " sending collision message while searching for parameters " + parameters);
 		final CollisionMessage collisionMessage = new CollisionMessage(peer.getPeerID());
 		pSearch.sendSearchMessage(parameters, collisionMessage, SearchType.Generic);
@@ -564,7 +567,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// input services
 		for (final Service receivedService : collisionResponseMessage.getServices()) {
 			final ServiceDistance receivedServiceDistance = new ServiceDistance(receivedService, collisionResponseMessage.getDistance(receivedService));
-
 			for (final ServiceNode realAncestor : eServiceGraph.getAncestors(eServiceGraph.getServiceNode(receivedService), false))
 				// Check if it is a valid successor
 				if (validOutputServices.contains(new ServiceDistance(realAncestor.getService(), Integer.valueOf(0)))) {
@@ -632,33 +634,34 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	@Override
 	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
-
 		final Set<Collision> inhibitedCollisions = new HashSet<Collision>();
 		final Set<Collision> collisions = new HashSet<Collision>();
 
 		if (!removedParameters.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
 
 			// obtain which previously detected collisions are affected by
 			// parameter removal
-			final Set<Connection> removedConnections = cManager.checkCollisions(removedParameters);
-
-			if (!removedConnections.isEmpty()) {
-				// obtain those parameters whose search must be canceled
-				final Set<Parameter> canceledParameters = new HashSet<Parameter>();
-				for (final Connection connection : removedConnections) {
-					final Collision collision = connection.getCollision();
-					canceledParameters.add(collision.getInput());
-					canceledParameters.add(collision.getOutput());
+			final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
+			synchronized (cManager) {
+				final Set<Connection> removedConnections = cManager.checkCollisions(removedParameters);
+	
+				if (!removedConnections.isEmpty()) {
+					// obtain those parameters whose search must be canceled
+					final Set<Parameter> canceledParameters = new HashSet<Parameter>();
+					for (final Connection connection : removedConnections) {
+						final Collision collision = connection.getCollision();
+						canceledParameters.add(collision.getInput());
+						canceledParameters.add(collision.getOutput());
+					}
+	
+					// send cancel search message
+					pSearch.sendCancelSearchMessage(canceledParameters);
 				}
-
-				// send cancel search message
-				pSearch.sendCancelSearchMessage(canceledParameters);
+	
+				// send disconnect notifications
+				 notifications.putAll((cManager.getNotifications(removedConnections)));
 			}
-
-			// send disconnect notifications
-			final Map<PeerIDSet, Set<Service>> notifications = cManager.getNotifications(removedConnections);
 			sendDisconnectNotifications(notifications);
 		}
 
@@ -686,7 +689,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 
 		if (!changedParameters.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
 
 			// obtain those parameters whose estimated distance has been reduced
@@ -723,18 +725,19 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		// if collisions were detected, notify them
 		if (!collisions.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " detected collisions " + collisions);
 
 			// Update the collisions detected by the current node
 			final Set<Parameter> parameters = new HashSet<Parameter>();
-			for (final Collision collision : collisions) {
-				cManager.addConnection(collision);
-
-				// Get the parameters which participate in each detected
-				// collision
-				parameters.add(collision.getInput());
-				parameters.add(collision.getOutput());
+			synchronized (cManager) {
+				for (final Collision collision : collisions) {
+					cManager.addConnection(collision);
+	
+					// Get the parameters which participate in each detected
+					// collision
+					parameters.add(collision.getInput());
+					parameters.add(collision.getOutput());
+				}
 			}
 
 			// send a message to search for the colliding parameters
@@ -750,7 +753,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	private Set<Collision> getReducedParametersCollisions(final Set<Parameter> reducedParameters) {
-
 		logger.trace("Peer " + peer.getPeerID() + " checking for collisions for reduced parameters: " + reducedParameters);
 		final Set<Collision> collisions = CollisionDetector.getParametersColliding(new HashSet<Parameter>(), pSearch.getDisseminationLayer().getParameters(), false, pSearch.getDisseminationLayer().getTaxonomy());
 
@@ -823,11 +825,13 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public PayloadMessage searchMessageReceived(final SearchMessage message) {
 		// only messages containing a collision message as payload are valid
 		if (message.getPayload() instanceof CollisionMessage) {
-
 			logger.trace("Peer " + peer.getPeerID() + " received collision message " + message.getPayload());
 
-			// obtain those services which provide the searched parameters
-			final Set<Service> services = sdg.findLocalCompatibleServices(message.getSearchedParameters());
+			Set<Service> services;
+			synchronized (sdg) {
+				// obtain those services which provide the searched parameters
+				services = sdg.findLocalCompatibleServices(message.getSearchedParameters());
+			}
 
 			// initial distance is zero because all services are local
 			final Map<Service, Integer> serviceDistanceTable = new HashMap<Service, Integer>();
@@ -852,13 +856,19 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			if (lostParameterRoutes.contains(parameterRouteID)) {
 
 				logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing responses from lost routes: " + lostParameterRoutes);
-				final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostParameterRoutes);
+				final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
+				synchronized (cManager) {
+					notifications.putAll(cManager.removeResponses(lostParameterRoutes));
+				}
 				sendDisconnectNotifications(notifications);
 			} else {
 				final Set<Parameter> parameters = entry.getValue();
 
 				logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing lost parameters: " + lostParameters);
-				final Map<PeerIDSet, Set<Service>> notifications = cManager.removeParameters(parameters, searchRouteID.getPeer());
+				final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
+				synchronized (cManager) {
+					notifications.putAll(cManager.removeParameters(parameters, searchRouteID.getPeer()));
+				}
 				sendDisconnectNotifications(notifications);
 			}
 		}
@@ -867,51 +877,53 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	@Override
 	public void changedSearchRoutes(final Map<MessageID, Set<Parameter>> changedSearchRoutes, final Set<MessageID> lostSearchRoutes) {
 		if (!lostSearchRoutes.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " checking for services connecting through lost search routes: " + lostSearchRoutes);
 
 			final Map<Service, Set<Service>> lostAncestors = new HashMap<Service, Set<Service>>();
 			final Map<Service, Set<Service>> lostSuccessors = new HashMap<Service, Set<Service>>();
 
-			for (final MessageID routeID : lostSearchRoutes)
-				// If there are no more routes to the peer remove all services
-				// which where obtained through the disappeared peer
-				if (!pSearch.knowsSearchRouteTo(routeID.getPeer())) {
-
-					// get the successors / ancestors of the removed services
-					final Set<ServiceDistance> lostServices = sdg.servicesConnectedThrough(routeID);
-
-					// services could be connected through a collision detected
-					// in another peer
-					// only single connected services are notified as removed
-					for (final Iterator<ServiceDistance> it = lostServices.iterator(); it.hasNext();) {
-						final ServiceDistance lostService = it.next();
-						final Set<PeerID> collisionPeers = sdg.getThroughCollisionNodes(lostService.getService());
-						// those services which are accessed through another
-						// collision peer not processed
-						if (collisionPeers.size() > 1)
-							it.remove();
+			synchronized (sdg) {
+				for (final MessageID routeID : lostSearchRoutes) {
+					// If there are no more routes to the peer remove all services
+					// which where obtained through the disappeared peer
+					if (!pSearch.knowsSearchRouteTo(routeID.getPeer())) {
+	
+						// get the successors / ancestors of the removed services
+						final Set<ServiceDistance> lostServices = sdg.servicesConnectedThrough(routeID);
+	
+						// services could be connected through a collision detected
+						// in another peer
+						// only single connected services are notified as removed
+						for (final Iterator<ServiceDistance> it = lostServices.iterator(); it.hasNext();) {
+							final ServiceDistance lostService = it.next();
+							final Set<PeerID> collisionPeers = sdg.getThroughCollisionNodes(lostService.getService());
+							// those services which are accessed through another
+							// collision peer not processed
+							if (collisionPeers.size() > 1)
+								it.remove();
+						}
+	
+						for (final ServiceDistance remoteService : lostServices)
+							for (final ServiceDistance successor : sdg.getLocalSuccessors(remoteService.getService())) {
+								if (!lostAncestors.containsKey(successor.getService()))
+									lostAncestors.put(successor.getService(), new HashSet<Service>());
+								lostAncestors.get(successor.getService()).add(remoteService.getService());
+							}
+	
+						for (final ServiceDistance remoteService : lostServices)
+							for (final ServiceDistance ancestor : sdg.getLocalAncestors(remoteService.getService())) {
+								if (!lostSuccessors.containsKey(ancestor.getService()))
+									lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
+								lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
+							}
+	
+						logger.trace("Peer " + peer.getPeerID() + " removing services connected through route: " + routeID);
+						sdg.removeServicesFromRoute(routeID);
+	
+						logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
 					}
-
-					for (final ServiceDistance remoteService : lostServices)
-						for (final ServiceDistance successor : sdg.getLocalSuccessors(remoteService.getService())) {
-							if (!lostAncestors.containsKey(successor.getService()))
-								lostAncestors.put(successor.getService(), new HashSet<Service>());
-							lostAncestors.get(successor.getService()).add(remoteService.getService());
-						}
-
-					for (final ServiceDistance remoteService : lostServices)
-						for (final ServiceDistance ancestor : sdg.getLocalAncestors(remoteService.getService())) {
-							if (!lostSuccessors.containsKey(ancestor.getService()))
-								lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
-							lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
-						}
-
-					logger.trace("Peer " + peer.getPeerID() + " removing services connected through route: " + routeID);
-					sdg.removeServicesFromRoute(routeID);
-
-					logger.trace("Peer " + peer.getPeerID() + " created new SDG" + sdg.toString());
 				}
+			}
 
 			if (!lostAncestors.isEmpty())
 				graphCreationListener.lostAncestors(lostAncestors);
@@ -929,5 +941,50 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	@Override
 	public void stop() {
+	}
+
+	@Override
+	public Service getService(String serviceID) {
+		synchronized (sdg) {
+			return sdg.getService(serviceID);
+		}
+	}
+
+	@Override
+	public void saveToXML(OutputStream os) throws IOException {
+		synchronized (sdg) {
+			sdg.saveToXML(os);
+		}
+	}
+
+	@Override
+	public void readFromXML(InputStream is) throws IOException {}
+
+	@Override
+	public boolean isLocal(Service service) {
+		synchronized (sdg) {
+			return sdg.isLocal(service);
+		}
+	}
+
+	@Override
+	public Set<ServiceDistance> getAncestors(Service service) {
+		synchronized (sdg) {
+			return sdg.getAncestors(service);
+		}
+	}
+
+	@Override
+	public Set<ServiceDistance> getSuccessors(Service service) {
+		synchronized (sdg) {
+			return sdg.getSuccessors(service);
+		}
+	}
+
+	@Override
+	public Set<InputParameter> getConnectedInputs(Service service, Service ancestor) {
+		synchronized (sdg) {
+			return sdg.getConnectedInputs(service, ancestor);
+		}
 	}
 }

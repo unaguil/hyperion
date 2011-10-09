@@ -1,7 +1,7 @@
 package graphsearch.backward.backwardCompositionTable;
 
+import graphcreation.GraphCreator;
 import graphcreation.collisionbased.ServiceDistance;
-import graphcreation.collisionbased.sdg.SDG;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
 import graphsearch.backward.message.BCompositionMessage;
@@ -22,8 +22,8 @@ public class BackwardCompositionData extends CompositionData {
 
 	private final Map<SearchID, SearchEntry> entries = new HashMap<SearchID, SearchEntry>();
 
-	public BackwardCompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final SDG sdg) {
-		super(checkTime, searchExpiredListener, sdg);
+	public BackwardCompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final GraphCreator gCreator) {
+		super(checkTime, searchExpiredListener, gCreator);
 	}
 
 	@Override

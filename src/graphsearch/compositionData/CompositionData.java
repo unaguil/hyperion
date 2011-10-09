@@ -1,6 +1,6 @@
 package graphsearch.compositionData;
 
-import graphcreation.collisionbased.sdg.SDG;
+import graphcreation.GraphCreator;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
 import graphsearch.compositionData.localSearchesTable.LocalSearchesTable;
@@ -20,13 +20,13 @@ public abstract class CompositionData implements TimerTask {
 	private final Timer cleaningThread;
 
 	private final SearchExpiredListener searchExpiredListener;
+	
+	protected final GraphCreator gCreator;
 
-	protected final SDG sdg;
-
-	public CompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final SDG sdg) {
+	public CompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final GraphCreator gCreator) {
 		this.cleaningThread = new Timer(checkTime, this);
 		this.searchExpiredListener = searchExpiredListener;
-		this.sdg = sdg;
+		this.gCreator = gCreator;
 	}
 
 	public void start() {

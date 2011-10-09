@@ -30,7 +30,7 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 	public void init() {
 		super.init();
 
-		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator.getSDG());
+		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		compositionData.start();
 
 		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this);

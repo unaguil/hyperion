@@ -44,10 +44,10 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	public void init() {
 		super.init();
 
-		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator.getSDG());
+		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		compositionData.start();
 
-		bCompositionData = new BackwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator.getSDG());
+		bCompositionData = new BackwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		bCompositionData.start();
 
 		forwardComposer = new BidirectionalForwardComposer((ForwardCompositionData) compositionData, bCompositionData, this);

@@ -125,7 +125,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 
 	@Override
 	public Service getService(final String serviceID) {
-		return gCreator.getSDG().getService(serviceID);
+		return gCreator.getService(serviceID);
 	}
 
 	@Override

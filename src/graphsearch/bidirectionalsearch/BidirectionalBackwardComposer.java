@@ -61,7 +61,7 @@ public class BidirectionalBackwardComposer extends BackwardComposer {
 				logger.trace("Peer " + peerID + " all inputs covered for service " + service + " in search " + bCompositionMessage.getSearchID());
 				final Map<Service, Set<ServiceDistance>> distanceBetweenServices = new HashMap<Service, Set<ServiceDistance>>();
 
-				final Set<ServiceDistance> successors = gCreator.getSDG().getSuccessors(service);
+				final Set<ServiceDistance> successors = gCreator.getSuccessors(service);
 
 				final Set<Service> directSuccessors = getSuccessors(modifiedTree.getServices(), service);
 

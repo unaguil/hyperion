@@ -28,7 +28,7 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 	public void init() {
 		super.init();
 
-		compositionData = new BackwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator.getSDG());
+		compositionData = new BackwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		compositionData.start();
 
 		backwardComposer = new BackwardComposer((BackwardCompositionData) compositionData, this);

@@ -48,14 +48,14 @@ public class BackwardComposer {
 
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
 		for (final Service service : newAncestors.keySet())
-			if (gCreator.getSDG().isLocal(service)) {
+			if (gCreator.isLocal(service)) {
 
 				logger.trace("Peer " + peerID + " service " + service + " has new ancestors " + newAncestors.get(service));
 
 				// Obtain the current ancestors set for the service
 				final Set<Set<ServiceDistance>> currentCoveringSets = bCompositionData.getCoveringSets(service);
 
-				final Set<ServiceDistance> ancestors = gCreator.getSDG().getAncestors(service);
+				final Set<ServiceDistance> ancestors = gCreator.getAncestors(service);
 				// Calculate the current power set of the service
 				final Set<Set<ServiceDistance>> newCoveringSets = CoveringSets.calculateCoveringSets(service, currentCoveringSets, ancestors, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 
@@ -124,7 +124,7 @@ public class BackwardComposer {
 			logger.trace("Peer " + peerID + " checking service " + sDistance.getService());
 			final Service service = sDistance.getService();
 
-			if (gCreator.getSDG().isLocal(service)) {
+			if (gCreator.isLocal(service)) {
 				// Updating received messages for current service node
 				final MessageTree modifiedTree = bCompositionData.addReceivedMessage(service, bCompositionMessage);
 

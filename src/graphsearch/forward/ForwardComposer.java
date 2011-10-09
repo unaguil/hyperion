@@ -2,7 +2,6 @@ package graphsearch.forward;
 
 import graphcreation.GraphCreator;
 import graphcreation.collisionbased.ServiceDistance;
-import graphcreation.collisionbased.sdg.SDG;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
 import graphsearch.commonCompositionSearch.CommonCompositionSearch;
@@ -51,7 +50,7 @@ public class ForwardComposer {
 		for (final Entry<Service, Set<ServiceDistance>> entry : newSuccessors.entrySet()) {
 			final Service service = entry.getKey();
 			// Only local services are taken into account
-			if (gCreator.getSDG().isLocal(service)) {
+			if (gCreator.isLocal(service)) {
 
 				logger.trace("Peer " + peer.getPeerID() + " service " + service + " has new successors " + entry.getValue());
 				if (Utility.isINITService(service)) {
@@ -155,8 +154,7 @@ public class ForwardComposer {
 			final Service service = sDistance.getService();
 
 			logger.trace("Peer " + peer.getPeerID() + " checking service " + service);
-			final SDG sdg = gCreator.getSDG();
-			if (sdg.isLocal(service)) {
+			if (gCreator.isLocal(service)) {
 
 				logger.trace("Peer " + peer.getPeerID() + " added composition message to message table");
 
@@ -165,7 +163,7 @@ public class ForwardComposer {
 
 				// Propagate messages
 				final SearchID searchID = fCompositionMessage.getSearchID();
-				processForwardCompositionMessages(gCreator.getSDG().getSuccessors(service), service, searchID);
+				processForwardCompositionMessages(gCreator.getSuccessors(service), service, searchID);
 			}
 		}
 	}
@@ -192,7 +190,7 @@ public class ForwardComposer {
 						removedServices.put(searchID, new HashSet<Service>());
 					removedServices.get(searchID).addAll(lostAncestors.get(localService));
 
-					final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(gCreator.getSDG().getSuccessors(localService), localService, searchID, peer.getPeerID(), fCompositionData, logger);
+					final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(gCreator.getSuccessors(localService), localService, searchID, peer.getPeerID(), fCompositionData, logger);
 					compositionMessages.put(searchID, mergedForwardMessage);
 				}
 		}
@@ -215,7 +213,7 @@ public class ForwardComposer {
 				if (Utility.isGoalService(invalidLocalService))
 					commonCompositionSearch.notifyCompositionsLost(searchID, invalidComposition);
 				else {
-					invalidCompositionsMessage.addInvalidLocalService(searchID, invalidLocalService, gCreator.getSDG().getSuccessors(invalidLocalService));
+					invalidCompositionsMessage.addInvalidLocalService(searchID, invalidLocalService, gCreator.getSuccessors(invalidLocalService));
 					invalidCompositionsMessage.addInvalidComposition(searchID, invalidComposition);
 				}
 			}

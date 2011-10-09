@@ -1,6 +1,6 @@
 package graphsearch.forward.forwardCompositionTable;
 
-import graphcreation.collisionbased.sdg.SDG;
+import graphcreation.GraphCreator;
 import graphcreation.services.Service;
 import graphsearch.forward.message.FCompositionMessage;
 
@@ -23,13 +23,13 @@ class SearchEntry {
 
 	private final long timestamp;
 	private final long firstReceivedMessageRemainingTime;
+	
+	private final GraphCreator gCreator;
 
-	private final SDG sdg;
-
-	public SearchEntry(final long createdTime, final SDG sdg) {
+	public SearchEntry(final long createdTime, final GraphCreator gCreator) {
 		this.firstReceivedMessageRemainingTime = createdTime;
 		this.timestamp = System.currentTimeMillis();
-		this.sdg = sdg;
+		this.gCreator = gCreator;
 	}
 
 	public long getTimestamp() {
@@ -70,7 +70,7 @@ class SearchEntry {
 		// Obtain which parameters of the local service are covered by the
 		// ancestor service
 		final Service ancestor = fCompositionMessage.getSourceService();
-		final Set<InputParameter> connectedInputs = sdg.getConnectedInputs(service, ancestor);
+		final Set<InputParameter> connectedInputs = gCreator.getConnectedInputs(service, ancestor);
 
 		coverInputs(service, connectedInputs);
 	}

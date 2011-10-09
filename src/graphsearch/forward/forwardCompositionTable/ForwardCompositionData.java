@@ -1,6 +1,6 @@
 package graphsearch.forward.forwardCompositionTable;
 
-import graphcreation.collisionbased.sdg.SDG;
+import graphcreation.GraphCreator;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
 import graphsearch.compositionData.CompositionData;
@@ -18,8 +18,8 @@ public class ForwardCompositionData extends CompositionData {
 
 	private final Map<SearchID, SearchEntry> entries = new HashMap<SearchID, SearchEntry>();
 
-	public ForwardCompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final SDG sdg) {
-		super(checkTime, searchExpiredListener, sdg);
+	public ForwardCompositionData(final long checkTime, final SearchExpiredListener searchExpiredListener, final GraphCreator gCreator) {
+		super(checkTime, searchExpiredListener, gCreator);
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class ForwardCompositionData extends CompositionData {
 	public void addReceivedMessage(final Service service, final FCompositionMessage fCompositionMessage) {
 		synchronized (entries) {
 			if (!entries.containsKey(fCompositionMessage.getSearchID()))
-				entries.put(fCompositionMessage.getSearchID(), new SearchEntry(fCompositionMessage.getRemainingTime(), sdg));
+				entries.put(fCompositionMessage.getSearchID(), new SearchEntry(fCompositionMessage.getRemainingTime(), gCreator));
 
 			entries.get(fCompositionMessage.getSearchID()).addReceivedMessage(service, fCompositionMessage);
 		}
