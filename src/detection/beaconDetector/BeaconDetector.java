@@ -88,7 +88,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		
 		@Override
 		public void stopAndWait() {
-			logger.info("Peer " + peer.getPeerID() + " interrupting beacon thread");
+			logger.trace("Peer " + peer.getPeerID() + " interrupting beacon thread");
 			super.stopAndWait();
 		}
 	}
