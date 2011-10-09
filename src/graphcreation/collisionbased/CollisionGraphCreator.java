@@ -59,12 +59,6 @@ import dissemination.TableChangedListener;
  */
 public class CollisionGraphCreator implements CommunicationLayer, TableChangedListener, ParameterSearchListener, GraphCreator {
 
-	// services to be added
-	private final Set<Service> addedServices = new HashSet<Service>();
-
-	// services to be removed
-	private final Set<Service> removedServices = new HashSet<Service>();
-
 	// the communication layer
 	private final Peer peer;
 
@@ -146,22 +140,23 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	 */
 	@Override
 	public void manageLocalServices(final ServiceList locallyAddedServices, final ServiceList locallyRemovedServices) {
-		for (final Service service : locallyAddedServices)
-			addLocalService(service);
-
-		final ServiceList localRemovedServices = new ServiceList(locallyRemovedServices);
+		final Set<Service> addedServices = new HashSet<Service>(locallyAddedServices.getServiceList());
+		final Set<Service> removedServices = new HashSet<Service>(locallyRemovedServices.getServiceList());
+		
+		addedServices.remove(removedServices);
+		
+		logger.debug("Peer " + peer.getPeerID() + " adding local services " + addedServices);
+		logger.debug("Peer " + peer.getPeerID() + " removing local services " + removedServices);
+		
 		final Map<Service, Set<ServiceDistance>> connectionTable = new HashMap<Service, Set<ServiceDistance>>();
 
 		// Obtain those remote services connected with the removed ones
-		for (final Service service : localRemovedServices) {
+		for (final Service service : removedServices) {
 			final Set<ServiceDistance> remoteConnectedServices = sdg.getRemoteConnectedServices(service);
 			connectionTable.put(service, remoteConnectedServices);
 		}
 
-		for (final Service service : localRemovedServices)
-			removeLocalService(service);
-
-		commit();
+		commit(addedServices, removedServices);
 
 		// Those services which after removal have some parameters still present
 		// or subsumed in the parameter table are notified
@@ -198,24 +193,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 	}
 
-	/**
-	 * Adds a service to the current node. After finalizing a change set
-	 * commit() must called in order to propagate the changes.
-	 * 
-	 * @param service
-	 *            the service to add
-	 */
-	private void addLocalService(final Service service) {
-		logger.debug("Peer " + peer.getPeerID() + " adding local service " + service);
-
-		if (removedServices.contains(service)) {
-			removedServices.remove(service);
-			return;
-		}
-
-		addedServices.add(service);
-	}
-
 	private void incReference(final Parameter p) {
 		if (!pReferences.containsKey(p))
 			pReferences.put(p, Integer.valueOf(0));
@@ -240,27 +217,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	/**
-	 * Removes a service from the current node After finalizing a change set,
-	 * commit() must be called in order to propagate the changes.
-	 * 
-	 * @param service
-	 *            the service to remove
-	 */
-	private void removeLocalService(final Service service) {
-		logger.debug("Peer " + peer.getPeerID() + " removing local service " + service);
-
-		if (addedServices.contains(service)) {
-			addedServices.remove(service);
-			return;
-		}
-
-		removedServices.add(service);
-	}
-
-	/**
 	 * Commits the changes performed using addLocalService() method.
 	 */
-	private void commit() {
+	private void commit(Set<Service> addedServices, Set<Service> removedServices) {
 		logger.debug("Peer " + peer.getPeerID() + " commiting local services changes");
 		for (final Service addedService : addedServices) {
 			// Increment parameter references
@@ -291,9 +250,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 				sdg.removeLocalService(removedService);
 			}
-
-		addedServices.clear();
-		removedServices.clear();
 
 		pSearch.commit();
 	}

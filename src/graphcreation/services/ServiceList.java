@@ -3,6 +3,7 @@ package graphcreation.services;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -88,6 +89,10 @@ public class ServiceList implements Iterable<Service> {
 
 	public void addService(final Service service) {
 		services.add(service);
+	}
+	
+	public List<Service> getServiceList() {
+		return Collections.unmodifiableList(services);
 	}
 
 	@Override
