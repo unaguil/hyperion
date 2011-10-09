@@ -398,7 +398,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 	@Override
 	public void saveToXML(final OutputStream os) throws IOException {
-		pTable.saveToXML(os);
+		synchronized (mutex) {
+			pTable.saveToXML(os);
+		}
 	}
 
 	@Override
