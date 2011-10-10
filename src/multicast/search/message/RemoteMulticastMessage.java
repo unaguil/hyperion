@@ -1,5 +1,9 @@
 package multicast.search.message;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.Collections;
 
 import peer.message.EnvelopeMessage;
@@ -7,6 +11,7 @@ import peer.message.MulticastMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class defines a message which can be send to multiple remote nodes. It
@@ -30,6 +35,10 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 
 	// the nodes that the message is sent through
 	private final PeerIDSet throughPeers = new PeerIDSet();
+	
+	public RemoteMulticastMessage() {
+		payload = null;
+	}
 
 	/**
 	 * Constructor of the remote multicast message
@@ -116,5 +125,23 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	@Override
 	public String toString() {
 		return super.toString() + " (To:" + getDestinations() + ")";
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		remoteDestinations.addPeers(Arrays.asList((PeerID[])in.readObject()));
+		throughPeers.addPeers(Arrays.asList((PeerID[])in.readObject()));
+		UnserializationUtils.setFinalField(RemoteMulticastMessage.class, this, "payload", in.readObject());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(remoteDestinations.getPeerSet().toArray(new PeerID[0]));
+		out.writeObject(throughPeers.getPeerSet().toArray(new PeerID[0]));
+		out.writeObject(payload);
 	}
 }

@@ -1,6 +1,9 @@
 package multicast.search.message;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,6 +14,7 @@ import java.util.Set;
 import peer.message.EnvelopeMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 
@@ -26,7 +30,7 @@ import taxonomy.parameter.Parameter;
 public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 
 	// this class is used to represent a searched parameter
-	private static class ParameterEntry implements Serializable {
+	private static class ParameterEntry implements Externalizable {
 
 		/**
 		 * 
@@ -34,7 +38,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		private static final long serialVersionUID = 5041859241963577106L;
 
 		// the searched parameter
-		private final Parameter p;
+		private final Parameter parameter;
 
 		// the TTL of the search for this parameter
 		private final int ttl;
@@ -42,17 +46,24 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		// the distance to this parameter as specified by the last consulted
 		// table
 		private final int previousDistance;
+		
+		@SuppressWarnings("unused")
+		public ParameterEntry() {
+			parameter = null;
+			ttl = 0;
+			previousDistance = 0;
+		}
 
 		// constructs a entry for a parameter search
 		public ParameterEntry(final Parameter p, final int ttl, final int previousDistance) {
-			this.p = p;
+			this.parameter = p;
 			this.ttl = ttl;
 			this.previousDistance = previousDistance;
 		}
 
 		// gets the searched parameter
 		public Parameter getParameter() {
-			return p;
+			return parameter;
 		}
 
 		// gets the TTL for this parameter
@@ -71,12 +82,26 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 				return false;
 
 			final ParameterEntry pEntry = (ParameterEntry) o;
-			return this.p.equals(pEntry.p);
+			return this.parameter.equals(pEntry.parameter);
 		}
 
 		@Override
 		public int hashCode() {
-			return p.hashCode();
+			return parameter.hashCode();
+		}
+
+		@Override
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "parameter", in.readObject());
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readInt());
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "previousDistance", in.readInt());
+		}
+
+		@Override
+		public void writeExternal(ObjectOutput out) throws IOException {
+			out.writeObject(parameter);
+			out.writeInt(ttl);
+			out.writeInt(previousDistance);
 		}
 	}
 
@@ -100,6 +125,12 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 
 	// the previous sender of the search message
 	private final PeerID previousSender;
+	
+	public SearchMessage() {
+		payload = null;
+		searchType = null;
+		previousSender = null;
+	}
 
 	/**
 	 * Constructor of the search message.
@@ -312,5 +343,27 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 			if (parameterEntries.get(parameter).getTTL() == 0)
 				it.remove();
 		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		UnserializationUtils.readMap(parameterEntries, in);
+		
+		SearchType type = SearchType.valueOf(in.readUTF());
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "previousSender", in.readObject());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(parameterEntries.keySet().toArray(new Parameter[0]));
+		out.writeObject(parameterEntries.values().toArray(new ParameterEntry[0]));
+		
+		out.writeUTF(searchType.toString());
+		out.writeObject(previousSender);
 	}
 }

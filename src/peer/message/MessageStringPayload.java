@@ -8,6 +8,10 @@ public class MessageStringPayload extends MessageString implements PayloadMessag
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public MessageStringPayload() {
+		
+	}
 
 	public MessageStringPayload(final PeerID sender, final String content) {
 		super(sender, content);

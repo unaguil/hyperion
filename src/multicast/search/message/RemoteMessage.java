@@ -1,9 +1,14 @@
 package multicast.search.message;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This abstract class defines those messages which can be sent to a node that
@@ -25,6 +30,11 @@ public abstract class RemoteMessage extends BroadcastMessage {
 
 	// the traversed distance (number of hops) of the current message
 	private final int distance;
+	
+	public RemoteMessage() {
+		remoteMessageID = null;
+		distance = 0;
+	}
 
 	/**
 	 * Constructs a remote message.
@@ -112,5 +122,21 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	@Override
 	public String toString() {
 		return super.toString() + " R:" + getRemoteMessageID() + " D:" + getDistance() + "";
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		UnserializationUtils.setFinalField(RemoteMessage.class, this, "remoteMessageID", in.readObject());
+		UnserializationUtils.setFinalField(RemoteMessage.class, this, "distance", in.readInt());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(remoteMessageID);
+		out.writeInt(distance);
 	}
 }

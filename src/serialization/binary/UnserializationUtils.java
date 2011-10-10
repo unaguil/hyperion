@@ -56,7 +56,7 @@ public class UnserializationUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <A, B>void readMap(Map<A, B> map, ObjectInput in) throws ClassNotFoundException, IOException {
+	public static <A, B> void readMap(Map<A, B> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		A[] keys = (A[]) in.readObject();
 		B[] values = (B[]) in.readObject();
 		

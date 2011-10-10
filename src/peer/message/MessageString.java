@@ -40,7 +40,7 @@ public class MessageString extends BroadcastMessage {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
-		UnserializationUtils.setFinalField(MessageString.class, this, "content", in.readObject());
+		UnserializationUtils.setFinalField(MessageString.class, this, "content", in.readUTF());
 	}
 
 	@Override

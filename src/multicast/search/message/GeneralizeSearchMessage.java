@@ -1,5 +1,9 @@
 package multicast.search.message;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +29,10 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 
 	// the route identifiers which parameters are generalized
 	private final Set<MessageID> routeIDs = new HashSet<MessageID>();
+	
+	public GeneralizeSearchMessage() {
+		
+	}
 
 	/**
 	 * Constructor of the class.
@@ -82,5 +90,21 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	@Override
 	public String toString() {
 		return super.toString() + " P: " + getParameters() + " Routes: " + getRouteIDs();
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		parameters.addAll(Arrays.asList((Parameter[])in.readObject()));
+		routeIDs.addAll(Arrays.asList((MessageID[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(parameters.toArray(new Parameter[0]));
+		out.writeObject(routeIDs.toArray(new MessageID[0]));
 	}
 }

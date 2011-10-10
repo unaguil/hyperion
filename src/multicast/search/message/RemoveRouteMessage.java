@@ -1,5 +1,9 @@
 package multicast.search.message;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +21,12 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
 	private final Set<MessageID> lostRoutes = new HashSet<MessageID>();
+	
+	public RemoveRouteMessage() {
+		
+	}
 
 	/**
 	 * Constructor of the remove route message.
@@ -59,5 +68,19 @@ public class RemoveRouteMessage extends RemoteMessage {
 	@Override
 	public String toString() {
 		return super.toString() + " (LR: " + lostRoutes + ")";
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		lostRoutes.addAll(Arrays.asList((MessageID[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(lostRoutes.toArray(new MessageID[0]));
 	}
 }
