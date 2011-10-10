@@ -1,8 +1,12 @@
 package dissemination.newProtocol.ptable;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class represents an element in the estimated distance list of each
@@ -11,7 +15,7 @@ import peer.peerid.PeerID;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-class EstimatedDistance implements Comparable<EstimatedDistance>, Serializable {
+class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable {
 
 	/**
 	 * 
@@ -26,7 +30,12 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Serializable {
 
 	// tells if the estimated distance is optional. Sometimes the order of
 	// messages is different and secondary entries on the list change.
-	private transient final boolean optional;
+	private final boolean optional;
+	
+	public EstimatedDistance() {
+		neighbor = null;
+		optional = false;
+	}
 
 	/**
 	 * Constructor of the class.
@@ -126,5 +135,17 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Serializable {
 
 		// Compare neighbors
 		return this.neighbor.compareTo(eDistance.neighbor);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		distance = in.readInt();
+		UnserializationUtils.setFinalField(EstimatedDistance.class, this, "neighbor", in.readObject());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeInt(distance);
+		out.writeObject(neighbor);
 	}
 }

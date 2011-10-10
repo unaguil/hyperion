@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import peer.peerid.PeerID;
-import serialization.binary.FinalFieldSetter;
+import serialization.binary.UnserializationUtils;
 
 /**
  * The type of message which are sent by the reliable broadcasting.
@@ -92,7 +92,7 @@ public abstract class BroadcastMessage implements Externalizable {
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		FinalFieldSetter.setFinalField(BroadcastMessage.class, this, "messageID", in.readObject());
+		UnserializationUtils.setFinalField(BroadcastMessage.class, this, "messageID", in.readObject());
 		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 

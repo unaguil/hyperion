@@ -6,6 +6,10 @@ public class OutputParameter extends Parameter {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public OutputParameter() {
+		
+	}
 
 	public OutputParameter(final String id) {
 		super(id);

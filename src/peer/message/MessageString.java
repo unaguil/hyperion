@@ -5,7 +5,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import peer.peerid.PeerID;
-import serialization.binary.FinalFieldSetter;
+import serialization.binary.UnserializationUtils;
 
 /**
  * Example implementation of a message.
@@ -40,7 +40,7 @@ public class MessageString extends BroadcastMessage {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
-		FinalFieldSetter.setFinalField(MessageString.class, this, "content", in.readObject());
+		UnserializationUtils.setFinalField(MessageString.class, this, "content", in.readObject());
 	}
 
 	@Override

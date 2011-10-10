@@ -6,7 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import peer.peerid.PeerID;
-import serialization.binary.FinalFieldSetter;
+import serialization.binary.UnserializationUtils;
 
 public class MessageID implements Externalizable, Comparable<MessageID> {
 
@@ -76,8 +76,8 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		FinalFieldSetter.setFinalField(MessageID.class, this, "peer", in.readObject());
-		FinalFieldSetter.setFinalField(MessageID.class, this, "id", in.readLong());
+		UnserializationUtils.setFinalField(MessageID.class, this, "peer", in.readObject());
+		UnserializationUtils.setFinalField(MessageID.class, this, "id", in.readLong());
 	}
 
 	@Override

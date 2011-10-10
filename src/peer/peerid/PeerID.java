@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import serialization.binary.FinalFieldSetter;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class is used for peer identification. It is implemented through the
@@ -55,7 +55,7 @@ public final class PeerID implements Externalizable, Comparable<PeerID> {
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		FinalFieldSetter.setFinalField(PeerID.class, this, "id", in.readUTF());
+		UnserializationUtils.setFinalField(PeerID.class, this, "id", in.readUTF());
 	}
 
 	@Override

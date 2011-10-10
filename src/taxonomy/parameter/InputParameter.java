@@ -6,6 +6,10 @@ public class InputParameter extends Parameter {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public InputParameter() {
+		
+	}
 
 	public InputParameter(final String id) {
 		super(id);

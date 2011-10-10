@@ -1,8 +1,13 @@
 package taxonomy.parameter;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-public abstract class Parameter implements Serializable {
+import serialization.binary.UnserializationUtils;
+
+public abstract class Parameter implements Externalizable {
 
 	/**
 	 * 
@@ -10,6 +15,10 @@ public abstract class Parameter implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private final String id;
 
+	public Parameter() {
+		id = null;
+	}
+	
 	public Parameter(final String id) {
 		this.id = id;
 	}
@@ -35,5 +44,15 @@ public abstract class Parameter implements Serializable {
 	@Override
 	public String toString() {
 		return id;
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(Parameter.class, this, "id", in.readUTF());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeUTF(id);		
 	}
 }
