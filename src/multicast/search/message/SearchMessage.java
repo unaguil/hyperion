@@ -354,6 +354,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		SearchType type = SearchType.valueOf(in.readUTF());
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "previousSender", in.readObject());
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "payload", in.readObject());
 	}
 
 	@Override
@@ -365,5 +366,6 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		
 		out.writeUTF(searchType.toString());
 		out.writeObject(previousSender);
+		out.writeObject(payload);
 	}
 }
