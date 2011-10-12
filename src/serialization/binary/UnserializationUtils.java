@@ -47,6 +47,10 @@ public class UnserializationUtils {
 		List<A> keyList = Arrays.asList(keys);
 		List<B> valueList = Arrays.asList(values);
 		
+		fillMap(map, keyList, valueList);
+	}
+
+	public static <B, A> void fillMap(Map<A, B> map, List<A> keyList, List<B> valueList) {
 		Iterator<A> itKeys = keyList.iterator();
 		Iterator<B> itValues = valueList.iterator();
 		
