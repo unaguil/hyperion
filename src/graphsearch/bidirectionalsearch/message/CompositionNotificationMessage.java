@@ -18,6 +18,10 @@ public class CompositionNotificationMessage extends ShortestPathNotificationMess
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public CompositionNotificationMessage() {
+		
+	}
 
 	public CompositionNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
 		super(source, searchID, serviceDistances, notificationPath);

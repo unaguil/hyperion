@@ -1,8 +1,8 @@
 package graphsearch.backward.backwardCompositionTable;
 
 import graphcreation.services.Service;
+import graphsearch.backward.MessageTree;
 import graphsearch.backward.message.BCompositionMessage;
-import graphsearch.backward.message.MessageTree;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -4,13 +4,20 @@ import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
 import peer.message.PayloadMessage;
+import serialization.binary.UnserializationUtils;
 
 public class FCompositionMessage extends RemoteMessage implements PayloadMessage {
 
@@ -37,6 +44,13 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 	private final int ttl;
 
 	private final long remainingTime;
+	
+	public FCompositionMessage() {
+		sourceService = null;
+		searchID = null;
+		ttl = 0;
+		remainingTime = 0;
+	}
 
 	/**
 	 * Constructor of the forward composition message
@@ -145,5 +159,50 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 
 	public Map<Service, Set<ServiceDistance>> getSuccessorDistances() {
 		return successorDistances;
+	}
+	
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		compositionServices.addAll(Arrays.asList((Service[])in.readObject()));
+		destServices.addAll(Arrays.asList((ServiceDistance[])in.readObject()));
+		readMap(successorDistances, in);
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "sourceService", in.readObject());
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "searchID", in.readObject());
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "ttl", in.readInt());
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readLong());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(compositionServices.toArray(new Service[0]));
+		out.writeObject(destServices.toArray(new ServiceDistance[0]));
+		writeMap(successorDistances, out);
+		out.writeObject(sourceService);
+		out.writeObject(searchID);
+		out.writeInt(ttl);
+		out.writeLong(remainingTime);
+	}
+	
+	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
+		out.writeObject(map.keySet().toArray(new Service[0]));
+		out.writeInt(map.values().size());
+		for (Set<ServiceDistance> set : map.values())
+			out.writeObject(set.toArray(new ServiceDistance[0]));
+	}
+	
+	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
+		List<Service> keys = Arrays.asList((Service[])in.readObject());
+		int size = in.readInt();
+		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
+		for (int i = 0; i < size; i++) {
+			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));
+			values.add(value);
+		}
+		
+		UnserializationUtils.fillMap(map, keys, values);
 	}
 }

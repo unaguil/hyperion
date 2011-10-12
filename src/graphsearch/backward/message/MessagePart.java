@@ -1,7 +1,11 @@
 package graphsearch.backward.message;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,10 +13,11 @@ import java.util.Set;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
-class MessagePart implements Serializable {
+public class MessagePart implements Externalizable {
 
-	static class Part implements Serializable {
+	public static class Part implements Externalizable {
 
 		/**
 		 * 
@@ -23,6 +28,12 @@ class MessagePart implements Serializable {
 		private final int pNumber;
 
 		private final MessageID partitionID;
+		
+		public Part() {
+			total = 0;
+			pNumber = 0;
+			partitionID = null;
+		}
 
 		public Part(final int total, final int pNumber, final MessageID partitionID) {
 			this.total = total;
@@ -64,6 +75,20 @@ class MessagePart implements Serializable {
 			final Part part = (Part) o;
 			return this.total == part.total && this.pNumber == part.pNumber && this.partitionID.equals(part.partitionID);
 		}
+
+		@Override
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+			UnserializationUtils.setFinalField(Part.class, this, "total", in.readInt());
+			UnserializationUtils.setFinalField(Part.class, this, "pNumber", in.readInt());
+			UnserializationUtils.setFinalField(Part.class, this, "partitionID", in.readObject());
+		}
+
+		@Override
+		public void writeExternal(ObjectOutput out) throws IOException {
+			out.writeInt(total);
+			out.writeInt(pNumber);
+			out.writeObject(partitionID);
+		}
 	}
 
 	/**
@@ -75,6 +100,10 @@ class MessagePart implements Serializable {
 	private final List<Part> parts = new ArrayList<Part>();
 
 	private final MessageID rootID;
+	
+	public MessagePart() {
+		rootID = null;
+	}
 
 	public MessagePart(final PeerID peerID) {
 		this.rootID = new MessageID(peerID, MessageIDGenerator.getNewID());
@@ -135,5 +164,17 @@ class MessagePart implements Serializable {
 	@Override
 	public String toString() {
 		return parts.toString();
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(MessagePart.class, this, "rootID", in.readObject());
+		parts.addAll(Arrays.asList((Part[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(rootID);
+		out.writeObject(parts.toArray(new Part[0]));
 	}
 }

@@ -4,8 +4,8 @@ import graphcreation.GraphCreator;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
+import graphsearch.backward.MessageTree;
 import graphsearch.backward.message.BCompositionMessage;
-import graphsearch.backward.message.MessageTree;
 import graphsearch.compositionData.CompositionData;
 import graphsearch.compositionData.localSearchesTable.SearchExpiredListener;
 

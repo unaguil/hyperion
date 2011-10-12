@@ -1,7 +1,9 @@
-package graphsearch.backward.message;
+package graphsearch.backward;
 
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
+import graphsearch.backward.message.BCompositionMessage;
+import graphsearch.backward.message.MessagePart;
 
 import java.util.HashMap;
 import java.util.HashSet;

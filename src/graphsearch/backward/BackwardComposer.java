@@ -6,7 +6,6 @@ import graphcreation.services.Service;
 import graphsearch.SearchID;
 import graphsearch.backward.backwardCompositionTable.BackwardCompositionData;
 import graphsearch.backward.message.BCompositionMessage;
-import graphsearch.backward.message.MessageTree;
 import graphsearch.commonCompositionSearch.CommonCompositionSearch;
 import graphsearch.util.Utility;
 
