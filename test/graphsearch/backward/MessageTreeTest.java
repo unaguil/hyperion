@@ -1,4 +1,4 @@
-package graphsearch.backward.message;
+package graphsearch.backward;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.SearchID;
+import graphsearch.backward.message.BCompositionMessage;
 
 import java.util.HashSet;
 import java.util.LinkedList;
