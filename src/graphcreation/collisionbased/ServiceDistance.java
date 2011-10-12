@@ -2,9 +2,14 @@ package graphcreation.collisionbased;
 
 import graphcreation.services.Service;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-public class ServiceDistance implements Serializable {
+import serialization.binary.UnserializationUtils;
+
+public class ServiceDistance implements Externalizable {
 
 	/**
 	 * 
@@ -13,6 +18,11 @@ public class ServiceDistance implements Serializable {
 
 	private final Service service;
 	private final Integer distance;
+	
+	public ServiceDistance() {
+		service = null;
+		distance = null;
+	}
 
 	public ServiceDistance(final Service service, final Integer distance) {
 		this.service = service;
@@ -44,5 +54,17 @@ public class ServiceDistance implements Serializable {
 	@Override
 	public int hashCode() {
 		return service.hashCode();
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(ServiceDistance.class, this, "service", in.readObject());
+		UnserializationUtils.setFinalField(ServiceDistance.class, this, "distance", new Integer(in.readInt()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(service);
+		out.writeInt(distance.intValue());
 	}
 }

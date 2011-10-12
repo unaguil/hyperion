@@ -2,6 +2,9 @@ package graphcreation.collisionbased.message;
 
 import graphcreation.services.Service;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -9,6 +12,7 @@ import java.util.Set;
 import multicast.search.message.RemoteMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
 public class CollisionResponseMessage extends RemoteMessage implements PayloadMessage {
 
@@ -18,6 +22,10 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 	private static final long serialVersionUID = 1L;
 
 	private final Map<Service, Integer> serviceDistanceTable = new HashMap<Service, Integer>();
+	
+	public CollisionResponseMessage() {
+		
+	}
 
 	public CollisionResponseMessage(final Map<Service, Integer> serviceTable, final PeerID source) {
 		super(source);
@@ -57,5 +65,20 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 			final Integer newDistance = Integer.valueOf(serviceDistanceTable.get(service).intValue() + distance);
 			serviceDistanceTable.put(service, newDistance);
 		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		UnserializationUtils.readMap(serviceDistanceTable, in);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(serviceDistanceTable.keySet().toArray(new Service[0]));
+		out.writeObject(serviceDistanceTable.values().toArray(new Integer[0]));
 	}
 }

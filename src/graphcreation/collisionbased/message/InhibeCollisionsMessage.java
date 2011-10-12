@@ -2,6 +2,10 @@ package graphcreation.collisionbased.message;
 
 import graphcreation.collisionbased.collisiondetector.Collision;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,6 +21,10 @@ public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMes
 	private static final long serialVersionUID = 1L;
 
 	private final Set<Collision> inhibitedCollisions = new HashSet<Collision>();
+	
+	public InhibeCollisionsMessage() {
+		
+	}
 
 	public InhibeCollisionsMessage(final Set<Collision> collisions, final PeerID source) {
 		super(source);
@@ -35,5 +43,19 @@ public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMes
 	@Override
 	public PayloadMessage copy() {
 		return new InhibeCollisionsMessage(getInhibedCollisions(), getSource());
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		inhibitedCollisions.addAll(Arrays.asList((Collision[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(inhibitedCollisions.toArray(new Collision[0]));
 	}
 }

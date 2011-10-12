@@ -840,7 +840,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 			final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(serviceDistanceTable, peer.getPeerID());
 
-			logger.trace("Peer " + peer.getPeerID() + " sending collision response with services" + serviceDistanceTable + " to " + message.getSource());
+			logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + message.getSource());
 			return collisionResponseMessage;
 		}
 

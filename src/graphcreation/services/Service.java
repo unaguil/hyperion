@@ -1,15 +1,20 @@
 package graphcreation.services;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
 
-public class Service implements Serializable {
+public class Service implements Externalizable {
 
 	/**
 	 * 
@@ -21,6 +26,11 @@ public class Service implements Serializable {
 	private final PeerID peer;
 
 	private final Set<Parameter> params = new HashSet<Parameter>();
+	
+	public Service() {
+		id = null;
+		peer = null;
+	}
 
 	public Service(final String id, final PeerID peer) {
 		this.id = id;
@@ -83,5 +93,19 @@ public class Service implements Serializable {
 
 		final Service s = (Service) o;
 		return this.id.equals(s.id) && this.peer.equals(s.peer);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(Service.class, this, "id", in.readUTF());
+		UnserializationUtils.setFinalField(Service.class, this, "peer", in.readObject());
+		params.addAll(Arrays.asList((Parameter[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeUTF(id);
+		out.writeObject(peer);
+		out.writeObject(params.toArray(new Parameter[0]));
 	}
 }

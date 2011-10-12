@@ -10,6 +10,10 @@ public class CollisionMessage extends RemoteMessage implements PayloadMessage {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public CollisionMessage() {
+		
+	}
 
 	public CollisionMessage(final PeerID source) {
 		super(source);

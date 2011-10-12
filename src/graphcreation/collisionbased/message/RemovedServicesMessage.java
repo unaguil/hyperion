@@ -2,6 +2,10 @@ package graphcreation.collisionbased.message;
 
 import graphcreation.services.Service;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,6 +21,10 @@ public class RemovedServicesMessage extends RemoteMessage implements PayloadMess
 	private static final long serialVersionUID = 1L;
 
 	private final Set<Service> lostServices = new HashSet<Service>();
+	
+	public RemovedServicesMessage() {
+		
+	}
 
 	public RemovedServicesMessage(final Set<Service> lostServices, final PeerID source) {
 		super(source);
@@ -35,5 +43,19 @@ public class RemovedServicesMessage extends RemoteMessage implements PayloadMess
 	@Override
 	public PayloadMessage copy() {
 		return new RemovedServicesMessage(getLostServices(), getSource());
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		lostServices.addAll(Arrays.asList((Service[])in.readObject()));
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeObject(lostServices.toArray(new Service[0]));
 	}
 }

@@ -1,11 +1,15 @@
 package graphcreation.collisionbased.collisiondetector;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
+import serialization.binary.UnserializationUtils;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 
-public class Collision implements Serializable {
+public class Collision implements Externalizable {
 
 	/**
 	 * 
@@ -14,6 +18,11 @@ public class Collision implements Serializable {
 
 	private final InputParameter input;
 	private final OutputParameter output;
+	
+	public Collision() {
+		input = null;
+		output = null;
+	}
 
 	public Collision(final InputParameter input, final OutputParameter output) {
 		this.input = input;
@@ -50,5 +59,17 @@ public class Collision implements Serializable {
 	@Override
 	public String toString() {
 		return "[" + output + "->" + input + "]";
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(Collision.class, this, "input", in.readObject());
+		UnserializationUtils.setFinalField(Collision.class, this, "output", in.readObject());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(input);
+		out.writeObject(output);
 	}
 }
