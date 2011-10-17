@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.zip.Deflater;
 
 import peer.conditionregister.ConditionRegister;
 import peer.message.ACKMessage;
@@ -76,7 +77,9 @@ public final class BasicPeer implements Peer {
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
-	public static final int TRANSMISSION_TIME = 40;
+	public static final int TRANSMISSION_TIME = 30;
+
+	public static final int ACK_TRANSMISSION_TIME = 10;
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures
@@ -237,6 +240,36 @@ public final class BasicPeer implements Peer {
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
 	}
+	
+	private byte[] compress(byte[] data) {
+		// Create the compressor with highest level of compression
+		Deflater compressor = new Deflater();
+		compressor.setLevel(Deflater.BEST_COMPRESSION);
+
+		// Give the compressor the data to compress
+		compressor.setInput(data);
+		compressor.finish();
+
+		// Create an expandable byte array to hold the compressed data.
+		// You cannot use an array that's the same size as the orginal because
+		// there is no guarantee that the compressed data will be smaller than
+		// the uncompressed data.
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
+
+		// Compress the data
+		byte[] buf = new byte[1024];
+		while (!compressor.finished()) {
+		    int count = compressor.deflate(buf);
+		    bos.write(buf, 0, count);
+		}
+		try {
+		    bos.close();
+		} catch (IOException e) {
+		}
+
+		// Get the compressed data
+		return bos.toByteArray();
+	}
 
 	@Override
 	public void broadcast(final BroadcastMessage message) {
@@ -246,14 +279,16 @@ public final class BasicPeer implements Peer {
 
 			// Message is converted to byte array
 			final byte[] data = toByteArray(message);
+			
+			//compress data
+			final byte [] compressed = compress(data);
+			
+			msgCounter.addMessageSize(compressed.length);
 
-			msgCounter.addMessageSize(data.length);
-
-			commProvider.broadcast(data);
+			commProvider.broadcast(compressed);
 
 			// Notify registered listeners
 			notifySentListeners(message);
-
 		} catch (final IOException ioe) {
 			logger.error("Peer " + peerID + " broadcast error. " + ioe.getMessage());
 		}
@@ -319,7 +354,7 @@ public final class BasicPeer implements Peer {
 			receivedMessages.addEntry(broadcastMessage.getMessageID());
 
 			// Put the message into the blocking queue for processing
-			messageProcessor.enqueue(broadcastMessage);
+			messageProcessor.receive(broadcastMessage);
 		} else
 			logger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
 	}
@@ -333,36 +368,50 @@ public final class BasicPeer implements Peer {
 	}
 
 	private void processSimpleMessage(final BroadcastMessage broadcastMessage) {
+		//beacon messages are not further processed
+		if (broadcastMessage instanceof BeaconMessage)
+			return;
+		
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
-
 			logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
 			messageProcessor.addACKResponse((ACKMessage) broadcastMessage);
 			return;
 		}
 
-		if (!broadcastMessage.getExpectedDestinations().isEmpty() && !broadcastMessage.getExpectedDestinations().contains(peerID))
+		//messages which does not have this node as destination are discarded
+		if (!broadcastMessage.getExpectedDestinations().contains(peerID))
+			return;
+		
+		//all received messages are responded with ACK
+		sendACKMessage(broadcastMessage);
+		
+		// previously received messages are not processed again
+		if (receivedMessages.contains(broadcastMessage.getMessageID()))
 			return;
 
-		if (!(broadcastMessage instanceof BeaconMessage))
-			sendACKMessage(broadcastMessage);
+		receivedMessages.addEntry(broadcastMessage.getMessageID());
 
 		messageReceived(broadcastMessage);
 	}
 
 	private void processBundleMessage(final BundleMessage bundleMessage) {
-		// previously received bundle messages are not processed again
+		// bundle messages containing only beacons are not further processed
+		if (ReliableBroadcast.containsOnlyBeaconMessages(bundleMessage))
+			return;
+		
+		//messages which does not have this node as destination are discarded
+		if (!bundleMessage.getExpectedDestinations().contains(peerID))
+			return;
+		
+		//all received messages are responded with ACK
+		sendACKMessage(bundleMessage);
+		
+		// previously received messages are not processed again
 		if (receivedMessages.contains(bundleMessage.getMessageID()))
 			return;
 
 		receivedMessages.addEntry(bundleMessage.getMessageID());
-
-		if (!bundleMessage.getExpectedDestinations().isEmpty() && !bundleMessage.getExpectedDestinations().contains(peerID))
-			return;
-
-		// beacon messages are not responded with ACK
-		if (!ReliableBroadcast.containsOnlyBeaconMessages(bundleMessage))
-			sendACKMessage(bundleMessage);
 
 		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
 			messageReceived(broadcastMessage);

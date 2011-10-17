@@ -1,9 +1,12 @@
 package peer;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import peer.message.BroadcastMessage;
 import util.WaitableThread;
@@ -37,8 +40,9 @@ final class ReceivingThread extends WaitableThread {
 			}
 
 			try {
-				if (data != null) {
-					final BroadcastMessage message = (BroadcastMessage) getObject(data);
+				if (data != null) {					
+					final byte[] uncompressed = uncompress(data);
+					final BroadcastMessage message = (BroadcastMessage) getObject(uncompressed);
 					if (peer.getCommProvider().isValid(message))
 						peer.processReceivedPacket(message);
 				}
@@ -58,5 +62,31 @@ final class ReceivingThread extends WaitableThread {
 		final ByteArrayInputStream bios = new ByteArrayInputStream(bytes);
 		final ObjectInput in = new ObjectInputStream(bios);
 		return in.readObject();
+	}
+	
+	private byte[] uncompress(byte[] data) {
+		// Create the decompressor and give it the data to compress
+		Inflater decompressor = new Inflater();
+		decompressor.setInput(data);
+
+		// Create an expandable byte array to hold the decompressed data
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
+
+		// Decompress the data
+		byte[] buf = new byte[1024];
+		while (!decompressor.finished()) {
+		    try {
+		        int count = decompressor.inflate(buf);
+		        bos.write(buf, 0, count);
+		    } catch (DataFormatException e) {
+		    }
+		}
+		try {
+		    bos.close();
+		} catch (IOException e) {
+		}
+
+		// Get the decompressed data
+		return bos.toByteArray();
 	}
 }

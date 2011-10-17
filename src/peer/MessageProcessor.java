@@ -76,7 +76,7 @@ final class MessageProcessor extends WaitableThread {
 	 * @param message
 	 *            the message to enqueue
 	 */
-	public void enqueue(final BroadcastMessage message) {
+	public void receive(final BroadcastMessage message) {
 		synchronized (messageDeque) {
 			messageDeque.add(message);
 		}
