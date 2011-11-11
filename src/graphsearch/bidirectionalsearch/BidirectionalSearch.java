@@ -61,8 +61,9 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 
 	@Override
 	public SearchID startComposition(final Service searchedService) {
-		logger.info("Peer " + peer.getPeerID() + " finding composition for service " + searchedService);
 		final SearchID searchID = new SearchID(peer.getPeerID());
+		logger.debug("Peer " + peer.getPeerID() + " started composition search " + searchID);
+		logger.debug("Peer " + peer.getPeerID() + " finding composition for service " + searchedService);
 		// the search is added to the search table as waiting
 		compositionData.addWaitingSearch(searchID);
 		bCompositionData.addWaitingSearch(searchID);
@@ -72,7 +73,6 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 
 	@Override
 	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
-
 		logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
 		final Service initService = Utility.createInitService(service, peer.getPeerID());
 		final Service goalService = Utility.createGoalService(service, peer.getPeerID());

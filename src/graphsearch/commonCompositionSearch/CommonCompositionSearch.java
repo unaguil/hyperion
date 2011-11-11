@@ -80,6 +80,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		for (final Service service : services)
 			composition.merge(service);
 
+		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID);
 		compositionListener.compositionFound(composition, searchID);
 	}
 
@@ -88,10 +89,12 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		for (final Service service : services)
 			invalidComposition.merge(service);
 
+		logger.debug("Peer " + peer.getPeerID() + " received invalid composition for search " + searchID);
 		compositionListener.compositionsLost(searchID, invalidComposition);
 	}
 
 	public void notifyCompositionModified(final SearchID searchID, final Set<Service> removedServices) {
+		logger.debug("Peer " + peer.getPeerID() + " received modification for composition " + searchID + " removed services: " + removedServices);
 		compositionListener.compositionModified(searchID, removedServices);
 	}
 
@@ -162,8 +165,9 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 
 	@Override
 	public SearchID startComposition(final Service searchedService) {
-		logger.info("Peer " + peer.getPeerID() + " finding composition for service " + searchedService);
 		final SearchID searchID = new SearchID(peer.getPeerID());
+		logger.debug("Peer " + peer.getPeerID() + " started composition search " + searchID);
+		logger.debug("Peer " + peer.getPeerID() + " finding composition for service " + searchedService);
 		// the search is added to the search table as waiting
 		compositionData.addWaitingSearch(searchID);
 		startComposition(searchedService, MAX_TTL, SEARCH_EXPIRATION, searchID);
