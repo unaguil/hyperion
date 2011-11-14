@@ -135,17 +135,22 @@ final class MessageProcessor extends WaitableThread {
 					peer.broadcast(bundleMessage);
 			}
 			
-			//random wait until next iteration
-			final long randomWait = r.nextInt(RANDOM_WAIT);
-			if (randomWait > 0) {
-				try {
-					Thread.sleep(randomWait);
-				} catch (final InterruptedException e) {
-					finishThread();
-					return;
-				}
-			} else
+			if (RANDOM_WAIT <= 0)
 				Thread.yield();
+			else {
+
+				//random wait until next iteration
+				final long randomWait = r.nextInt(RANDOM_WAIT);
+				if (randomWait > 0) {
+					try {
+						Thread.sleep(randomWait);
+					} catch (final InterruptedException e) {
+						finishThread();
+						return;
+					}
+				} else
+					Thread.yield();
+			}
 		}
 
 		finishThread();
