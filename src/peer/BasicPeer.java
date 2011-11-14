@@ -36,8 +36,11 @@ public final class BasicPeer implements Peer {
 
 	// List of registered communication layers
 	private final List<CommunicationLayer> communicationLayers = new CopyOnWriteArrayList<CommunicationLayer>();
+	
+	// The instance of the message counter to be used.
+	private final MessageCounter msgCounter = new MessageCounter();
 
-	private final MessageProcessor messageProcessor = new MessageProcessor(this);
+	private final MessageProcessor messageProcessor = new MessageProcessor(this, msgCounter);
 
 	private final Random r = new Random();
 
@@ -54,9 +57,6 @@ public final class BasicPeer implements Peer {
 
 	// the communication peer
 	private final CommProvider commProvider;
-
-	// The instance of the message counter to be used.
-	private final MessageCounter msgCounter = new MessageCounter();
 
 	// Sets the message hearing listener
 	private MessageReceivedListener hearListener = null;
@@ -274,8 +274,8 @@ public final class BasicPeer implements Peer {
 	@Override
 	public void broadcast(final BroadcastMessage message) {
 		try {
-			logger.debug("Peer " + peerID + " sending " + message);
-			msgCounter.addSent(message.getClass());
+			logger.debug("Peer " + peerID + " broadcasting " + message);
+			msgCounter.addBroadcasted(message.getClass());
 
 			// Message is converted to byte array
 			final byte[] data = toByteArray(message);
@@ -341,7 +341,7 @@ public final class BasicPeer implements Peer {
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
-
+		
 		logger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
 		logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
@@ -375,7 +375,9 @@ public final class BasicPeer implements Peer {
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
 			logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
-			messageProcessor.addACKResponse((ACKMessage) broadcastMessage);
+			ACKMessage ackMessage = (ACKMessage) broadcastMessage;
+			msgCounter.addReceived(ackMessage.getClass());
+			messageProcessor.addACKResponse(ackMessage);
 			return;
 		}
 
@@ -396,6 +398,8 @@ public final class BasicPeer implements Peer {
 	}
 
 	private void processBundleMessage(final BundleMessage bundleMessage) {
+		msgCounter.addReceived(bundleMessage.getClass());
+		
 		// bundle messages containing only beacons are not further processed
 		if (ReliableBroadcast.containsOnlyBeaconMessages(bundleMessage))
 			return;
@@ -450,8 +454,8 @@ public final class BasicPeer implements Peer {
 
 	public void processReceivedPacket(final BroadcastMessage message) {
 		// messages are only processed if node is initialized
-		logger.debug("Peer " + peerID + " received " + message + " from node " + message.getSender());
-		msgCounter.addReceived(message.getClass());
+		logger.debug("Peer " + peerID + " received packet " + message + " from node " + message.getSender());
+		msgCounter.addReceivedPacket(message.getClass());
 
 		// Notify hear listeners indicating that a message was received
 		notifyHearListener(message, System.currentTimeMillis());

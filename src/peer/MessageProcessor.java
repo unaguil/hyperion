@@ -10,6 +10,7 @@ import multicast.search.message.RemoteMulticastMessage;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
+import peer.messagecounter.MessageCounter;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
@@ -36,6 +37,8 @@ final class MessageProcessor extends WaitableThread {
 	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
 
 	private final Random r = new Random();
+	
+	private final MessageCounter msgCounter;
 
 	// stores the unprocessed messages when the thread is stopped
 	private int unprocessedMessages = 0;
@@ -50,10 +53,12 @@ final class MessageProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public MessageProcessor(final BasicPeer peer) {
+	public MessageProcessor(final BasicPeer peer, MessageCounter msgCounter) {
 		this.peer = peer;
 
 		this.reliableBroadcast = new ReliableBroadcast(peer);
+		
+		this.msgCounter = msgCounter;
 	}
 
 	public void init() {
@@ -129,6 +134,8 @@ final class MessageProcessor extends WaitableThread {
 
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), bundleMessages);
 				bundleMessage.setExpectedDestinations(destinations.getPeerSet());
+				
+				msgCounter.addSent(bundleMessage.getClass());
 
 				if (Peer.USE_RELIABLE_BROADCAST)
 					reliableBroadcast.broadcast(bundleMessage);
@@ -181,6 +188,6 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		reliableBroadcast.sendACKMessage(broadcastMessage);
+		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);
 	}
 }

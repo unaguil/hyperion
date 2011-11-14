@@ -32,11 +32,25 @@ public final class TotalMessageCounter {
 			total += msgCounter.getReceived();
 		return total;
 	}
+	
+	public static long getTotalReceivedPacket() {
+		long total = 0;
+		for (final MessageCounter msgCounter : msgCounters)
+			total += msgCounter.getReceivedPacket();
+		return total;
+	}
 
 	public static long getTotalSent() {
 		long total = 0;
 		for (final MessageCounter msgCounter : msgCounters)
 			total += msgCounter.getSent();
+		return total;
+	}
+	
+	public static long getTotalBroadcasted() {
+		long total = 0;
+		for (final MessageCounter msgCounter : msgCounters)
+			total += msgCounter.getBroadcasted();
 		return total;
 	}
 
@@ -118,7 +132,7 @@ public final class TotalMessageCounter {
 
 		}
 		strBuilder.append("Total received messages: " + getTotalReceived() + "\n");
-		strBuilder.append("Total sent messages: " + getTotalSent() + "\n");
+		strBuilder.append("Total broadcasted messages: " + getTotalBroadcasted() + "\n");
 		strBuilder.append("Avg process time: " + getAvgProcessTimeMillis() + " ms\n");
 		strBuilder.append("Avg message size: " + getAvgMessageSize() + " bytes\n");
 		strBuilder.append("Max message size: " + getMaxMessageSize() + " bytes\n");
@@ -134,6 +148,8 @@ public final class TotalMessageCounter {
 			logger.info(clazz.getName() + " received: " + getTotalReceived(clazz));
 			logger.info(clazz.getName() + " last time received : " + getLastTimeReceived(clazz));
 		}
+		logger.info("Total broadcasted packets: " + getTotalBroadcasted());
+		logger.info("Total received packets: " + getTotalReceivedPacket());
 		logger.info("Total received messages: " + getTotalReceived());
 		logger.info("Total sent messages: " + getTotalSent());
 		logger.info("Avg process time: " + getAvgProcessTimeMillis() + " ms");

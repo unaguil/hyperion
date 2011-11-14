@@ -13,6 +13,8 @@ public final class ReliableBroadcastCounter {
 	private long deliveredMessages = 0;
 
 	private long totalDeliveringTime = 0;
+	
+	private long rebroadcasted = 0;
 
 	public ReliableBroadcastCounter() {
 		ReliableBroadcastTotalCounter.addCounter(this);
@@ -26,6 +28,10 @@ public final class ReliableBroadcastCounter {
 		deliveredMessages++;
 		totalDeliveringTime += deliveringTime;
 	}
+	
+	public void addRebroadcastedMessage() {
+		rebroadcasted++;
+	}
 
 	public long getBroadcastedMessages() {
 		return broadcastedMessages;
@@ -37,6 +43,10 @@ public final class ReliableBroadcastCounter {
 
 	public long getFailedMessages() {
 		return broadcastedMessages - deliveredMessages;
+	}
+	
+	public long getRebroadcastedMessages() {
+		return rebroadcasted;
 	}
 
 	public double getAvgDeliveringTime() {
@@ -53,6 +63,7 @@ public final class ReliableBroadcastCounter {
 		strBuilder.append("Broadcasted msgs: " + getBroadcastedMessages() + "\n");
 		strBuilder.append("Delivered msgs: " + getDeliveredMessages() + "\n");
 		strBuilder.append("Failed msgs: " + getFailedMessages() + "\n");
+		strBuilder.append("Rebroadcasted msgs: " + getRebroadcastedMessages() + "\n");
 		strBuilder.append("*********************************\n");
 
 		return strBuilder.toString();

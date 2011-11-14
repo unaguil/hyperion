@@ -38,6 +38,8 @@ public final class MessageCounter {
 
 	private final Map<Class<? extends BroadcastMessage>, Info> received = new HashMap<Class<? extends BroadcastMessage>, Info>();
 	private final Map<Class<? extends BroadcastMessage>, Info> sent = new HashMap<Class<? extends BroadcastMessage>, Info>();
+	private final Map<Class<? extends BroadcastMessage>, Info> broadcasted = new HashMap<Class<? extends BroadcastMessage>, Info>();
+	private final Map<Class<? extends BroadcastMessage>, Info> receivedPacket = new HashMap<Class<? extends BroadcastMessage>, Info>();
 
 	private long totalProcessTime = 0;
 	private long totalProcessedMessages = 0;
@@ -52,9 +54,17 @@ public final class MessageCounter {
 	public void addReceived(final Class<? extends BroadcastMessage> clazz) {
 		inc(received, clazz);
 	}
+	
+	public void addReceivedPacket(final Class<? extends BroadcastMessage> clazz) {
+		inc(receivedPacket, clazz);
+	}
 
 	public void addSent(final Class<? extends BroadcastMessage> clazz) {
 		inc(sent, clazz);
+	}
+	
+	public void addBroadcasted(final Class<? extends BroadcastMessage> clazz) {
+		inc(broadcasted, clazz);
 	}
 
 	public void addMessageSize(final int size) {
@@ -95,6 +105,14 @@ public final class MessageCounter {
 
 	public long getSent() {
 		return sumCollection(sent.values());
+	}
+	
+	public long getBroadcasted() {
+		return sumCollection(broadcasted.values());
+	}
+	
+	public long getReceivedPacket() {
+		return sumCollection(receivedPacket.values());
 	}
 
 	public long getMaxMessageSize() {
@@ -152,6 +170,8 @@ public final class MessageCounter {
 			strBuilder.append(clazz.getName() + " received : " + getReceived(clazz) + "\n");
 			strBuilder.append(clazz.getName() + " sent: " + getSent(clazz) + "\n");
 		}
+		strBuilder.append("Broadcasted packets: " + getBroadcasted() + "\n");
+		strBuilder.append("Received packets: " + getReceivedPacket() + "\n");
 		strBuilder.append("Received msgs: " + getReceived() + "\n");
 		strBuilder.append("Sent msgs: " + getSent() + "\n");
 		strBuilder.append("Avg process time: " + getAvgProcessTime() + "\n");

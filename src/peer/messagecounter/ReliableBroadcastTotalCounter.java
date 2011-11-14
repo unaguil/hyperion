@@ -43,6 +43,13 @@ public final class ReliableBroadcastTotalCounter {
 			total += msgCounter.getFailedMessages();
 		return total;
 	}
+	
+	public static long getTotalRebroadcasted() {
+		long total = 0;
+		for (final ReliableBroadcastCounter msgCounter : msgCounters)
+			total += msgCounter.getRebroadcastedMessages();
+		return total;
+	}
 
 	public static double getDeliveredRatio() {
 		final long totalBroadcasted = getTotalBroadcasted();
@@ -67,6 +74,7 @@ public final class ReliableBroadcastTotalCounter {
 		logger.info("Total reliable broadcasted messages: " + getTotalBroadcasted());
 		logger.info("Total delivered messages: " + getTotalDelivered());
 		logger.info("Total failed messages: " + getTotalFailed());
+		logger.info("Total rebroadcasted messages: " + getTotalRebroadcasted());
 		logger.info("Delivered ratio: " + getDeliveredRatio());
 		logger.info("Avg delivering time: " + getAvgDeliveringTime());
 	}

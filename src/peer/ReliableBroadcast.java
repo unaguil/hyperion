@@ -5,6 +5,7 @@ import java.util.Random;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
+import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastCounter;
 import peer.peerid.PeerIDSet;
 import util.logger.Logger;
@@ -186,6 +187,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		synchronized (mutex) {
 			if (processingMessage && rebroadcast) {
 				peer.broadcast(currentMessage);
+				reliableBroadcastCounter.addRebroadcastedMessage();
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime);
 				lastBroadcastTime = System.currentTimeMillis();
 				tryNumber++;
@@ -215,9 +217,10 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		removeNeighbors(neighbors);
 	}
 
-	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
+	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
+		msgCounter.addSent(ackMessage.getClass());
 		peer.broadcast(ackMessage);
 	}
 }
