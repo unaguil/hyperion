@@ -124,14 +124,6 @@ final class MessageProcessor extends WaitableThread {
 					bundleMessages.add(broadcastMessage);
 				}
 
-				final long randomWait = r.nextInt(RANDOM_WAIT);
-				try {
-					Thread.sleep(randomWait);
-				} catch (final InterruptedException e) {
-					finishThread();
-					return;
-				}
-
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), bundleMessages);
 				bundleMessage.setExpectedDestinations(destinations.getPeerSet());
 				
@@ -141,6 +133,17 @@ final class MessageProcessor extends WaitableThread {
 					reliableBroadcast.broadcast(bundleMessage);
 				else
 					peer.broadcast(bundleMessage);
+			}
+			
+			//random wait until next iteration
+			final long randomWait = r.nextInt(RANDOM_WAIT);
+			if (randomWait > 0) {
+				try {
+					Thread.sleep(randomWait);
+				} catch (final InterruptedException e) {
+					finishThread();
+					return;
+				}
 			} else
 				Thread.yield();
 		}
