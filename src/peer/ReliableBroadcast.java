@@ -143,7 +143,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(final BroadcastMessage broadcastMessage) {
-		return BasicPeer.TRANSMISSION_TIME + broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME;
+		return BasicPeer.TRANSMISSION_TIME + broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME / 2;
 	}
 
 	private boolean mustRebroadcast() {
@@ -216,11 +216,44 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void dissapearedNeighbors(final PeerIDSet neighbors) {
 		removeNeighbors(neighbors);
 	}
+	
+	private static class DelayACK extends Thread {
+		
+		private final ACKMessage ackMessage;
+		private final Peer peer;
+		private final int slots;
+		
+		private final Random r = new Random();
+		
+		private final Logger logger = Logger.getLogger(DelayACK.class);
+		
+		public DelayACK(final ACKMessage ackMessage, Peer peer, int slots) {
+			this.ackMessage = ackMessage;
+			this.peer = peer;
+			this.slots = slots;
+		}
+		
+		@Override
+		public void run() {
+			final int k = r.nextInt(slots);
+			final long time = k * BasicPeer.ACK_TRANSMISSION_TIME;
+			if (k > 0) {
+				logger.debug("Peer " + peer.getPeerID() + " delayed ACK response during " + time + " ms");
+				try {
+					Thread.sleep(time );
+				} catch (InterruptedException e) {
+				}
+			}		
+			
+			peer.broadcast(ackMessage);
+		}
+	}
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
 		msgCounter.addSent(ackMessage.getClass());
-		peer.broadcast(ackMessage);
+		DelayACK delayACK = new DelayACK(ackMessage, peer, broadcastMessage.getExpectedDestinations().size());
+		delayACK.start();
 	}
 }
