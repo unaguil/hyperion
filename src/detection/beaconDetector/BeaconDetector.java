@@ -12,6 +12,7 @@ import peer.Peer;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
 import peer.message.MessageSentListener;
+import peer.messagecounter.MessageCounter;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
@@ -111,6 +112,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Reference to the peer
 	private final Peer peer;
+	private final MessageCounter msgCounter;
 
 	// Thread which sends beacons periodically
 	private BeaconSendThread beaconThread;
@@ -131,8 +133,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	 * @param peer
 	 *            the peer which provides communication capabilities
 	 */
-	public BeaconDetector(final Peer peer) {
+	public BeaconDetector(final Peer peer, final MessageCounter msgCounter) {
 		this.peer = peer;
+		this.msgCounter = msgCounter;
 
 		peer.addSentListener(this);
 
@@ -306,6 +309,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Send a beacon using broadcast provided by communication peer
 	private void sendBeacon() {
-		peer.enqueueBroadcast(beaconMessage);
+		msgCounter.addSent(beaconMessage.getClass());
+		peer.broadcast(beaconMessage);
 	}
 }

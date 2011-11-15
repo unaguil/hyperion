@@ -231,7 +231,7 @@ public final class BasicPeer implements Peer {
 			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
 
-		detector = new BeaconDetector(this);
+		detector = new BeaconDetector(this, msgCounter);
 
 		// Initialize all layers
 		for (final CommunicationLayer layer : communicationLayers)

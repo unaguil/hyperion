@@ -217,20 +217,16 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		removeNeighbors(neighbors);
 	}
 	
-	private static class DelayACK extends Thread {
+	private class DelayACK extends Thread {
 		
 		private final ACKMessage ackMessage;
-		private final Peer peer;
 		private final int slots;
+		private final MessageCounter msgCounter;
 		
-		private final Random r = new Random();
-		
-		private final Logger logger = Logger.getLogger(DelayACK.class);
-		
-		public DelayACK(final ACKMessage ackMessage, Peer peer, int slots) {
+		public DelayACK(final ACKMessage ackMessage, int slots, MessageCounter msgCounter) {
 			this.ackMessage = ackMessage;
-			this.peer = peer;
 			this.slots = slots;
+			this.msgCounter = msgCounter;
 		}
 		
 		@Override
@@ -245,6 +241,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				}
 			}		
 			
+			msgCounter.addSent(ackMessage.getClass());
 			peer.broadcast(ackMessage);
 		}
 	}
@@ -252,8 +249,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
-		msgCounter.addSent(ackMessage.getClass());
-		DelayACK delayACK = new DelayACK(ackMessage, peer, broadcastMessage.getExpectedDestinations().size());
+		DelayACK delayACK = new DelayACK(ackMessage, broadcastMessage.getExpectedDestinations().size(), msgCounter);
 		delayACK.start();
 	}
 }
