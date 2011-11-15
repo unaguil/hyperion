@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import multicast.search.message.RemoteMulticastMessage;
 import peer.message.ACKMessage;
@@ -44,6 +46,9 @@ final class MessageProcessor extends WaitableThread {
 	private int unprocessedMessages = 0;
 
 	private final ReliableBroadcast reliableBroadcast;
+	
+	private final AtomicBoolean delayNext = new AtomicBoolean(false);
+	private final AtomicLong delayTime = new AtomicLong();
 
 	private int RANDOM_WAIT = 200;
 
@@ -128,7 +133,18 @@ final class MessageProcessor extends WaitableThread {
 				bundleMessage.setExpectedDestinations(destinations.getPeerSet());
 				
 				msgCounter.addSent(bundleMessage.getClass());
-
+				
+				if (delayNext.get()) {
+					logger.debug("Peer " + peer.getPeerID() + " delaying next messsage during " + delayTime + " ms");
+					delayNext.set(false);
+					try {
+						Thread.sleep(delayTime.get());							
+					} catch (final InterruptedException e) {
+						finishThread();
+						return;
+					}
+				}
+				
 				if (Peer.USE_RELIABLE_BROADCAST)
 					reliableBroadcast.broadcast(bundleMessage);
 				else
@@ -196,6 +212,15 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
+		final int k = r.nextInt(broadcastMessage.getExpectedDestinations().size());
+		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + k * BasicPeer.TRANSMISSION_TIME;
+		delayNextMessage(time);
+		
 		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);
+	}
+	
+	private void delayNextMessage(long time) {
+		delayTime.set(time);
+		delayNext.set(true); 
 	}
 }
