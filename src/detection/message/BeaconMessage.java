@@ -34,6 +34,6 @@ public class BeaconMessage extends BroadcastMessage {
 
 	@Override
 	public String toString() {
-		return getType() + " " + getMessageID();
+		return getType();
 	}
 }
