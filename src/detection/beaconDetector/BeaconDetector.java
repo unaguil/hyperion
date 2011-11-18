@@ -73,7 +73,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 					// next beacon)
 					sleepTime = BEACON_TIME - elapsedTime;
 
-				int randomSleep = r.nextInt(RANDOM_WAIT);
+				int randomSleep = 0;
+				if (RANDOM_WAIT > 0)
+					randomSleep = r.nextInt(RANDOM_WAIT);
 				try {
 					Thread.sleep(sleepTime + randomSleep);
 				} catch (final InterruptedException e) {
