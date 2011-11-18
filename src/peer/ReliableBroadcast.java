@@ -148,7 +148,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	private boolean mustRebroadcast() {
 		synchronized (mutex) {
-			return rebroadcast;
+			return processingMessage && rebroadcast;
 		}
 	}
 
@@ -157,7 +157,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		long backoffTime = 0;
 
 		synchronized (mutex) {
-			if (processingMessage) {
+			if (processingMessage && !mustRebroadcast()) {
 				// calculate elapsed time since last broadcast
 				long responseWaitTime = getResponseWaitTime(currentMessage);
 				long elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
@@ -184,13 +184,15 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			do {
 				Thread.yield();
 				interrupted = Thread.interrupted();
-				if (interrupted)
+				if (interrupted) {
 					rebroadcastThread.interrupt();
+					return;
+				}
 			} while (mustRebroadcast() && (System.currentTimeMillis() - startTime) < backoffTime && !interrupted);
 		}
 
-		synchronized (mutex) {
-			if (mustRebroadcast() && processingMessage && rebroadcast) {
+		if (mustRebroadcast()) {
+			synchronized (mutex) {
 				peer.broadcast(currentMessage);
 				reliableBroadcastCounter.addRebroadcastedMessage();
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime);
