@@ -95,6 +95,8 @@ final class MessageProcessor extends WaitableThread {
 		// the queue used for storing received messages
 		private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
 		
+		private final AtomicBoolean processing = new AtomicBoolean();
+		
 		public void receive(final BroadcastMessage message) {
 			synchronized (messageDeque) {
 				messageDeque.add(message);
@@ -106,6 +108,9 @@ final class MessageProcessor extends WaitableThread {
 			while (!Thread.interrupted()) {
 				final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 				synchronized (messageDeque) {
+					if (!messageDeque.isEmpty())
+						processing.set(true);
+						
 					while (!messageDeque.isEmpty()) {
 						final BroadcastMessage message = messageDeque.poll();
 						messages.add(message);
@@ -115,10 +120,16 @@ final class MessageProcessor extends WaitableThread {
 				for (final BroadcastMessage message : messages)
 					peer.processMessage(message);
 				
+				processing.set(false);
+				
 				Thread.yield();
 			}
 			
 			finishThread();
+		}
+
+		public boolean isProcessing() {
+			return processing.get();
 		}
 	}
 
@@ -157,6 +168,15 @@ final class MessageProcessor extends WaitableThread {
 					delayNext.set(false);
 					try {
 						Thread.sleep(delayTime.get());							
+					} catch (final InterruptedException e) {
+						finishThread();
+						return;
+					}
+				}
+				
+				while(receivedMessageProcessor.isProcessing()) {
+					try {
+						Thread.sleep(0);
 					} catch (final InterruptedException e) {
 						finishThread();
 						return;
