@@ -1,7 +1,6 @@
 package peer;
 
 import java.util.List;
-import java.util.Random;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -40,8 +39,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private boolean processingMessage = false;
 	private boolean rebroadcast = true;
 	private long responseWaitTime;
-
-	private final Random r = new Random();
 
 	private int tryNumber;
 	private long broadcastStartTime;

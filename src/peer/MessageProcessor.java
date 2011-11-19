@@ -112,12 +112,19 @@ final class MessageProcessor extends WaitableThread {
 			for (final BroadcastMessage message : messages)
 				peer.processMessage(message);
 			
-			boolean sendMessage = waitedTime >= randomWait;
+			boolean sendMessage = false;
+			if (delayNext.get()) {
+				logger.debug("Peer " + peer.getPeerID() + " delaying next messsage during " + delayTime + " ms");
+				sendMessage = waitedTime >= randomWait + delayTime.get();
+			} else {
+				sendMessage = waitedTime >= randomWait;
+			}
 			
 			if (sendMessage && !waitingMessages.isEmpty())	 {
 				logger.trace("Peer " + peer.getPeerID() + " waited " + waitedTime + " ms");
 				waitedTime = 0;
 				randomWait = r.nextInt(RANDOM_WAIT) + 1;
+				delayNext.set(false);
 				
 				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 				final PeerIDSet destinations = new PeerIDSet();
@@ -138,17 +145,6 @@ final class MessageProcessor extends WaitableThread {
 				List<PeerID> expectedDestinations = new ArrayList<PeerID>();
 				expectedDestinations.addAll(destinations.getPeerSet());
 				bundleMessage.setExpectedDestinations(expectedDestinations);
-				
-				if (delayNext.get()) {
-					logger.debug("Peer " + peer.getPeerID() + " delaying next messsage during " + delayTime + " ms");
-					delayNext.set(false);
-					try {
-						Thread.sleep(delayTime.get());							
-					} catch (final InterruptedException e) {
-						finishThread();
-						return;
-					}
-				}
 				
 				msgCounter.addSent(bundleMessage.getClass());
 				
@@ -199,9 +195,8 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		final int k = r.nextInt(broadcastMessage.getExpectedDestinations().size());
 		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
-		//delayNextMessage(time);
+		delayNextMessage(time);
 		
 		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);
 	}
