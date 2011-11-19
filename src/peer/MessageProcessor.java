@@ -66,7 +66,6 @@ final class MessageProcessor extends WaitableThread {
 		this.peer = peer;
 		this.reliableBroadcast = new ReliableBroadcast(peer);
 		this.msgCounter = msgCounter;
-		this.randomWait = r.nextInt(RANDOM_WAIT);
 	}
 
 	public void init() {
@@ -74,6 +73,8 @@ final class MessageProcessor extends WaitableThread {
 			final String randomWaitStr = Configuration.getInstance().getProperty("messageProcessor.randomWait");
 			RANDOM_WAIT = Integer.parseInt(randomWaitStr);
 			logger.info("Peer " + peer.getPeerID() + " set RANDOM_WAIT to " + RANDOM_WAIT);
+			
+			this.randomWait = r.nextInt(RANDOM_WAIT);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
