@@ -8,6 +8,8 @@ Collisions occur sometimes
 
 Collisions occurs sometimes. Maybe it is related with the simultaneous messages propagated by the different layers. Piggybacking could resolve this problem.
 
+scripts/tests/graphcreation/multipleConnectionsRemoveServiceTaxonomy
+
  BGraphSearch
 ===============
 Collisions occurs sometimes. Maybe it is related with the simultaneous messages propagated by the different layers. Piggybacking could resolve this problem.

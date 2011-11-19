@@ -30,11 +30,10 @@ final class MessageProcessor extends WaitableThread {
 
 	// the communication peer
 	private final BasicPeer peer;
-
-	// the queue used for storing received messages
-	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
-
+	
 	private final Logger logger = Logger.getLogger(MessageProcessor.class);
+	
+	private final ReceivedMessageProcessor receivedMessageProcessor;
 
 	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
 
@@ -60,10 +59,9 @@ final class MessageProcessor extends WaitableThread {
 	 */
 	public MessageProcessor(final BasicPeer peer, MessageCounter msgCounter) {
 		this.peer = peer;
-
 		this.reliableBroadcast = new ReliableBroadcast(peer);
-		
 		this.msgCounter = msgCounter;
+		this.receivedMessageProcessor = new ReceivedMessageProcessor();
 	}
 
 	public void init() {
@@ -76,6 +74,8 @@ final class MessageProcessor extends WaitableThread {
 		}
 
 		start();
+		
+		receivedMessageProcessor.start();
 
 		reliableBroadcast.start();
 	}
@@ -87,8 +87,38 @@ final class MessageProcessor extends WaitableThread {
 	 *            the message to enqueue
 	 */
 	public void receive(final BroadcastMessage message) {
-		synchronized (messageDeque) {
-			messageDeque.add(message);
+		receivedMessageProcessor.receive(message);
+	}
+	
+	private class ReceivedMessageProcessor extends WaitableThread {
+		
+		// the queue used for storing received messages
+		private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
+		
+		public void receive(final BroadcastMessage message) {
+			synchronized (messageDeque) {
+				messageDeque.add(message);
+			}
+		}
+		
+		@Override
+		public void run() {
+			while (!Thread.interrupted()) {
+				final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
+				synchronized (messageDeque) {
+					while (!messageDeque.isEmpty()) {
+						final BroadcastMessage message = messageDeque.poll();
+						messages.add(message);
+					}
+				}
+	
+				for (final BroadcastMessage message : messages)
+					peer.processMessage(message);
+				
+				Thread.yield();
+			}
+			
+			finishThread();
 		}
 	}
 
@@ -96,18 +126,6 @@ final class MessageProcessor extends WaitableThread {
 	public void run() {
 		// Processor loop
 		while (!Thread.interrupted()) {
-			final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
-
-			synchronized (messageDeque) {
-				while (!messageDeque.isEmpty()) {
-					final BroadcastMessage message = messageDeque.poll();
-					messages.add(message);
-				}
-			}
-
-			for (final BroadcastMessage message : messages)
-				peer.processMessage(message);
-
 			final List<BroadcastMessage> messagesToSend = new ArrayList<BroadcastMessage>();
 
 			synchronized (waitingMessages) {
@@ -184,21 +202,14 @@ final class MessageProcessor extends WaitableThread {
 	 */
 	@Override
 	public void stopAndWait() {
+		receivedMessageProcessor.stopAndWait();
 		reliableBroadcast.stopAndWait();
 		
 		super.stopAndWait();
-
-		synchronized (messageDeque) {
-			unprocessedMessages = messageDeque.size();
-		}
 	}
 
 	public int getUnprocessedMessages() {
 		return unprocessedMessages;
-	}
-
-	public boolean contains(final BroadcastMessage broadcastMessage) {
-		return messageDeque.contains(broadcastMessage);
 	}
 
 	public void addResponse(final BroadcastMessage message) {
