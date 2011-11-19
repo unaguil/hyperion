@@ -987,4 +987,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			return sdg.getConnectedInputs(service, ancestor);
 		}
 	}
+
+	@Override
+	public void disableMulticastLayer() {
+		pSearch.setDisabled();
+	}
 }

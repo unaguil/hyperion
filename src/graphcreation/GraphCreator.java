@@ -41,4 +41,6 @@ public interface GraphCreator extends XMLSerializable {
 	public Set<ServiceDistance> getSuccessors(Service service);
 
 	public Set<InputParameter> getConnectedInputs(Service service, Service ancestor);
+	
+	public void disableMulticastLayer();
 }

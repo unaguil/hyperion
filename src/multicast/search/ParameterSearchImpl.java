@@ -71,6 +71,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private final int CLEAN_REC_MSG = 5000;
 
 	private final ConditionRegister<MessageID> receivedMessages = new ConditionRegister<MessageID>(CLEAN_REC_MSG);
+	
+	private boolean enabled = true;
 
 	private final Logger logger = Logger.getLogger(ParameterSearchImpl.class);
 
@@ -104,6 +106,12 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			logger.error("Peer " + peer.getPeerID() + " had problem registering communication layer: " + rce.getMessage());
 		}
 	}
+	
+	@Override
+	public void setDisabled() {
+		enabled = false;
+	}
+	
 
 	/*
 	 * (non-Javadoc)
@@ -197,6 +205,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public void sendCancelSearchMessage(final Set<Parameter> parameters) {
+		if (!enabled)
+			return;
+		
 		logger.debug("Peer " + peer.getPeerID() + " canceling searches for parameters " + parameters);
 
 		final Set<MessageID> routeIDs = new HashSet<MessageID>();
@@ -220,6 +231,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public void sendGeneralizeSearchMessage(final Set<Parameter> generalizedParameters) {
+		if (!enabled)
+			return;
+		
 		logger.debug("Peer " + peer.getPeerID() + " enqueuing generalize search for parameters " + generalizedParameters);
 		final Set<MessageID> routeIDs = new HashSet<MessageID>();
 		
@@ -323,6 +337,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	@Override
 	public void messageReceived(final BroadcastMessage message, final long receptionTime) {
+		if (!enabled)
+			return;
+		
 		if (message instanceof SearchMessage) {
 			final SearchMessage searchMessage = (SearchMessage) message;
 
@@ -361,6 +378,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public void sendMulticastMessage(final PeerIDSet destinations, final PayloadMessage payload) {
+		if (!enabled)
+			return;
+		
 		final RemoteMulticastMessage msg = new RemoteMulticastMessage(destinations, payload, peer.getPeerID());
 
 		logger.trace("Peer " + peer.getPeerID() + " sending remote multicast message " + msg + " to " + destinations);
@@ -375,6 +395,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public void sendUnicastMessage(final PeerID destination, final PayloadMessage payload) {
+		if (!enabled)
+			return;
+		
 		final RemoteMulticastMessage msg = new RemoteMulticastMessage(new PeerIDSet(Collections.singleton(destination)), payload, peer.getPeerID());
 
 		logger.trace("Peer " + peer.getPeerID() + " sending remote unicast message " + msg + " to " + destination);
@@ -721,6 +744,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 */
 	@Override
 	public void sendSearchMessage(final Set<Parameter> parameters, final PayloadMessage payload, final SearchType searchType) {
+		if (!enabled)
+			return;
+		
 		final SearchMessage msg = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
 		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + msg.getRemoteMessageID());
 
@@ -730,11 +756,17 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// Sends a message which generalizes the specified parameters
 	private void sendRemoveParametersMessage(final Set<Parameter> parameters, final Set<MessageID> routeIDs) {
+		if (!enabled)
+			return;
+		
 		final RemoveParametersMessage removeParametersMessage = new RemoveParametersMessage(parameters, routeIDs, peer.getPeerID());
 		processRemoveParametersMessage(removeParametersMessage);
 	}
 
 	private void sendGeneralizeSearchMessage(final Set<Parameter> parameters, final Set<MessageID> routeIDs) {
+		if (!enabled)
+			return;
+		
 		final GeneralizeSearchMessage generalizeSearchMessage = new GeneralizeSearchMessage(parameters, routeIDs, peer.getPeerID());
 		processGeneralizeSearchMessage(generalizeSearchMessage);
 	}
@@ -742,6 +774,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// sends a search response message to a the specified destination,
 	// indicating that the following parameters have been found
 	private void sendSearchResponseMessage(final PeerID destination, final Set<Parameter> parameters, final PayloadMessage payload, final MessageID respondedRouteID) {
+		if (!enabled)
+			return;
+		
 		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(destination, parameters, payload, peer.getPeerID(), respondedRouteID);
 
 		logger.trace("Peer " + peer.getPeerID() + " sending search response message " + searchResponseMessage);
@@ -751,6 +786,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// sends a remove route message
 	private void sendRemoveRouteMessage(final Set<MessageID> lostRoutes) {
+		if (!enabled)
+			return;
+		
 		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), lostRoutes);
 		processRemoveRouteMessage(removeRouteMessage);
 	}

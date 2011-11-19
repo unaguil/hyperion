@@ -13,4 +13,5 @@ public interface CompositionSearch {
 
 	public boolean isRunningSearch(SearchID searchID);
 
+	public void disableMulticastLayer();
 }

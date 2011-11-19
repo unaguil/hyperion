@@ -68,6 +68,11 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 	}
 
 	@Override
+	public void disableMulticastLayer() {
+		gCreator.disableMulticastLayer();
+	}
+
+	@Override
 	public void filterConnections(final Map<Service, Set<ServiceDistance>> foundRemoteSuccessors, final Map<Service, Set<ServiceDistance>> foundRemoteAncestors) {
 		ConnectionsFilter.filter(foundRemoteSuccessors, foundRemoteAncestors);
 	}
