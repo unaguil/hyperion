@@ -119,7 +119,7 @@ final class MessageProcessor extends WaitableThread {
 				sendMessage = waitedTime >= randomWait;
 			
 			if (sendMessage && !waitingMessages.isEmpty())	 {
-				logger.trace("Peer " + peer.getPeerID() + " waited " + waitedTime + " ms (including an extra delay of " + delayTime.get() + ")");
+				logger.debug("Peer " + peer.getPeerID() + " waited " + waitedTime + " ms (including an extra delay of " + delayTime.get() + ")");
 				waitedTime = 0;
 				randomWait = r.nextInt(RANDOM_WAIT) + 1;
 				delayNext.set(false);
