@@ -33,7 +33,7 @@ public class BundleMessage extends BroadcastMessage {
 
 	@Override
 	public String toString() {
-		return getType() + " [" + messages.size() + "]";
+		return getType() +  " " + getMessageID() + " [" + messages.size() + "]";
 	}
 
 	@Override

@@ -148,21 +148,19 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	private boolean mustRebroadcast() {
 		synchronized (mutex) {
-			return rebroadcast;
+			return processingMessage && rebroadcast;
 		}
 	}
 
 	@Override
 	public void perform() throws InterruptedException {
-		long elapsedTime = 0;
-		long responseWaitTime = 0;
 		long backoffTime = 0;
 
 		synchronized (mutex) {
-			if (processingMessage) {
+			if (processingMessage && !mustRebroadcast()) {
 				// calculate elapsed time since last broadcast
-				responseWaitTime = getResponseWaitTime(currentMessage);
-				elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
+				long responseWaitTime = getResponseWaitTime(currentMessage);
+				long elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
 				if (elapsedTime >= responseWaitTime) {
 					backoffTime = getBackoffTime(tryNumber, peer.getDetector().getCurrentNeighbors().size());
 
@@ -178,14 +176,23 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				}
 			}
 		}
-
+ 
 		if (mustRebroadcast() && backoffTime > 0) {
-			logger.debug("Peer " + peer.getPeerID() + " sleeping " + backoffTime + " ms for message " + currentMessage.getMessageID());
-			Thread.sleep(backoffTime);
+			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
+			long startTime = System.currentTimeMillis();
+			boolean interrupted = false;
+			do {
+				Thread.yield();
+				interrupted = Thread.interrupted();
+				if (interrupted) {
+					rebroadcastThread.interrupt();
+					return;
+				}
+			} while (mustRebroadcast() && (System.currentTimeMillis() - startTime) < backoffTime && !interrupted);
 		}
 
-		synchronized (mutex) {
-			if (processingMessage && rebroadcast) {
+		if (mustRebroadcast()) {
+			synchronized (mutex) {
 				peer.broadcast(currentMessage);
 				reliableBroadcastCounter.addRebroadcastedMessage();
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime);

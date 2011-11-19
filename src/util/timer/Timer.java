@@ -16,7 +16,10 @@ public class Timer extends WaitableThread {
 	public void run() {
 		while (!Thread.interrupted())
 			try {
-				Thread.sleep(period);
+				if (period > 0)
+					Thread.sleep(period);
+				else
+					Thread.yield();
 
 				// perform timer task
 				timerTask.perform();
