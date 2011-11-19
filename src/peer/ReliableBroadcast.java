@@ -137,13 +137,15 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	private long getBackoffTime(final int factor, int currentNeighbors) {
 		final int slots = currentNeighbors * factor;
+		if (slots == 0)
+			return 0;
 		final int k = r.nextInt(slots);
 		final long slotSize = BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME;
 		return slotSize * k;
 	}
 
 	public long getResponseWaitTime(final BroadcastMessage broadcastMessage) {
-		return BasicPeer.TRANSMISSION_TIME + broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME / 2;
+		return BasicPeer.TRANSMISSION_TIME + broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
 	}
 
 	private boolean mustRebroadcast() {
@@ -154,16 +156,12 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	@Override
 	public void perform() throws InterruptedException {
-		long backoffTime = 0;
-
 		synchronized (mutex) {
 			if (processingMessage && !mustRebroadcast()) {
 				// calculate elapsed time since last broadcast
 				long responseWaitTime = getResponseWaitTime(currentMessage);
 				long elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
 				if (elapsedTime >= responseWaitTime) {
-					backoffTime = getBackoffTime(tryNumber, peer.getDetector().getCurrentNeighbors().size());
-
 					if (tryNumber == MAX_TRIES) {
 						// maximum tries reached. failed broadcast
 						processingMessage = false;
@@ -176,6 +174,8 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				}
 			}
 		}
+
+		final long backoffTime = getBackoffTime(tryNumber + 1, peer.getDetector().getCurrentNeighbors().size());
  
 		if (mustRebroadcast() && backoffTime > 0) {
 			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
@@ -241,9 +241,9 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			final int k = r.nextInt(slots);
 			final long time = k * BasicPeer.ACK_TRANSMISSION_TIME;
 			if (k > 0) {
-				logger.debug("Peer " + peer.getPeerID() + " delayed ACK response during " + time + " ms");
+				logger.debug("Peer " + peer.getPeerID() + " delayed ACK response " + ackMessage + " during " + time + " ms");
 				try {
-					Thread.sleep(time );
+					Thread.sleep(time);
 				} catch (InterruptedException e) {
 				}
 			}		
