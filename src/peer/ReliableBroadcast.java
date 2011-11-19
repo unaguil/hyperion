@@ -39,6 +39,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private final Object mutex = new Object();
 	private boolean processingMessage = false;
 	private boolean rebroadcast = true;
+	private long responseWaitTime;
 
 	private final Random r = new Random();
 
@@ -103,7 +104,8 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			currentMessage = broadcastMessage;
 			broadcastStartTime = lastBroadcastTime = System.currentTimeMillis();
 			tryNumber = 1;
-			logger.debug("Peer " + peer.getPeerID() + " reliable broadcasting message " + broadcastMessage.getMessageID() + " " + broadcastMessage.getExpectedDestinations());
+			responseWaitTime = getResponseWaitTime(currentMessage);
+			logger.debug("Peer " + peer.getPeerID() + " reliable broadcasting message " + broadcastMessage.getMessageID() + " " + broadcastMessage.getExpectedDestinations() + " responseWaitTime: " + responseWaitTime);
 			rebroadcast = false;
 			processingMessage = true;
 		}
@@ -161,7 +163,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		synchronized (mutex) {
 			if (processingMessage && !mustRebroadcast()) {
 				// calculate elapsed time since last broadcast
-				long responseWaitTime = getResponseWaitTime(currentMessage);
 				long elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
 				if (elapsedTime >= responseWaitTime) {
 					if (tryNumber == MAX_TRIES) {
@@ -197,7 +198,8 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			synchronized (mutex) {
 				peer.broadcast(currentMessage);
 				reliableBroadcastCounter.addRebroadcastedMessage();
-				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime);
+				responseWaitTime = getResponseWaitTime(currentMessage);
+				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime + " waitingTime: " + responseWaitTime);
 				lastBroadcastTime = System.currentTimeMillis();
 				tryNumber++;
 				rebroadcast = false;
