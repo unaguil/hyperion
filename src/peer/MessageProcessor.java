@@ -49,10 +49,7 @@ final class MessageProcessor extends WaitableThread {
 	private final AtomicLong delayTime = new AtomicLong();
 	
 	// the queue used for storing received messages
-	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
-	
-	private long waitedTime;
-	private long randomWait; 
+	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
 
 	private int RANDOM_WAIT = 200;
 
@@ -74,7 +71,6 @@ final class MessageProcessor extends WaitableThread {
 			RANDOM_WAIT = Integer.parseInt(randomWaitStr);
 			logger.info("Peer " + peer.getPeerID() + " set RANDOM_WAIT to " + RANDOM_WAIT);
 			
-			this.randomWait = r.nextInt(RANDOM_WAIT);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
@@ -99,31 +95,25 @@ final class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {
-			final long currenTime = System.currentTimeMillis();
+		while (!Thread.interrupted()) {	
+			processAllReceivedMessages();
 			
-			final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();						
-			synchronized (messageDeque) {					
-				while (!messageDeque.isEmpty()) {
-					final BroadcastMessage message = messageDeque.poll();
-					messages.add(message);
-				}
+			final long randomWait = r.nextInt(RANDOM_WAIT) + 1;
+			long sleepTime = randomWait; 
+			
+			if (delayNext.get())
+				sleepTime += delayTime.get();
+			
+			try {
+				Thread.sleep(sleepTime);
+			} catch (InterruptedException e) {
+				finishThread();
 			}
 			
-			for (final BroadcastMessage message : messages)
-				peer.processMessage(message);
+			processAllReceivedMessages();
 			
-			boolean sendMessage = false;
-			if (delayNext.get())
-				sendMessage = waitedTime >= randomWait + delayTime.get();
-			else
-				sendMessage = waitedTime >= randomWait;
-			
-			if (sendMessage && !waitingMessages.isEmpty())	 {
-				logger.debug("Peer " + peer.getPeerID() + " waited " + waitedTime + " ms (randomWait: " + randomWait + " + "  + delayTime.get() + ")");
-				waitedTime = 0;
-				randomWait = r.nextInt(RANDOM_WAIT) + 1;
-				delayNext.set(false);
+			if (!waitingMessages.isEmpty())	 {
+				logger.debug("Peer " + peer.getPeerID() + " slept during " + sleepTime + " ms (randomWait: " + randomWait + " + delayNextMessageTime: "  + delayTime.get() + ")");
 				
 				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 				final PeerIDSet destinations = new PeerIDSet();
@@ -152,14 +142,23 @@ final class MessageProcessor extends WaitableThread {
 				else
 					peer.broadcast(bundleMessage);
 				
-				Thread.yield();				
-			} else {
-				Thread.yield();
-				waitedTime += System.currentTimeMillis() - currenTime;
 			}
 		}
 
 		finishThread();
+	}
+
+	private void processAllReceivedMessages() {
+		final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();						
+		synchronized (messageDeque) {					
+			while (!messageDeque.isEmpty()) {
+				final BroadcastMessage message = messageDeque.poll();
+				messages.add(message);
+			}
+		}
+		
+		for (final BroadcastMessage message : messages)
+			peer.processMessage(message);
 	}
 
 	private void finishThread() {
