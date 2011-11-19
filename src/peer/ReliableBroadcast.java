@@ -1,5 +1,6 @@
 package peer;
 
+import java.util.List;
 import java.util.Random;
 
 import peer.message.ACKMessage;
@@ -7,6 +8,7 @@ import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastCounter;
+import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.logger.Logger;
 import util.timer.Timer;
@@ -227,20 +229,27 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private class DelayACK extends Thread {
 		
 		private final ACKMessage ackMessage;
-		private final int slots;
+		private final List<PeerID> expectedDestinations;
 		private final MessageCounter msgCounter;
 		
-		public DelayACK(final ACKMessage ackMessage, int slots, MessageCounter msgCounter) {
+		public DelayACK(final ACKMessage ackMessage, List<PeerID> expectedDestinations, MessageCounter msgCounter) {
 			this.ackMessage = ackMessage;
-			this.slots = slots;
+			this.expectedDestinations = expectedDestinations;
 			this.msgCounter = msgCounter;
 		}
 		
 		@Override
 		public void run() {
-			final int k = r.nextInt(slots);
-			final long time = k * BasicPeer.ACK_TRANSMISSION_TIME;
-			if (k > 0) {
+			
+			int index = 0;
+			for (PeerID dest : expectedDestinations) {
+				if (dest.equals(peer.getPeerID()))
+					break;
+				index++;
+			}
+			
+			if (index > 0) {
+				final long time = index * BasicPeer.ACK_TRANSMISSION_TIME;
 				logger.debug("Peer " + peer.getPeerID() + " delayed ACK response " + ackMessage + " during " + time + " ms");
 				try {
 					Thread.sleep(time);
@@ -256,7 +265,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
-		DelayACK delayACK = new DelayACK(ackMessage, broadcastMessage.getExpectedDestinations().size(), msgCounter);
+		DelayACK delayACK = new DelayACK(ackMessage, broadcastMessage.getExpectedDestinations(), msgCounter);
 		delayACK.start();
 	}
 }

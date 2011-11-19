@@ -13,6 +13,7 @@ import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.MessageCounter;
+import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
@@ -134,7 +135,9 @@ final class MessageProcessor extends WaitableThread {
 				waitingMessages.clear();
 
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), bundleMessages);
-				bundleMessage.setExpectedDestinations(destinations.getPeerSet());
+				List<PeerID> expectedDestinations = new ArrayList<PeerID>();
+				expectedDestinations.addAll(destinations.getPeerSet());
+				bundleMessage.setExpectedDestinations(expectedDestinations);
 				
 				if (delayNext.get()) {
 					logger.debug("Peer " + peer.getPeerID() + " delaying next messsage during " + delayTime + " ms");
@@ -197,7 +200,7 @@ final class MessageProcessor extends WaitableThread {
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
 		final int k = r.nextInt(broadcastMessage.getExpectedDestinations().size());
-		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + k * BasicPeer.TRANSMISSION_TIME;
+		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
 		//delayNextMessage(time);
 		
 		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);

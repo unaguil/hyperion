@@ -4,9 +4,10 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import peer.peerid.PeerID;
@@ -28,7 +29,7 @@ public abstract class BroadcastMessage implements Externalizable {
 	// the identification of the message (peer, id)
 	private final MessageID messageID;
 
-	private Set<PeerID> expectedDestinations = new HashSet<PeerID>();
+	private List<PeerID> expectedDestinations = new ArrayList<PeerID>();
 
 	
 	public BroadcastMessage() {
@@ -55,8 +56,8 @@ public abstract class BroadcastMessage implements Externalizable {
 		return getClass().getName();
 	}
 
-	public void setExpectedDestinations(final Set<PeerID> expectedDestinations) {
-		this.expectedDestinations = new HashSet<PeerID>(expectedDestinations);
+	public void setExpectedDestinations(final List<PeerID> expectedDestinations) {
+		this.expectedDestinations.addAll(expectedDestinations);
 	}
 
 	public void removeExpectedDestination(final PeerID peerID) {
@@ -67,8 +68,8 @@ public abstract class BroadcastMessage implements Externalizable {
 		expectedDestinations.removeAll(peerIDSet);
 	}
 
-	public Set<PeerID> getExpectedDestinations() {
-		return Collections.unmodifiableSet(expectedDestinations);
+	public List<PeerID> getExpectedDestinations() {
+		return Collections.unmodifiableList(expectedDestinations);
 	}
 
 	@Override
