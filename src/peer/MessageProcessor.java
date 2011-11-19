@@ -95,25 +95,33 @@ final class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {	
+		while (!Thread.interrupted()) {
+			final long currentTime = System.currentTimeMillis();
+			
 			processAllReceivedMessages();
 			
-			final long randomWait = r.nextInt(RANDOM_WAIT) + 1;
-			long sleepTime = randomWait; 
-			
-			if (delayNext.get())
-				sleepTime += delayTime.get();
-			
+			final long randomWait = r.nextInt(RANDOM_WAIT) + 1;				
 			try {
-				Thread.sleep(sleepTime);
+				Thread.sleep(randomWait);
 			} catch (InterruptedException e) {
 				finishThread();
 			}
 			
-			processAllReceivedMessages();
+			do {				
+				if (delayNext.get()) {
+					delayNext.set(false);
+					try {
+						Thread.sleep(delayTime.get());
+					} catch (InterruptedException e) {
+						finishThread();
+					}
+				}
+				
+				processAllReceivedMessages();
+			} while (delayNext.get());
 			
 			if (!waitingMessages.isEmpty())	 {
-				logger.debug("Peer " + peer.getPeerID() + " slept during " + sleepTime + " ms (randomWait: " + randomWait + " + delayNextMessageTime: "  + delayTime.get() + ")");
+				logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
 				
 				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 				final PeerIDSet destinations = new PeerIDSet();
