@@ -104,7 +104,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			currentMessage = broadcastMessage;
 			broadcastStartTime = lastBroadcastTime = System.currentTimeMillis();
 			tryNumber = 1;
-			responseWaitTime = getResponseWaitTime(currentMessage);
+			responseWaitTime = getResponseWaitTime(currentMessage.getExpectedDestinations().size());
 			logger.debug("Peer " + peer.getPeerID() + " reliable broadcasting message " + broadcastMessage.getMessageID() + " " + broadcastMessage.getExpectedDestinations() + " responseWaitTime: " + responseWaitTime);
 			rebroadcast = false;
 			processingMessage = true;
@@ -140,16 +140,11 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	private long getBackoffTime(final int factor, int currentNeighbors) {
-		final int slots = currentNeighbors * factor;
-		if (slots == 0)
-			return 0;
-		final int k = r.nextInt(slots);
-		final long slotSize = BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME;
-		return slotSize * k;
+		return BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME * factor;
 	}
 
-	public long getResponseWaitTime(final BroadcastMessage broadcastMessage) {
-		return BasicPeer.TRANSMISSION_TIME + broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
+	public long getResponseWaitTime(int destinations) {
+		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
 	}
 
 	private boolean mustRebroadcast() {
@@ -178,7 +173,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			}
 		}
 
-		final long backoffTime = getBackoffTime(tryNumber + 1, peer.getDetector().getCurrentNeighbors().size());
+		final long backoffTime = getBackoffTime(tryNumber, peer.getDetector().getCurrentNeighbors().size());
  
 		if (mustRebroadcast() && backoffTime > 0) {
 			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
@@ -198,7 +193,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			synchronized (mutex) {
 				peer.broadcast(currentMessage);
 				reliableBroadcastCounter.addRebroadcastedMessage();
-				responseWaitTime = getResponseWaitTime(currentMessage);
+				responseWaitTime = getResponseWaitTime(currentMessage.getExpectedDestinations().size());
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime + " waitingTime: " + responseWaitTime);
 				lastBroadcastTime = System.currentTimeMillis();
 				tryNumber++;
