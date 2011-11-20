@@ -88,6 +88,4 @@ public interface ParameterSearch extends XMLSerializable {
 	public void sendSearchMessage(Set<Parameter> parameters, PayloadMessage payload, SearchType searchType);
 
 	public int getDistanceTo(PeerID peerID);
-
-	public void setDisabled();
 }

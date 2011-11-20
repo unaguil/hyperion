@@ -67,9 +67,12 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		}
 	}
 
-	@Override
 	public void disableMulticastLayer() {
-		gCreator.disableMulticastLayer();
+		((CollisionGraphCreator)gCreator).disableMulticastLayer();
+	}
+	
+	public void disableGraphCreationLayer() {
+		((CollisionGraphCreator)gCreator).setDisabled();
 	}
 
 	@Override

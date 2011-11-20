@@ -106,8 +106,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			logger.error("Peer " + peer.getPeerID() + " had problem registering communication layer: " + rce.getMessage());
 		}
 	}
-	
-	@Override
+
 	public void setDisabled() {
 		enabled = false;
 	}

@@ -12,6 +12,4 @@ public interface CompositionSearch {
 	public Service getService(String serviceID);
 
 	public boolean isRunningSearch(SearchID searchID);
-
-	public void disableMulticastLayer();
 }

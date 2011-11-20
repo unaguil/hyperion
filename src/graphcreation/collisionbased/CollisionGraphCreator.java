@@ -83,6 +83,8 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// the connections manager
 	private ConnectionsManager cManager;
+	
+	private boolean enabled = true;
 
 	private final Logger logger = Logger.getLogger(CollisionGraphCreator.class);
 
@@ -104,6 +106,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		} catch (final RegisterCommunicationLayerException e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem registering communication layer: " + e.getMessage());
 		}
+	}
+	
+	public void setDisabled() {
+		enabled = false;
 	}
 
 	/*
@@ -423,6 +429,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	@Override
 	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
+		if (!enabled)
+			return;
+		
 		if (payload instanceof ConnectServicesMessage)
 			processConnectServicesMessage((ConnectServicesMessage) payload, source);
 		else if (payload instanceof DisconnectServicesMessage)
@@ -532,24 +541,36 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// sends a message including the passed connections
 	private void sendConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final PeerIDSet notifiedPeers) {
+		if (!enabled)
+			return;
+		
 		logger.trace("Peer " + peer.getPeerID() + " sending connect services message to " + notifiedPeers + " RS:" + remoteSuccessors + " RA:" + remoteAncestors);
 		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(remoteSuccessors, remoteAncestors, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForPeers);
 	}
 
 	private void sendDisconnectServicesMessage(final Set<Service> lostServices, final PeerIDSet notifiedPeers) {
+		if (!enabled)
+			return;
+		
 		logger.trace("Peer " + peer.getPeerID() + " sending disconnect services message to " + notifiedPeers + " with lost services " + lostServices);
 		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(lostServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendRemoveServicesMessage(final Set<Service> rServices, final PeerIDSet notifiedPeers) {
+		if (!enabled)
+			return;
+		
 		logger.trace("Peer " + peer.getPeerID() + " sending removed services message to " + notifiedPeers + " with removed services " + rServices);
 		final RemovedServicesMessage messageForOutputPeers = new RemovedServicesMessage(rServices, peer.getPeerID());
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
 	private void sendCollisionSearchMessage(final Set<Parameter> parameters) {
+		if (!enabled)
+			return;
+		
 		logger.trace("Peer " + peer.getPeerID() + " sending collision message while searching for parameters " + parameters);
 		final CollisionMessage collisionMessage = new CollisionMessage(peer.getPeerID());
 		pSearch.sendSearchMessage(parameters, collisionMessage, SearchType.Generic);
@@ -935,6 +956,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// sends the notifications for service disconnection
 	private void sendDisconnectNotifications(final Map<PeerIDSet, Set<Service>> notifications) {
+		if (!enabled)
+			return;
+		
 		for (final Entry<PeerIDSet, Set<Service>> entry : notifications.entrySet())
 			sendDisconnectServicesMessage(entry.getValue(), entry.getKey());
 	}
@@ -988,8 +1012,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		}
 	}
 
-	@Override
 	public void disableMulticastLayer() {
-		pSearch.setDisabled();
+		((ParameterSearchImpl)pSearch).setDisabled();
 	}
 }
