@@ -657,37 +657,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
 		final Set<Collision> inhibitedCollisions = new HashSet<Collision>();
 		final Set<Collision> collisions = new HashSet<Collision>();
-
-		if (!removedParameters.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
-
-			// obtain which previously detected collisions are affected by
-			// parameter removal
-			final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-			synchronized (cManager) {
-				final Set<Connection> removedConnections = cManager.checkCollisions(removedParameters);
-	
-				if (!removedConnections.isEmpty()) {
-					// obtain those parameters whose search must be canceled
-					final Set<Parameter> canceledParameters = new HashSet<Parameter>();
-					for (final Connection connection : removedConnections) {
-						final Collision collision = connection.getCollision();
-						canceledParameters.add(collision.getInput());
-						canceledParameters.add(collision.getOutput());
-					}
-	
-					// send cancel search message
-					pSearch.sendCancelSearchMessage(canceledParameters);
-				}
-	
-				// send disconnect notifications
-				 notifications.putAll((cManager.getNotifications(removedConnections)));
-			}
-			sendDisconnectNotifications(notifications);
-		}
-
 		if (!addedParameters.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
 
 			// obtain which collisions are caused by the new parameters addition
@@ -875,7 +845,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			final MessageID parameterRouteID = routeAssociations.get(searchRouteID);
 			// check if route was completely lost
 			if (lostParameterRoutes.contains(parameterRouteID)) {
-
 				logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing responses from lost routes: " + lostParameterRoutes);
 				final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
 				synchronized (cManager) {

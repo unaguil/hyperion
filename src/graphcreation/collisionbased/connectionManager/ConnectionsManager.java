@@ -73,7 +73,8 @@ public class ConnectionsManager {
 	 */
 	public Map<PeerIDSet, Set<Service>> removeParameters(final Set<Parameter> parameters, final PeerID source) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-		for (final Connection connection : detectedConnections) {
+		for (Iterator<Connection> it = detectedConnections.iterator(); it.hasNext(); ) {
+			Connection connection = it.next();
 			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeParameters(parameters, source);
 			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
 				final PeerIDSet peers = entry.getKey();
@@ -81,6 +82,9 @@ public class ConnectionsManager {
 					notifications.put(peers, new HashSet<Service>());
 				notifications.get(peers).addAll(entry.getValue());
 			}
+			
+			if (!connection.isConnected())
+				it.remove();
 		}
 		return notifications;
 	}
@@ -94,7 +98,8 @@ public class ConnectionsManager {
 	 */
 	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<MessageID> lostRoutes) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-		for (final Connection connection : detectedConnections) {
+		for (Iterator<Connection> it = detectedConnections.iterator(); it.hasNext(); ) {
+			Connection connection = it.next();
 			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeResponses(lostRoutes);
 			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
 				final PeerIDSet peers = entry.getKey();
@@ -102,6 +107,9 @@ public class ConnectionsManager {
 					notifications.put(peers, new HashSet<Service>());
 				notifications.get(peers).addAll(entry.getValue());
 			}
+			
+			if (!connection.isConnected())
+				it.remove();
 		}
 		return notifications;
 	}
