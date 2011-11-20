@@ -32,7 +32,7 @@ import detection.message.BeaconMessage;
 
 public final class BasicPeer implements Peer {
 
-	private static final int CLEAN_REC_MSGS = 5000;
+	public static final int CLEAN_REC_MSGS = 5000;
 
 	// List of registered communication layers
 	private final List<CommunicationLayer> communicationLayers = new CopyOnWriteArrayList<CommunicationLayer>();

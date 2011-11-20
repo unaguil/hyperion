@@ -23,6 +23,7 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
+import peer.BasicPeer;
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
@@ -68,9 +69,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// Configuration properties
 	private int MAX_TTL = 5; // Default value
 
-	private final int CLEAN_REC_MSG = 5000;
-
-	private final ConditionRegister<MessageID> receivedMessages = new ConditionRegister<MessageID>(CLEAN_REC_MSG);
+	private final ConditionRegister<MessageID> receivedMessages = new ConditionRegister<MessageID>(BasicPeer.CLEAN_REC_MSGS);
 	
 	private boolean enabled = true;
 
@@ -339,26 +338,17 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		if (message instanceof SearchMessage) {
-			final SearchMessage searchMessage = (SearchMessage) message;
-
-			// check that this message was not previously propagated by this
-			// peer
-			if (searchMessage.getPreviousSender().equals(peer.getPeerID()))
-				return;
-
+		// check that message was not previously received
+		RemoteMessage remoteMessage = ((RemoteMessage) message);
+		if (receivedMessages.contains(remoteMessage.getRemoteMessageID()))
+			return;
+		
+		receivedMessages.addEntry(remoteMessage.getRemoteMessageID());
+		
+		if (message instanceof SearchMessage)
 			processSearchMessage((SearchMessage) message);
-
-		} else if (message instanceof RemoteMulticastMessage) {
-			final RemoteMulticastMessage remoteMulticastMessage = (RemoteMulticastMessage) message;
-
-			// check that message was not previously received
-			if (receivedMessages.contains(remoteMulticastMessage.getRemoteMessageID()))
-				return;
-
-			receivedMessages.addEntry(remoteMulticastMessage.getRemoteMessageID());
-
-			processMulticastMessage(remoteMulticastMessage);
+		else if (message instanceof RemoteMulticastMessage) {
+			processMulticastMessage((RemoteMulticastMessage) message);
 		} else if (message instanceof RemoveRouteMessage)
 			processRemoveRouteMessage((RemoveRouteMessage) message);
 		else if (message instanceof RemoveParametersMessage)
@@ -746,11 +736,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final SearchMessage msg = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
-		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + msg.getRemoteMessageID());
+		final SearchMessage searchMessage = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
+		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID());
 
-		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + msg);
-		processSearchMessage(msg);
+		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
+		
+		//add search message as sent
+		receivedMessages.addEntry(searchMessage.getRemoteMessageID());
+		
+		processSearchMessage(searchMessage);
 	}
 
 	// Sends a message which generalizes the specified parameters
