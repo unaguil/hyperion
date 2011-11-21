@@ -44,4 +44,9 @@ public class Inhibition implements Externalizable {
 		out.writeObject(collision);
 		out.writeObject(notApplied);
 	}
+	
+	@Override
+	public String toString() {
+		return "[" + collision + ", notApplied: " + notApplied + "]";
+	}
 }
