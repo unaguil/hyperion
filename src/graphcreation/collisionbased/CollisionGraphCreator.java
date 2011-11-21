@@ -380,7 +380,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		for (final Service remoteService : disconnectServicesMessage.getLostServices())
 			// test that service really exists in graph before removal
 			if (sdg.hasService(remoteService)) {
-
 				// get the current ancestors and successors of the removed
 				// service
 				final Set<ServiceDistance> beforeAncestors = sdg.getLocalAncestors(remoteService, disconnectServicesMessage.getSource());
@@ -664,24 +663,20 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			// obtain which collisions are caused by the new parameters addition
 			final Set<Collision> detectedCollisions = checkNewParametersCollisions(addedParameters, sender);
 
-			final Set<Inhibition> invalidCollisions = getInhibitions(detectedCollisions, sender);
+			final Set<Inhibition> inhibitions = getInhibitions(detectedCollisions, sender);
 
 			// remove all invalid collisions
-			detectedCollisions.removeAll(invalidCollisions);
+			for (Inhibition inhibition : inhibitions)
+				detectedCollisions.remove(inhibition.getCollision());
 
 			// add valid collisions
 			collisions.addAll(detectedCollisions);
-
-			// inhibe for neighbors valid & invalid detected collisions
-			for (Collision detectedCollision : detectedCollisions)
-				inhibitedCollisions.add(new Inhibition(detectedCollision, PeerID.VOID_PEERID));
 			
-			inhibitedCollisions.addAll(invalidCollisions);
+			inhibitedCollisions.addAll(inhibitions);
 		}
 
 		if (!changedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
-
 			// obtain those parameters whose estimated distance has been reduced
 			final Set<Parameter> reducedParameters = new HashSet<Parameter>();
 			for (final Entry<Parameter, DistanceChange> entry : changedParameters.entrySet()) {
