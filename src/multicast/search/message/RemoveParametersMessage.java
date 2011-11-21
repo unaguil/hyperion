@@ -3,12 +3,17 @@ package multicast.search.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import peer.message.MessageID;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -24,11 +29,7 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	// the set of parameters to remove
-	private final Set<Parameter> parameters = new HashSet<Parameter>();
-
-	// the route identifiers which parameters are removed from
-	private final Set<MessageID> routeIDs = new HashSet<MessageID>();
+	private final Map<MessageID, Set<Parameter>> removedParameters = new HashMap<MessageID, Set<Parameter>>();
 
 	public RemoveParametersMessage() {
 		
@@ -44,10 +45,9 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 * @param source
 	 *            the source of the message
 	 */
-	public RemoveParametersMessage(final Set<Parameter> parameters, final Set<MessageID> routeIDs, final PeerID source) {
+	public RemoveParametersMessage(final Map<MessageID, Set<Parameter>> removedParameters, final PeerID source) {
 		super(source);
-		this.parameters.addAll(parameters);
-		this.routeIDs.addAll(routeIDs);
+		this.removedParameters.putAll(removedParameters);
 	}
 
 	/**
@@ -64,46 +64,48 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 */
 	public RemoveParametersMessage(final RemoveParametersMessage removeParamRouteMessage, final PeerID sender, final int newDistance) {
 		super(removeParamRouteMessage, sender, newDistance);
-		this.routeIDs.addAll(removeParamRouteMessage.routeIDs);
-		this.parameters.addAll(removeParamRouteMessage.parameters);
+		this.removedParameters.putAll(removeParamRouteMessage.removedParameters);
 	}
 
-	/**
-	 * Gets the removed parameters
-	 * 
-	 * @return the removed parameters
-	 */
-	public Set<Parameter> getParameters() {
-		return parameters;
-	}
-
-	/**
-	 * Gets the route identifiers
-	 * 
-	 * @return the route identifier
-	 */
-	public Set<MessageID> getRouteIDs() {
-		return routeIDs;
+	public Map<MessageID, Set<Parameter>> getRemovedParameters() {
+		return removedParameters;
 	}
 
 	@Override
 	public String toString() {
-		return super.toString() + " P: " + getParameters() + " Routes: " + getRouteIDs();
+		return super.toString() + " removedParameters: " + removedParameters;
 	}
 	
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
-		parameters.addAll(Arrays.asList((Parameter[])in.readObject()));
-		routeIDs.addAll(Arrays.asList((MessageID[])in.readObject()));
+		readMap(removedParameters, in);
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
 		
-		out.writeObject(parameters.toArray(new Parameter[0]));
-		out.writeObject(routeIDs.toArray(new MessageID[0]));
+		writeMap(removedParameters, out);
+	}
+	
+	private void writeMap(Map<MessageID, Set<Parameter>> map, ObjectOutput out) throws IOException {
+		out.writeObject(map.keySet().toArray(new MessageID[0]));
+		out.writeInt(map.values().size());
+		for (Set<Parameter> set : map.values())
+			out.writeObject(set.toArray(new Parameter[0]));
+	}
+	
+	private void readMap(Map<MessageID, Set<Parameter>> map, ObjectInput in) throws ClassNotFoundException, IOException {
+		List<MessageID> keys = Arrays.asList((MessageID[])in.readObject());
+		int size = in.readInt();
+		List<Set<Parameter>> values = new ArrayList<Set<Parameter>>();
+		for (int i = 0; i < size; i++) {
+			Set<Parameter> value = new HashSet<Parameter>(Arrays.asList((Parameter[])in.readObject()));
+			values.add(value);
+		}
+		
+		UnserializationUtils.fillMap(map, keys, values);
 	}
 }
