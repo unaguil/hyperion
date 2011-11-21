@@ -655,20 +655,27 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	@Override
 	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
-		final Set<Inhibition> inhibitedCollisions = new HashSet<Inhibition>();
+		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
 		if (!addedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
 
 			// obtain which collisions are caused by the new parameters addition
-			final Set<Collision> detectedCollisions = checkNewParametersCollisions(addedParameters, sender);
+			collisions.addAll(checkNewParametersCollisions(addedParameters, sender));
+			logger.trace("Peer " + peer.getPeerID() + " provisional collisions " + collisions);
 
-			final Set<Inhibition> inhibitions = getInhibitions(detectedCollisions, sender);
-
-			// add valid collisions
-			collisions.addAll(detectedCollisions);
+			Set<Collision> invalidCollisions = getInvalidCollisions(collisions, sender);
+			logger.trace("Peer " + peer.getPeerID() + " invalid collisions " + invalidCollisions);
+						
+			for (Collision invalidCollision : invalidCollisions) {
+				collisions.remove(invalidCollision);
+				inhibitions.add(new Inhibition(invalidCollision, sender));
+			}
 			
-			inhibitedCollisions.addAll(inhibitions);
+			logger.trace("Peer " + peer.getPeerID() + " collisions after removing invalid " + collisions);
+				
+			for (Collision validCollision : collisions)
+				inhibitions.add(new Inhibition(validCollision, PeerID.VOID_PEERID));
 		}
 
 		if (!changedParameters.isEmpty()) {
@@ -690,7 +697,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 				// add detected collisions to inhibited ones
 				for (Collision detectedCollision : detectedCollisions)
-					inhibitedCollisions.add(new Inhibition(detectedCollision, PeerID.VOID_PEERID));
+					inhibitions.add(new Inhibition(detectedCollision, PeerID.VOID_PEERID));
 			}
 		}
 
@@ -700,13 +707,16 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
 
 			logger.trace("Peer " + peer.getPeerID() + " received inhibition for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
-			inhibitedCollisions.addAll(inhibeCollisionsMessage.getInhibedCollisions());
 
 			// remove collisions using received inhibitions (checking if collision is applied)
 			for (Inhibition inhibedCollision : inhibeCollisionsMessage.getInhibedCollisions()) {
 				if (!inhibedCollision.getNotAppliedTo().equals(peer.getPeerID()))
 					collisions.remove(inhibedCollision.getCollision());
 			}
+			
+			logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + inhibeCollisionsMessage.getInhibedCollisions());
+				
+			inhibitions.addAll(inhibeCollisionsMessage.getInhibedCollisions());
 		}
 
 		// if collisions were detected, notify them
@@ -732,8 +742,8 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		// if collisions were detected return them as payload for parameter
 		// table update propagated message
-		if (!inhibitedCollisions.isEmpty())
-			return new InhibeCollisionsMessage(inhibitedCollisions, peer.getPeerID());
+		if (!inhibitions.isEmpty())
+			return new InhibeCollisionsMessage(inhibitions, peer.getPeerID());
 
 		return null;
 	}
@@ -752,13 +762,11 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		return collisions;
 	}
 
-	public Set<Inhibition> getInhibitions(final Set<Collision> newParametersCollisions, final PeerID neighbor) {
-		final Set<Inhibition> invalidCollisions = new HashSet<Inhibition>();
+	private Set<Collision> getInvalidCollisions(final Set<Collision> newParametersCollisions, final PeerID neighbor) {
+		final Set<Collision> invalidCollisions = new HashSet<Collision>();
 		for (final Collision collision : newParametersCollisions) {
-			if (isCollisionValid(collision, neighbor))
-				invalidCollisions.add(new Inhibition(collision, PeerID.VOID_PEERID));
-			else
-				invalidCollisions.add(new Inhibition(collision, neighbor));
+			if (!isCollisionValid(collision, neighbor))
+				invalidCollisions.add(collision);
 		}
 		return invalidCollisions;
 	}
