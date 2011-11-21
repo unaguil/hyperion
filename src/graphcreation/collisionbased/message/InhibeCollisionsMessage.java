@@ -1,7 +1,5 @@
 package graphcreation.collisionbased.message;
 
-import graphcreation.collisionbased.collisiondetector.Collision;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -20,18 +18,18 @@ public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMes
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private final Set<Collision> inhibitedCollisions = new HashSet<Collision>();
+	private final Set<Inhibition> inhibitedCollisions = new HashSet<Inhibition>();
 	
 	public InhibeCollisionsMessage() {
 		
 	}
 
-	public InhibeCollisionsMessage(final Set<Collision> collisions, final PeerID source) {
+	public InhibeCollisionsMessage(final Set<Inhibition> inhibitions, final PeerID source) {
 		super(source);
-		inhibitedCollisions.addAll(collisions);
+		inhibitedCollisions.addAll(inhibitions);
 	}
 
-	public Set<Collision> getInhibedCollisions() {
+	public Set<Inhibition> getInhibedCollisions() {
 		return inhibitedCollisions;
 	}
 
@@ -49,13 +47,13 @@ public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMes
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
-		inhibitedCollisions.addAll(Arrays.asList((Collision[])in.readObject()));
+		inhibitedCollisions.addAll(Arrays.asList((Inhibition[])in.readObject()));
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
 		
-		out.writeObject(inhibitedCollisions.toArray(new Collision[0]));
+		out.writeObject(inhibitedCollisions.toArray(new Inhibition[0]));
 	}
 }
