@@ -665,10 +665,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 			final Set<Inhibition> inhibitions = getInhibitions(detectedCollisions, sender);
 
-			// remove all invalid collisions
-			for (Inhibition inhibition : inhibitions)
-				detectedCollisions.remove(inhibition.getCollision());
-
 			// add valid collisions
 			collisions.addAll(detectedCollisions);
 			
@@ -809,8 +805,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// if it is equal the collision is valid if the local identifier is
 		// greater than the one which sent the update message
 		if (localSum == neighborSum)
-			if (peer.getPeerID().compareTo(neighbor) > 0)
-				return true;
+			return peer.getPeerID().compareTo(neighbor) > 0;
 
 		return false;
 	}
