@@ -837,10 +837,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	}
 
 	@Override
-	public void changedParameterRoutes(final Map<MessageID, Set<Parameter>> lostParameters, final Set<MessageID> lostParameterRoutes, final Map<MessageID, MessageID> routeAssociations) {
+	public void changedParameterRoutes(final Map<MessageID, Set<Parameter>> lostParameters, final Set<MessageID> lostParameterRoutes) {
 		for (final Entry<MessageID, Set<Parameter>> entry : lostParameters.entrySet()) {
-			final MessageID searchRouteID = entry.getKey();
-			final MessageID parameterRouteID = routeAssociations.get(searchRouteID);
+			final MessageID parameterRouteID = entry.getKey();
 			// check if route was completely lost
 			if (lostParameterRoutes.contains(parameterRouteID)) {
 				logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing responses from lost routes: " + lostParameterRoutes);
@@ -851,11 +850,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 				sendDisconnectNotifications(notifications);
 			} else {
 				final Set<Parameter> parameters = entry.getValue();
-
 				logger.trace("Peer " + peer.getPeerID() + " checking for collisions containing lost parameters: " + lostParameters);
 				final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
 				synchronized (cManager) {
-					notifications.putAll(cManager.removeParameters(parameters, searchRouteID.getPeer()));
+					notifications.putAll(cManager.removeParameters(parameters, parameterRouteID.getPeer()));
 				}
 				sendDisconnectNotifications(notifications);
 			}

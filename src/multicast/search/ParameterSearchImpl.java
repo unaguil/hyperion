@@ -561,7 +561,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 
 		if (notify) {
-			notifyRouteListeners(removeParametersMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch, associatedRoutes);
+			notifyRouteListeners(removeParametersMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch);
 
 			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), getNewDistance(removeParametersMessage));
 
@@ -570,18 +570,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 	}
 
-	private void notifyRouteListeners(final PeerID source, final Set<MessageID> removedSearchRoutes, final Set<MessageID> removedParameterRoutes, final Map<MessageID, Set<Parameter>> lostParameters, final Map<MessageID, Set<Parameter>> canceledParameterSearch, final Map<MessageID, MessageID> associatedRoutes) {
+	private void notifyRouteListeners(final PeerID source, final Set<MessageID> removedSearchRoutes, final Set<MessageID> removedParameterRoutes, final Map<MessageID, Set<Parameter>> lostParameters, final Map<MessageID, Set<Parameter>> canceledParameterSearch) {
 		if (!lostParameters.isEmpty()) {
 			logger.debug("Peer " + peer.getPeerID() + " lost parameters " + lostParameters + " in node " + source);
-
 			logger.trace("Peer " + peer.getPeerID() + " removedParameterRoutes " + removedParameterRoutes);
-			searchListener.changedParameterRoutes(lostParameters, removedParameterRoutes, associatedRoutes);
+			searchListener.changedParameterRoutes(lostParameters, removedParameterRoutes);
 		}
 
 		if (!canceledParameterSearch.isEmpty()) {
-
 			logger.trace("Peer " + peer.getPeerID() + " canceledParameterSearch " + canceledParameterSearch);
-
 			logger.trace("Peer " + peer.getPeerID() + " removedSearchRoutes " + removedSearchRoutes);
 			searchListener.changedSearchRoutes(canceledParameterSearch, removedSearchRoutes);
 		}
@@ -644,19 +641,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		final Set<MessageID> removedParameterRoutes = new HashSet<MessageID>();
 		final Set<MessageID> removedSearchRoutes = new HashSet<MessageID>();
 
-		final Map<MessageID, MessageID> associatedRoutes = new HashMap<MessageID, MessageID>();
-
 		boolean notify = false;
 		
 		synchronized (uTable) {
-			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {
-				final boolean searchRoute = uTable.isSearchRoute(routeID);
-	
-				final MessageID searchRouteID = uTable.getAssociatedSearchRoute(routeID);
-				if (searchRouteID != null)
-					associatedRoutes.put(searchRouteID, routeID);
-	
-				if (searchRoute) {
+			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
+				if (uTable.isSearchRoute(routeID)) {
 					final Set<Parameter> canceledParameters = uTable.getSearchedParameters(routeID);
 					final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
 					if (!lostDestination.equals(PeerID.VOID_PEERID)) {
@@ -664,17 +653,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 						removedSearchRoutes.add(routeID);
 						notify = true;
 					}
-	
 				} else {
 					final Set<Parameter> removedParameters = uTable.getParameters(routeID);
 					final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
 					if (!lostDestination.equals(PeerID.VOID_PEERID)) {
 						removedParameters.retainAll(uTable.getSearchedParameters());
-	
 						// get the search route associated with this route
 						if (!removedParameters.isEmpty())
 							lostParameters.put(routeID, removedParameters);
-						removedParameterRoutes.add(searchRouteID);
+						removedParameterRoutes.add(routeID);
 						notify = true;
 					}
 				}
@@ -685,7 +672,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		repropagateSearches(peer.getDetector().getCurrentNeighbors());
 
 		if (notify) {
-			notifyRouteListeners(removeRouteMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch, associatedRoutes);
+			notifyRouteListeners(removeRouteMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch);
 
 			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), getNewDistance(removeRouteMessage));
 

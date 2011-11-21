@@ -38,7 +38,7 @@ public interface ParameterSearchListener extends MulticastMessageListener {
 	 */
 	public void parametersFound(SearchResponseMessage message);
 
-	public void changedParameterRoutes(Map<MessageID, Set<Parameter>> lostParameters, Set<MessageID> lostParameterRoutes, Map<MessageID, MessageID> routeAssociations);
+	public void changedParameterRoutes(Map<MessageID, Set<Parameter>> lostParameters, Set<MessageID> lostParameterRoutes);
 
 	public void changedSearchRoutes(Map<MessageID, Set<Parameter>> changedSearchRoutes, Set<MessageID> lostSearchRoutes);
 }
