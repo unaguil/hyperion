@@ -200,6 +200,10 @@ public final class ConditionRegister<T> implements TimerTask {
 
 		return currentEntries;
 	}
+	
+	public boolean remove(T entry) {
+		return entries.remove(new Entry<T>(entry, System.currentTimeMillis()));
+	}
 
 	/**
 	 * Stops the internal timer of the register.

@@ -24,13 +24,15 @@ import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastTotalCounter;
 import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
+import detection.NeighborEventsListener;
 import detection.beaconDetector.BeaconDetector;
 import detection.message.BeaconMessage;
 
-public final class BasicPeer implements Peer {
+public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	public static final int CLEAN_REC_MSGS = 5000;
 
@@ -232,6 +234,8 @@ public final class BasicPeer implements Peer {
 		}
 
 		detector = new BeaconDetector(this, msgCounter);
+		
+		detector.addNeighborListener(this);
 
 		// Initialize all layers
 		for (final CommunicationLayer layer : communicationLayers)
@@ -479,5 +483,18 @@ public final class BasicPeer implements Peer {
 	@Override
 	public PeerID getPeerID() {
 		return peerID;
+	}
+
+	@Override
+	public void appearedNeighbors(PeerIDSet neighbors) {}
+
+	@Override
+	public void dissapearedNeighbors(PeerIDSet neighbors) {
+		for (MessageID messageID : receivedMessages.getEntries()) {
+			if (neighbors.contains(messageID.getPeer())) {
+				logger.trace("Peer " + peerID + " removing all messages received from neighbor " + messageID.getPeer());
+				receivedMessages.remove(messageID);
+			}
+		}
 	}
 }

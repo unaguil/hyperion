@@ -69,8 +69,38 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// Configuration properties
 	private int MAX_TTL = 5; // Default value
+	
+	
+	private static class ReceivedMessageID {
+		
+		private final MessageID remoteMessageID;
+		private final PeerID sender;
+		
+		public ReceivedMessageID(final MessageID remoteMessageID, final PeerID sender) {
+			this.remoteMessageID = remoteMessageID;
+			this.sender = sender;
+		}
+		
+		public PeerID getSender() {
+			return sender;
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof ReceivedMessageID))
+				return false;
+			
+			ReceivedMessageID receivedMessageID = (ReceivedMessageID)o;
+			return this.remoteMessageID.equals(receivedMessageID.remoteMessageID);
+		}
+		
+		@Override
+		public int hashCode() {
+			 return remoteMessageID.hashCode();
+		}
+	}
 
-	private final ConditionRegister<MessageID> receivedMessages = new ConditionRegister<MessageID>(BasicPeer.CLEAN_REC_MSGS);
+	private final ConditionRegister<ReceivedMessageID> receivedMessages = new ConditionRegister<ReceivedMessageID>(BasicPeer.CLEAN_REC_MSGS);
 	
 	private boolean enabled = true;
 
@@ -151,7 +181,14 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 	
 	@Override
-	public void dissapearedNeighbors(final PeerIDSet neighbors) {
+	public void dissapearedNeighbors(final PeerIDSet neighbors) {	
+		for (ReceivedMessageID receivedMessageID : receivedMessages.getEntries()) {
+			if (neighbors.contains(receivedMessageID.getSender())) {
+				logger.trace("Peer " + peer.getPeerID() + " removing all messages received from neighbor " + receivedMessageID.getSender());
+				receivedMessages.remove(receivedMessageID);
+			}
+		}
+		
 		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
 		
 		synchronized (uTable) { 
@@ -352,10 +389,10 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		// check that message was not previously received
 		RemoteMessage remoteMessage = ((RemoteMessage) message);
-		if (receivedMessages.contains(remoteMessage.getRemoteMessageID()))
+		if (receivedMessages.contains(new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())))
 			return;
 		
-		receivedMessages.addEntry(remoteMessage.getRemoteMessageID());
+		receivedMessages.addEntry((new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())));
 		
 		if (message instanceof SearchMessage)
 			processSearchMessage((SearchMessage) message);
