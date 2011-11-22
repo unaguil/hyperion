@@ -51,7 +51,7 @@ final class MessageProcessor extends WaitableThread {
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
 
-	private int RANDOM_WAIT = 200;
+	private int RANDOM_WAIT = 100;
 
 	/**
 	 * Constructor of the message processor
@@ -68,9 +68,11 @@ final class MessageProcessor extends WaitableThread {
 	public void init() {
 		try {
 			final String randomWaitStr = Configuration.getInstance().getProperty("messageProcessor.randomWait");
-			RANDOM_WAIT = Integer.parseInt(randomWaitStr);
+			final int value = Integer.parseInt(randomWaitStr);
+			if (value > 0)
+				RANDOM_WAIT = value;
+
 			logger.info("Peer " + peer.getPeerID() + " set RANDOM_WAIT to " + RANDOM_WAIT);
-			
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
