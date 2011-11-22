@@ -31,7 +31,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	private final RebroadcastThread rebroadcastThread;
 
-	private final static long CHECK_PERIOD = 10;
+	private final static long CHECK_PERIOD = 0;
 
 	private final ReliableBroadcastCounter reliableBroadcastCounter = new ReliableBroadcastCounter();
 
