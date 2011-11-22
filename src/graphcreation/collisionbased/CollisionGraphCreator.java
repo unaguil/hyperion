@@ -661,44 +661,27 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
 
 			// obtain which collisions are caused by the new parameters addition
-			collisions.addAll(checkNewParametersCollisions(addedParameters, sender));
-			logger.trace("Peer " + peer.getPeerID() + " provisional collisions " + collisions);
-
-			Set<Collision> invalidCollisions = getInvalidCollisions(collisions, sender);
-			logger.trace("Peer " + peer.getPeerID() + " invalid collisions " + invalidCollisions);
-						
-			for (Collision invalidCollision : invalidCollisions) {
-				collisions.remove(invalidCollision);
-				inhibitions.add(new Inhibition(invalidCollision, sender));
-			}
+			collisions.addAll(checkParametersCollisions(addedParameters, sender));
 			
-			logger.trace("Peer " + peer.getPeerID() + " collisions after removing invalid " + collisions);
-				
-			for (Collision validCollision : collisions)
-				inhibitions.add(new Inhibition(validCollision, PeerID.VOID_PEERID));
+			processCollisions(sender, inhibitions, collisions);
 		}
 
 		if (!changedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
-			// obtain those parameters whose estimated distance has been reduced
-			final Set<Parameter> reducedParameters = new HashSet<Parameter>();
-			for (final Entry<Parameter, DistanceChange> entry : changedParameters.entrySet()) {
-				final DistanceChange dChange = entry.getValue();
-				if (dChange.getNewValue() < dChange.getPreviousValue())
-					reducedParameters.add(entry.getKey());
+			
+			Set<Collision> detectedCollisions = checkParametersCollisions(changedParameters.keySet(), sender);
+			
+			//remove already detected collisions
+			//TODO improve with taxonomy checking
+			synchronized (cManager) {
+				for (final Iterator<Collision> it = detectedCollisions.iterator(); it.hasNext(); ) {
+					Collision detectedCollision = it.next();
+					if (cManager.contains(detectedCollision))
+						it.remove();
+				}
 			}
-
-			if (!reducedParameters.isEmpty()) {
-				// obtain collisions with reduced parameters
-				final Set<Collision> detectedCollisions = getReducedParametersCollisions(reducedParameters);
-
-				// add detected collisions
-				collisions.addAll(detectedCollisions);
-
-				// add detected collisions to inhibited ones
-				for (Collision detectedCollision : detectedCollisions)
-					inhibitions.add(new Inhibition(detectedCollision, PeerID.VOID_PEERID));
-			}
+			
+			processCollisions(sender, inhibitions, collisions);
 		}
 
 		// include those inhibitions received with the message which added the
@@ -714,7 +697,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 					collisions.remove(inhibedCollision.getCollision());
 			}
 			
-			logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + inhibeCollisionsMessage.getInhibedCollisions());
+			logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);
 				
 			inhibitions.addAll(inhibeCollisionsMessage.getInhibedCollisions());
 		}
@@ -748,18 +731,21 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		return null;
 	}
 
-	private Set<Collision> getReducedParametersCollisions(final Set<Parameter> reducedParameters) {
-		logger.trace("Peer " + peer.getPeerID() + " checking for collisions for reduced parameters: " + reducedParameters);
-		final Set<Collision> collisions = CollisionDetector.getParametersColliding(new HashSet<Parameter>(), pSearch.getDisseminationLayer().getParameters(), false, pSearch.getDisseminationLayer().getTaxonomy());
+	private void processCollisions(final PeerID sender, final Set<Inhibition> inhibitions, final Set<Collision> collisions) {
+		logger.trace("Peer " + peer.getPeerID() + " provisional collisions " + collisions);
 
-		// all collisions not containing reducedParameters are removed
-		for (final Iterator<Collision> it = collisions.iterator(); it.hasNext();) {
-			final Collision collision = it.next();
-			if (!reducedParameters.contains(collision.getInput()) && !reducedParameters.contains(collision.getOutput()))
-				it.remove();
+		Set<Collision> invalidCollisions = getInvalidCollisions(collisions, sender);
+		logger.trace("Peer " + peer.getPeerID() + " invalid collisions " + invalidCollisions);
+					
+		for (Collision invalidCollision : invalidCollisions) {
+			collisions.remove(invalidCollision);
+			inhibitions.add(new Inhibition(invalidCollision, sender));
 		}
-
-		return collisions;
+		
+		logger.trace("Peer " + peer.getPeerID() + " collisions after removing invalid " + collisions);
+			
+		for (Collision validCollision : collisions)
+			inhibitions.add(new Inhibition(validCollision, PeerID.VOID_PEERID));
 	}
 
 	private Set<Collision> getInvalidCollisions(final Set<Collision> newParametersCollisions, final PeerID neighbor) {
@@ -773,7 +759,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	// checks for new collisions taking into account the new added parameters.
 	// Returns the list of detected collisions
-	private Set<Collision> checkNewParametersCollisions(final Set<Parameter> addedParameters, final PeerID sender) {
+	private Set<Collision> checkParametersCollisions(final Set<Parameter> addedParameters, final PeerID sender) {
 		boolean checkNewParameters = false;
 		if (sender.equals(peer.getPeerID()))
 			checkNewParameters = true;

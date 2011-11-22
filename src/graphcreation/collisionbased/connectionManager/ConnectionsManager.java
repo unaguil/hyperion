@@ -172,4 +172,8 @@ public class ConnectionsManager {
 
 		return notifications;
 	}
+	
+	public boolean contains(final Collision collision) {
+		return detectedConnections.contains(new Connection(collision, taxonomy)); 
+	}
 }
