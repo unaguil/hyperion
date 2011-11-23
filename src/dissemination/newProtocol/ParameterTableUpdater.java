@@ -436,12 +436,16 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				final Set<Parameter> parametersAfterUpdate = pTable.getParameters();
 	
 				// obtain distance changes
-				for (final Parameter parameter : pTable.getParameters())
+				for (final Parameter parameter : pTable.getParameters()) {
+					final DistanceChange dChange = changedParameters.get(parameter);
 					if (changedParameters.containsKey(parameter)) {
-						final DistanceChange dChange = changedParameters.get(parameter);
-						changedParameters.put(parameter, new DistanceChange(dChange.getPreviousValue(), pTable.getEstimatedDistance(parameter)));
+						if (dChange.getPreviousValue() != pTable.getEstimatedDistance(parameter))
+							changedParameters.put(parameter, new DistanceChange(dChange.getPreviousValue(), pTable.getEstimatedDistance(parameter)));
+						else
+							changedParameters.remove(parameter);
 					} else
 						changedParameters.put(parameter, new DistanceChange(0, pTable.getEstimatedDistance(parameter)));
+				}
 	
 				// If parameters were added or removed
 				if (!parametersAfterUpdate.equals(parametersBeforeUpdate)) {
