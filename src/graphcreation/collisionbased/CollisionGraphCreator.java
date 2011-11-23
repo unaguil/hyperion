@@ -784,6 +784,8 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// to the values in the local table
 		final int neighborInput = (dissemination.getDistance(collision.getInput(), neighbor) == 0) ? dissemination.getEstimatedDistance(collision.getInput()) - 1 : dissemination.getDistance(collision.getInput(), neighbor) + 1;
 		final int neighborOutput = (dissemination.getDistance(collision.getOutput(), neighbor) == 0) ? dissemination.getEstimatedDistance(collision.getOutput()) - 1 : dissemination.getDistance(collision.getOutput(), neighbor) + 1;
+		if (neighborInput == 0 || neighborOutput == 0)
+			return true;
 
 		final int neighborSum = neighborInput + neighborOutput;
 
