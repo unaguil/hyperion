@@ -103,7 +103,7 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable
 
 	@Override
 	public String toString() {
-		return "[" + distance + "," + neighbor + "]";
+		return "[D:" + distance + ",N:" + neighbor + "]";
 	}
 
 	@Override
