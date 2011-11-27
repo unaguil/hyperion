@@ -13,7 +13,6 @@ public interface MulticastMessageListener {
 	 * @param payload
 	 *            the payload included in the multicast message
 	 * @param distance
-	 *            TODO
 	 */
 	public void multicastMessageAccepted(PeerID source, PayloadMessage payload, int distance);
 }

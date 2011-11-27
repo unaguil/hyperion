@@ -129,28 +129,16 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	}
 
 	@Override
-	public void compositionFound(final ExtendedServiceGraph composition, final SearchID searchID) {
-		// TODO Auto-generated method stub
-
-	}
+	public void compositionFound(final ExtendedServiceGraph composition, final SearchID searchID) {}
 
 	@Override
-	public void compositionTimeExpired(final SearchID searchID) {
-		// TODO Auto-generated method stub
-
-	}
+	public void compositionTimeExpired(final SearchID searchID) {}
 
 	@Override
-	public void compositionsLost(final SearchID searchID, final ExtendedServiceGraph invalidComposition) {
-		// TODO Auto-generated method stub
-
-	}
+	public void compositionsLost(final SearchID searchID, final ExtendedServiceGraph invalidComposition) {}
 
 	@Override
-	public void compositionModified(final SearchID searchID, final Set<Service> removedServices) {
-		// TODO Auto-generated method stub
-
-	}
+	public void compositionModified(final SearchID searchID, final Set<Service> removedServices) {}
 
 	public void loadData() {
 		try {

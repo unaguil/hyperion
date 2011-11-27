@@ -112,7 +112,6 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		// TODO Auto-generated method stub
 		super.readExternal(in);
 		
 		parameters.addAll(Arrays.asList((Parameter[])in.readObject()));
