@@ -452,6 +452,13 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			return uTable.knowsSearchRouteTo(dest);
 		}
 	}
+	
+	@Override
+	public boolean knowsRouteTo(final PeerID dest) {
+		synchronized (uTable) {
+			return uTable.knowsRouteTo(dest);
+		}
+	}
 
 	@Override
 	public int getDistanceTo(final PeerID peerID) {

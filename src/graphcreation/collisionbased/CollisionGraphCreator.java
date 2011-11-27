@@ -133,6 +133,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {
 		// Get the intermediate/collision nodes and group them
 		final Map<PeerID, Set<Service>> forwardTable = new HashMap<PeerID, Set<Service>>();
+		final Map<PeerID, Set<Service>> directMulticast = new HashMap<PeerID, Set<Service>>();
 		
 		synchronized (sdg) {
 			for (final Service service : destinations) {
@@ -144,18 +145,32 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 					if (!distances.isEmpty()) {
 						Collections.sort(distances, new DistanceComparator());
 						final PeerID intermediateNode = distances.get(0).getKey();
-						if (!forwardTable.containsKey(intermediateNode))
-							forwardTable.put(intermediateNode, new HashSet<Service>());
-						forwardTable.get(intermediateNode).add(service);
+						final int distance = distances.get(0).getValue().intValue();
+						
+						//check if destination node can be directly accessed trough multicast and it is shorter or equal than found one
+						if (pSearch.knowsRouteTo(service.getPeerID()) && pSearch.getDistanceTo(service.getPeerID()) <= distance) {
+							if (!directMulticast.containsKey(service.getPeerID()))
+								directMulticast.put(service.getPeerID(), new HashSet<Service>());
+							directMulticast.get(service.getPeerID()).add(service);
+						} else {						
+							if (!forwardTable.containsKey(intermediateNode))
+								forwardTable.put(intermediateNode, new HashSet<Service>());
+							forwardTable.get(intermediateNode).add(service);
+						}
 					}
 				}
 			}
 		}
 
+		//perform forwarding
 		for (final Entry<PeerID, Set<Service>> entry : forwardTable.entrySet()) {
 			logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getClass().getName());
 			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey())), new ForwardMessage(peer.getPeerID(), payload, entry.getValue()));
 		}
+		
+		//perform direct multicast
+		for (final Entry<PeerID, Set<Service>> entry : directMulticast.entrySet())
+			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey())), payload);
 	}
 
 	/*
