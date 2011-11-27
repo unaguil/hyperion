@@ -49,4 +49,23 @@ public class Inhibition implements Externalizable {
 	public String toString() {
 		return "[" + collision + ", notApplied: " + notApplied + "]";
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof Inhibition))
+			return false;
+		
+		Inhibition inhibition = (Inhibition)o;
+		return this.collision.equals(inhibition.collision) && this.notApplied.equals(inhibition.notApplied);
+	}
+	
+	@Override
+	public int hashCode() {
+		int result = 17;
+
+		result = 37 * result + this.collision.hashCode();
+		result = 37 * result + this.notApplied.hashCode();
+
+		return result; 
+	}
 }
