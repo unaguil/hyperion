@@ -695,6 +695,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		boolean notify = false;
 		boolean repropagateSearches = false;
 		
+		logger.trace("Peer " + peer.getPeerID() + " unicast table before removal: " + uTable);
+		
 		synchronized (uTable) {
 			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
 				if (uTable.isSearchRoute(routeID)) {
@@ -721,6 +723,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				}
 			}
 		}
+		
+		logger.trace("Peer " + peer.getPeerID() + " unicast table after removal: " + uTable);
 
 		if (removeRouteMessage.mustRepropagateSearches()) {
 			// Propagate current active searches
