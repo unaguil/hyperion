@@ -26,9 +26,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -112,6 +114,14 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public void setDisabled() {
 		enabled = false;
 	}
+	
+	class DistanceComparator implements Comparator<Entry<PeerID, Integer>> {
+
+		@Override
+		public int compare(Entry<PeerID, Integer> entryA, Entry<PeerID, Integer> entryB) {
+			return entryA.getValue().intValue() - entryB.getValue().intValue();
+		}
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -129,9 +139,11 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 				if (service.getPeerID().equals(peer.getPeerID()))
 					pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(peer.getPeerID())), payload);
 				else {
-					final Set<PeerID> intermediateNodes = sdg.getThroughCollisionNodes(service);
-					if (!intermediateNodes.isEmpty()) {
-						final PeerID intermediateNode = intermediateNodes.iterator().next();
+					//find the shortest path to reach each destination			
+					final List<Entry<PeerID, Integer>> distances = sdg.getDistances(service.getPeerID());
+					if (!distances.isEmpty()) {
+						Collections.sort(distances, new DistanceComparator());
+						final PeerID intermediateNode = distances.get(0).getKey();
 						if (!forwardTable.containsKey(intermediateNode))
 							forwardTable.put(intermediateNode, new HashSet<Service>());
 						forwardTable.get(intermediateNode).add(service);
