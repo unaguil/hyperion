@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -66,6 +67,9 @@ public class UnicastTable implements XMLSerializable {
 
 		// distance to the destination peer
 		private final int distance;
+		
+		//route creation timestamp
+		private final long timestamp;
 
 		public Route(final PeerID dest, final PeerID neighbor, final MessageID routeID, final boolean local, final int distance) {
 			this.dest = dest;
@@ -73,6 +77,7 @@ public class UnicastTable implements XMLSerializable {
 			this.routeID = routeID;
 			this.local = local;
 			this.distance = distance;
+			this.timestamp = System.currentTimeMillis();
 		}
 
 		public PeerID getNeighbor() {
@@ -93,6 +98,10 @@ public class UnicastTable implements XMLSerializable {
 
 		public int getDistance() {
 			return distance;
+		}
+		
+		public long getTimestamp() {
+			return timestamp;
 		}
 
 		@Override
@@ -421,6 +430,20 @@ public class UnicastTable implements XMLSerializable {
 
 		return searchedParameters;
 	}
+	
+	class TimeStampComparator implements Comparator<Route> {
+
+		@Override
+		public int compare(Route routeA, Route routeB) {
+			if (routeA.getTimestamp() > routeB.getTimestamp())
+				return 1;
+			else if (routeA.getTimestamp() < routeB.getTimestamp())
+				return -1;
+			else
+				return 0;				
+		}
+		
+	}
 
 	/**
 	 * Gets the neighbor which the passed destination peer is reached through
@@ -431,12 +454,21 @@ public class UnicastTable implements XMLSerializable {
 	 *         if destination is unknown
 	 */
 	public PeerID getNeighbor(final PeerID destination) {
-		// Find the first route to the destination
+		List<Route> availableRoutes = new ArrayList<Route>();
+		// find the more recent route to destination
 		for (final Route route : getAllRoutes())
 			if (route.getDest().equals(destination))
-				return route.getNeighbor();
+				availableRoutes.add(route);
 
-		return PeerID.VOID_PEERID;
+		if (availableRoutes.isEmpty())
+			return PeerID.VOID_PEERID;
+				
+		//sort available routes using creation timestamp
+		Collections.sort(availableRoutes, new TimeStampComparator());
+		
+		logger.trace("Peer " + peerID + " available routes to " + destination + ": " + availableRoutes);
+		
+		return availableRoutes.get(availableRoutes.size() - 1).getNeighbor();
 	}
 
 	/**
@@ -870,14 +902,11 @@ public class UnicastTable implements XMLSerializable {
 
 	// Adds a new known parameter route
 	private void addParameterRoute(final MessageID routeID, final Parameter parameter, final PeerID dest, final PeerID neighbor, final boolean local, final MessageID respondedRouteID, final int distance) {
-
 		final ResponseRoute route = new ResponseRoute(dest, neighbor, routeID, local, respondedRouteID, distance);
 
-		// Add the route to parameter routes creating an entry if does not
-		// already exist
 		if (!parameterRoutes.containsKey(route))
 			parameterRoutes.put(route, new HashSet<Parameter>());
-
+			
 		parameterRoutes.get(route).add(parameter);
 	}
 
