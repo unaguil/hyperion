@@ -165,6 +165,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		
 		final Map<PeerID, Set<Service>> notifications = new HashMap<PeerID, Set<Service>>();
 		
+		boolean notify = false;
 		synchronized (sdg) {
 			final Map<Service, Set<ServiceDistance>> connectionTable = new HashMap<Service, Set<ServiceDistance>>();
 			
@@ -182,7 +183,6 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	
 			// Those services which after removal have some parameters still present
 			// or subsumed in the parameter table are notified
-			boolean notify = false;
 			for (final Entry<Service, Set<ServiceDistance>> entry : connectionTable.entrySet()) {
 				final Service localService = entry.getKey();
 				for (final Parameter localParameter : pSearch.getDisseminationLayer().getLocalParameters())
@@ -207,12 +207,17 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 				}
 			}
 		}
-
-		// Enqueue remove service messages
-		for (final Entry<PeerID, Set<Service>> entry : notifications.entrySet()) {
+		
+		if (notify) {
 			final PeerIDSet peers = new PeerIDSet();
-			peers.addPeer(entry.getKey());
-			sendRemoveServicesMessage(entry.getValue(), peers);
+			final Set<Service> notifiedServices = new HashSet<Service>();
+	
+			for (final Entry<PeerID, Set<Service>> entry : notifications.entrySet()) {
+				peers.addPeer(entry.getKey());
+				notifiedServices.addAll(entry.getValue());
+			}
+		
+			sendRemoveServicesMessage(notifiedServices, peers);
 		}
 	}
 	
