@@ -3,6 +3,8 @@ package graphcreation.collisionbased.sdg;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import peer.message.MessageID;
@@ -171,4 +173,6 @@ public interface SDG extends XMLSerializable {
 	void removeServiceConnectedBy(Service service, PeerID peerID);
 
 	public Set<ServiceDistance> servicesConnectedThrough(MessageID routeID);
+
+	public List<Entry<PeerID, Integer>> getDistances(PeerID destination);
 }

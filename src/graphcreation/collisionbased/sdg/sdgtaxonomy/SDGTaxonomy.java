@@ -11,10 +11,13 @@ import graphcreation.services.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import peer.message.MessageID;
@@ -236,7 +239,7 @@ public class SDGTaxonomy implements SDG {
 			services.add(sDistance.getService());
 		return services;
 	}
-
+	
 	@Override
 	public Set<PeerID> getThroughCollisionNodes(final Service service) {
 		final Set<PeerID> collisionNodes = new HashSet<PeerID>();
@@ -246,6 +249,17 @@ public class SDGTaxonomy implements SDG {
 				collisionNodes.add(collisionNode);
 		}
 		return collisionNodes;
+	}
+
+	@Override
+	public List<Entry<PeerID, Integer>> getDistances(final PeerID destination) {
+		final Map<PeerID, Integer> distances = new HashMap<PeerID, Integer>();
+		for (final PeerID collisionNode : collisionInfoTable.keySet()) {
+			for (final ServiceDistance serviceDistance : collisionInfoTable.get(collisionNode).getServices())
+			if (serviceDistance.getService().getPeerID().equals(destination))
+				distances.put(collisionNode, serviceDistance.getDistance());
+		}
+		return new ArrayList<Entry<PeerID, Integer>>(distances.entrySet());
 	}
 
 	@Override
