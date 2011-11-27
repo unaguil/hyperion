@@ -9,6 +9,7 @@ import java.util.Set;
 
 import peer.message.MessageID;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class defines a message which is used to remove invalid routes
@@ -24,8 +25,10 @@ public class RemoveRouteMessage extends RemoteMessage {
 	
 	private final Set<MessageID> lostRoutes = new HashSet<MessageID>();
 	
+	private final boolean repropagateSearches;
+	
 	public RemoveRouteMessage() {
-		
+		repropagateSearches = false;
 	}
 
 	/**
@@ -36,9 +39,10 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * @param lostRoutes
 	 *            the routes which have to be removed
 	 */
-	public RemoveRouteMessage(final PeerID source, final Set<MessageID> lostRoutes) {
+	public RemoveRouteMessage(final PeerID source, final Set<MessageID> lostRoutes, final boolean repropagateSearches) {
 		super(source);
 		this.lostRoutes.addAll(lostRoutes);
+		this.repropagateSearches = repropagateSearches;
 	}
 
 	/**
@@ -51,9 +55,10 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * @param newDistance
 	 *            the new distance traveled by the message
 	 */
-	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender, final int newDistance) {
+	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender, final Set<MessageID> lostRoutes, final boolean repropagateSearches, final int newDistance) {
 		super(removeRouteMessage, sender, newDistance);
-		this.lostRoutes.addAll(removeRouteMessage.lostRoutes);
+		this.lostRoutes.addAll(lostRoutes);
+		this.repropagateSearches = repropagateSearches;
 	}
 
 	/**
@@ -63,6 +68,10 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 */
 	public Set<MessageID> getLostRoutes() {
 		return lostRoutes;
+	}
+	
+	public boolean mustRepropagateSearches() {
+		return repropagateSearches;
 	}
 
 	@Override
@@ -75,6 +84,8 @@ public class RemoveRouteMessage extends RemoteMessage {
 		super.readExternal(in);
 		
 		lostRoutes.addAll(Arrays.asList((MessageID[])in.readObject()));
+		
+		UnserializationUtils.setFinalField(RemoveRouteMessage.class, this, "repropagateSearches", in.readBoolean());
 	}
 
 	@Override
@@ -82,5 +93,7 @@ public class RemoveRouteMessage extends RemoteMessage {
 		super.writeExternal(out);
 		
 		out.writeObject(lostRoutes.toArray(new MessageID[0]));
+		
+		out.writeBoolean(repropagateSearches);
 	}
 }

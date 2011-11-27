@@ -21,7 +21,7 @@ public class UnserializationUtils {
 		}
 	}
 	
-	public static void setFinalField(Class<?> clazz, Object obj, final String fieldName, long value) throws IOException {
+	public static void setFinalField(Class<?> clazz, Object obj, final String fieldName, final long value) throws IOException {
 		try {
 			final Field field = clazz.getDeclaredField(fieldName);
 			field.setAccessible(true);
@@ -32,11 +32,22 @@ public class UnserializationUtils {
 		}
 	}
 	
-	public static void setFinalField(Class<?> clazz, Object obj, final String fieldName, int value) throws IOException {
+	public static void setFinalField(Class<?> clazz, Object obj, final String fieldName, final int value) throws IOException {
 		try {
 			final Field field = clazz.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			field.setInt(obj, value);
+			field.setAccessible(false);
+		} catch (Exception e) {
+			throw new IOException(clazz + ". " + e.getMessage());
+		}
+	}
+	
+	public static void setFinalField(Class<?> clazz, Object obj, final String fieldName, final boolean value) throws IOException {
+		try {
+			final Field field = clazz.getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.setBoolean(obj, value);
 			field.setAccessible(false);
 		} catch (Exception e) {
 			throw new IOException(clazz + ". " + e.getMessage());
