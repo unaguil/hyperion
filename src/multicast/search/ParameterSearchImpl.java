@@ -693,6 +693,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		final Set<MessageID> removedSearchRoutes = new HashSet<MessageID>();
 
 		boolean notify = false;
+		boolean repropagateSearches = false;
 		
 		synchronized (uTable) {
 			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
@@ -700,9 +701,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 					final Set<Parameter> canceledParameters = uTable.getSearchedParameters(routeID);
 					final PeerID lostDestination = uTable.removeRoute(routeID, removeRouteMessage.getSender());
 					if (!lostDestination.equals(PeerID.VOID_PEERID)) {
+						//removing of search parameters produces
 						canceledParameterSearch.put(routeID, canceledParameters);
 						removedSearchRoutes.add(routeID);
 						notify = true;
+						repropagateSearches = true;
 					}
 				} else {
 					final Set<Parameter> removedParameters = uTable.getParameters(routeID);
@@ -719,14 +722,20 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 
-		// Propagate current active searches
-		repropagateSearches(peer.getDetector().getCurrentNeighbors());
+		if (removeRouteMessage.mustRepropagateSearches()) {
+			// Propagate current active searches
+			repropagateSearches(peer.getDetector().getCurrentNeighbors());
+		}
 
-		if (notify) {
+		if (notify)
 			notifyRouteListeners(removeRouteMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch);
-
-			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), getNewDistance(removeRouteMessage));
-
+		
+		if (notify || repropagateSearches) {
+			final Set<MessageID> lostRoutes = new HashSet<MessageID>();
+			lostRoutes.addAll(removedSearchRoutes);
+			lostRoutes.addAll(removedParameterRoutes);
+			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), lostRoutes, repropagateSearches, getNewDistance(removeRouteMessage));
+	
 			logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
 			peer.enqueueBroadcast(newRemoveRouteMessage);
 		}
@@ -817,7 +826,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), lostRoutes);
+		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), lostRoutes, false);
 		messageReceived(removeRouteMessage, System.currentTimeMillis());
 	}
 
