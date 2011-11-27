@@ -655,6 +655,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 	@Override
 	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
+		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
 		if (!addedParameters.isEmpty()) {
@@ -688,8 +689,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// new parameters
 		if (payload != null) {
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
-
-			logger.trace("Peer " + peer.getPeerID() + " received inhibition for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
+			logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
 
 			// remove collisions using received inhibitions (checking if collision is applied)
 			for (Inhibition inhibedCollision : inhibeCollisionsMessage.getInhibedCollisions()) {
@@ -725,8 +725,10 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		// if collisions were detected return them as payload for parameter
 		// table update propagated message
-		if (!inhibitions.isEmpty())
+		if (!inhibitions.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " sending inhibitions " + inhibitions + " as parameter table payload");
 			return new InhibeCollisionsMessage(inhibitions, peer.getPeerID());
+		}
 
 		return null;
 	}
