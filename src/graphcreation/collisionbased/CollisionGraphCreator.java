@@ -130,7 +130,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	 * BroadcastMessage, java.util.Set)
 	 */
 	@Override
-	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {
+	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {		
 		// Get the intermediate/collision nodes and group them
 		final Map<PeerID, Set<Service>> forwardTable = new HashMap<PeerID, Set<Service>>();
 		final Map<PeerID, Set<Service>> directMulticast = new HashMap<PeerID, Set<Service>>();
@@ -164,13 +164,15 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 
 		//perform forwarding
 		for (final Entry<PeerID, Set<Service>> entry : forwardTable.entrySet()) {
-			logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getClass().getName());
+			logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType());
 			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey())), new ForwardMessage(peer.getPeerID(), payload, entry.getValue()));
 		}
 		
 		//perform direct multicast
-		for (final Entry<PeerID, Set<Service>> entry : directMulticast.entrySet())
+		for (final Entry<PeerID, Set<Service>> entry : directMulticast.entrySet()) {
+			logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType());
 			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey())), payload);
+		}
 	}
 
 	/*

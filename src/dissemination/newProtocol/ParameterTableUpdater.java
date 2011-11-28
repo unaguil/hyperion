@@ -492,6 +492,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			tableMessage = new TableMessage(updateTable, peer.getPeerID(), payload);
 
 			logger.trace("Peer " + peer.getPeerID() + " sending update table message " + tableMessage);
+			
+			final String payloadType = (payload == null)?"null":payload.getType();
+			logger.debug("Peer " + peer.getPeerID() + " sending update table message with payload type of " + payloadType);
 			// Perform the broadcasting of table message
 			peer.enqueueBroadcast(tableMessage);
 		} else
