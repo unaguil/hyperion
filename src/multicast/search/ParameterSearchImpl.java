@@ -796,7 +796,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			return;
 		
 		final SearchMessage searchMessage = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
-		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID());
+		final String payloadType = (payload == null)?"null":payload.getType();
+		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
 		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
 		
@@ -829,7 +830,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(destination, parameters, payload, peer.getPeerID(), respondedRouteID);
 
 		logger.trace("Peer " + peer.getPeerID() + " sending search response message " + searchResponseMessage);
-		logger.debug("Peer " + peer.getPeerID() + " sending response message to search " + searchResponseMessage.getRespondedRouteID());
+		
+		final String payloadType = (payload == null)?"null":payload.getType();
+		logger.debug("Peer " + peer.getPeerID() + " sending response message to search " + searchResponseMessage.getRespondedRouteID() + " with payload type of " + payloadType);
 		messageReceived(searchResponseMessage, System.currentTimeMillis());
 	}
 
