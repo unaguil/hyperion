@@ -1,19 +1,4 @@
-  Multicast
-============
-
-Collisions occur sometimes
-
- GraphCreation
-===============
-
-Collisions occurs sometimes. Maybe it is related with the simultaneous messages propagated by the different layers. Piggybacking could resolve this problem.
-
-multipleConnectionsRemoveServiceTaxonomy
-multipleConnectionsRemoveService
-simpleComposition
-
- BGraphSearch
-===============
-Collisions occurs sometimes. Maybe it is related with the simultaneous messages propagated by the different layers. Piggybacking could resolve this problem.
-
-simpleMultipleSearches -> collisions occurs due to simultaneous multiple messages. Maybe number messages could be reduced.
+  Dissemination
+ ===============
+ 
+  * nodeMoving1-> no ha obtenido el valor correcto para la tabla del nodo que se mueve
