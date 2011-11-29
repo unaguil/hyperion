@@ -137,11 +137,11 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	private long getBackoffTime(final int factor, int currentNeighbors) {
-		return BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME * factor;
+		return currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME * factor;
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
+		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME;
 	}
 
 	private boolean mustRebroadcast() {

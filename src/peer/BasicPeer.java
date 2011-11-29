@@ -79,7 +79,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
-	public static final int TRANSMISSION_TIME = 30;
+	public static final int TRANSMISSION_TIME = 20;
 
 	public static final int ACK_TRANSMISSION_TIME = 10;
 
