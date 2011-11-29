@@ -605,7 +605,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		if (!enabled)
 			return;
 		
-		logger.trace("Peer " + peer.getPeerID() + " sending collision message while searching for parameters " + parameters);
+		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + parameters);
 		final CollisionMessage collisionMessage = new CollisionMessage(peer.getPeerID());
 		pSearch.sendSearchMessage(parameters, collisionMessage, SearchType.Generic);
 	}
