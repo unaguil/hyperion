@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
@@ -31,7 +30,6 @@ public abstract class BroadcastMessage implements Externalizable {
 
 	private List<PeerID> expectedDestinations = new ArrayList<PeerID>();
 
-	
 	public BroadcastMessage() {
 		messageID = null;
 	}
@@ -62,10 +60,6 @@ public abstract class BroadcastMessage implements Externalizable {
 
 	public void removeExpectedDestination(final PeerID peerID) {
 		expectedDestinations.remove(peerID);
-	}
-
-	public void removeExpectedDestinations(final Set<PeerID> peerIDSet) {
-		expectedDestinations.removeAll(peerIDSet);
 	}
 
 	public List<PeerID> getExpectedDestinations() {

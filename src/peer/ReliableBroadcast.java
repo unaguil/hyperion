@@ -203,7 +203,8 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		synchronized (mutex) {
 			if (processingMessage) {
 				// remove disappeared neighbors
-				currentMessage.removeExpectedDestinations(disappearedNeighbors.getPeerSet());
+				for (final PeerID dissappearedNeighbor : disappearedNeighbors.getPeerSet())
+					currentMessage.removeExpectedDestination(dissappearedNeighbor);
 
 				if (currentMessage.getExpectedDestinations().isEmpty())
 					processingMessage = false;
