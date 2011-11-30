@@ -1,5 +1,6 @@
 package multicast.search;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,11 +15,11 @@ class SearchMessageReceivers {
 
 	private final Map<SearchMessage, Set<PeerID>> receiversTable = new HashMap<SearchMessage, Set<PeerID>>(); 	
 	
-	public void addReceivers(SearchMessage searchMessage, Set<PeerID> neighbors) {
+	public void addReceivers(SearchMessage searchMessage, Collection<PeerID> neighbors) {
 		if (!receiversTable.containsKey(searchMessage))
-			receiversTable.put(searchMessage, neighbors);
-		else
-			receiversTable.get(searchMessage).addAll(neighbors);
+			receiversTable.put(searchMessage, new HashSet<PeerID>());
+		
+		receiversTable.get(searchMessage).addAll(neighbors);
 	}
 	
 	public void removeNeighbors(Set<PeerID> neighbors) {
