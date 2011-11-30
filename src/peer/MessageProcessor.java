@@ -8,7 +8,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import multicast.search.message.RemoteMulticastMessage;
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
@@ -129,12 +128,7 @@ final class MessageProcessor extends WaitableThread {
 				final PeerIDSet destinations = new PeerIDSet();
 
 				for (final BroadcastMessage broadcastMessage : waitingMessages) {
-					if (broadcastMessage instanceof RemoteMulticastMessage) {
-						final RemoteMulticastMessage remoteMulticastMessage = (RemoteMulticastMessage) broadcastMessage;
-						destinations.addPeers(remoteMulticastMessage.getThroughPeers());
-					} else
-						destinations.addPeers(peer.getDetector().getCurrentNeighbors());
-
+					destinations.addPeers(broadcastMessage.getExpectedDestinations());
 					bundleMessages.add(broadcastMessage);
 				}
 				
