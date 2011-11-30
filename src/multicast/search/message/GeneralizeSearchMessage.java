@@ -5,6 +5,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import peer.message.MessageID;
@@ -45,8 +46,8 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	 * @param source
 	 *            the source of the message
 	 */
-	public GeneralizeSearchMessage(final Set<Parameter> parameters, final Set<MessageID> routeIDs, final PeerID source) {
-		super(source);
+	public GeneralizeSearchMessage(final PeerID source, final List<PeerID> expectedDestinations, final Set<Parameter> parameters, final Set<MessageID> routeIDs) {
+		super(source, expectedDestinations);
 		this.parameters.addAll(parameters);
 		this.routeIDs.addAll(routeIDs);
 	}
@@ -63,8 +64,8 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	 * @param newDistance
 	 *            the new distance for this message
 	 */
-	public GeneralizeSearchMessage(final GeneralizeSearchMessage generalizeSearchMessage, final PeerID sender, final int newDistance) {
-		super(generalizeSearchMessage, sender, newDistance);
+	public GeneralizeSearchMessage(final GeneralizeSearchMessage generalizeSearchMessage, final PeerID sender, final List<PeerID> expectedDestinations, final int newDistance) {
+		super(generalizeSearchMessage, sender, expectedDestinations, newDistance);
 		this.routeIDs.addAll(generalizeSearchMessage.routeIDs);
 		this.parameters.addAll(generalizeSearchMessage.parameters);
 	}

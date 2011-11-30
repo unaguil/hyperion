@@ -45,8 +45,8 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 * @param source
 	 *            the source of the message
 	 */
-	public RemoveParametersMessage(final Map<MessageID, Set<Parameter>> removedParameters, final PeerID source) {
-		super(source);
+	public RemoveParametersMessage(final PeerID source, final List<PeerID> expectedDestinations, final Map<MessageID, Set<Parameter>> removedParameters) {
+		super(source, expectedDestinations);
 		this.removedParameters.putAll(removedParameters);
 	}
 
@@ -62,8 +62,8 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 * @param newDistance
 	 *            the new distance for this message
 	 */
-	public RemoveParametersMessage(final RemoveParametersMessage removeParamRouteMessage, final PeerID sender, final int newDistance) {
-		super(removeParamRouteMessage, sender, newDistance);
+	public RemoveParametersMessage(final RemoveParametersMessage removeParamRouteMessage, final PeerID sender, final List<PeerID> expectedDestinations, final int newDistance) {
+		super(removeParamRouteMessage, sender, expectedDestinations, newDistance);
 		this.removedParameters.putAll(removeParamRouteMessage.removedParameters);
 	}
 

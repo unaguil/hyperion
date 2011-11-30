@@ -96,7 +96,7 @@ public class ConnectionsManagerTest {
 		for (final Service service : services)
 			serviceTable.put(service, Integer.valueOf(0));
 
-		return new CollisionResponseMessage(serviceTable, source);
+		return new CollisionResponseMessage(source, serviceTable);
 	}
 
 	@Test

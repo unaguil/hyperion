@@ -1,5 +1,6 @@
 package detection.beaconDetector;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -181,7 +182,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
-		beaconMessage = new BeaconMessage(peer.getPeerID());
+		beaconMessage = new BeaconMessage(peer.getPeerID(), new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet()));
 
 		// Send initial beacon and schedule next
 		beaconThread = new BeaconSendThread(this);

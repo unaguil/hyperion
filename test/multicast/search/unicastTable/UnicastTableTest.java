@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -98,9 +99,9 @@ public class UnicastTableTest {
 	}
 
 	private SearchMessage createSearchMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender) {
-		final SearchMessage searchMessage = new SearchMessage(parameters, null, source, 0, 0, SearchType.Exact);
+		final SearchMessage searchMessage = new SearchMessage(source, new ArrayList<PeerID>(), parameters, null, 0, 0, SearchType.Exact);
 
-		return new SearchMessage(searchMessage, sender, 0);
+		return new SearchMessage(searchMessage, sender, new ArrayList<PeerID>(), 0);
 	}
 
 	private SearchResponseMessage createSearchResponseMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender, final SearchMessage searchMessage) {

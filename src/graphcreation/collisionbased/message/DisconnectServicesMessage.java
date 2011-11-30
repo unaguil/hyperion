@@ -5,6 +5,7 @@ import graphcreation.services.Service;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,8 +27,8 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 		
 	}
 
-	public DisconnectServicesMessage(final Set<Service> lostServices, final PeerID source) {
-		super(source);
+	public DisconnectServicesMessage(final PeerID source, final Set<Service> lostServices) {
+		super(source, new ArrayList<PeerID>());
 		this.lostServices.addAll(lostServices);
 	}
 
@@ -42,7 +43,7 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 
 	@Override
 	public PayloadMessage copy() {
-		return new DisconnectServicesMessage(getLostServices(), getSource());
+		return new DisconnectServicesMessage(getSource(), getLostServices());
 	}
 	
 	@Override

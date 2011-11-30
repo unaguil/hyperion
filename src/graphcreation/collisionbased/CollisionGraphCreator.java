@@ -579,7 +579,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			return;
 		
 		logger.trace("Peer " + peer.getPeerID() + " sending connect services message to " + notifiedPeers + " RS:" + remoteSuccessors + " RA:" + remoteAncestors);
-		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(remoteSuccessors, remoteAncestors, peer.getPeerID());
+		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(peer.getPeerID(), remoteSuccessors, remoteAncestors);
 		pSearch.sendMulticastMessage(notifiedPeers, messageForPeers);
 	}
 
@@ -588,7 +588,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			return;
 		
 		logger.trace("Peer " + peer.getPeerID() + " sending disconnect services message to " + notifiedPeers + " with lost services " + lostServices);
-		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(lostServices, peer.getPeerID());
+		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(peer.getPeerID(), lostServices);
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
@@ -597,7 +597,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			return;
 		
 		logger.trace("Peer " + peer.getPeerID() + " sending removed services message to " + notifiedPeers + " with removed services " + rServices);
-		final RemovedServicesMessage messageForOutputPeers = new RemovedServicesMessage(rServices, peer.getPeerID());
+		final RemovedServicesMessage messageForOutputPeers = new RemovedServicesMessage(peer.getPeerID(), rServices);
 		pSearch.sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 
@@ -761,7 +761,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 		// table update propagated message
 		if (!inhibitions.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " sending inhibitions " + inhibitions + " as parameter table payload");
-			return new InhibeCollisionsMessage(inhibitions, peer.getPeerID());
+			return new InhibeCollisionsMessage(peer.getPeerID(), inhibitions);
 		}
 
 		return null;
@@ -859,7 +859,7 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 			for (final Service service : services)
 				serviceDistanceTable.put(service, Integer.valueOf(0));
 
-			final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(serviceDistanceTable, peer.getPeerID());
+			final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
 
 			logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + message.getSource());
 			return collisionResponseMessage;

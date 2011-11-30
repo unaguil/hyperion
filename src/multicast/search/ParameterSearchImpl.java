@@ -424,7 +424,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final RemoteMulticastMessage msg = new RemoteMulticastMessage(destinations, payload, peer.getPeerID());
+		final RemoteMulticastMessage msg = new RemoteMulticastMessage(peer.getPeerID(), destinations, payload);
 
 		final String payloadType = (payload == null)?"null":payload.getType();
 		logger.debug("Peer " + peer.getPeerID() + " sending remote multicast message " + msg + " with payload type of " + payloadType + " to " + destinations);
@@ -442,7 +442,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final RemoteMulticastMessage msg = new RemoteMulticastMessage(new PeerIDSet(Collections.singleton(destination)), payload, peer.getPeerID());
+		final RemoteMulticastMessage msg = new RemoteMulticastMessage(peer.getPeerID(), new PeerIDSet(Collections.singleton(destination)), payload);
 		logger.debug("Peer " + peer.getPeerID() + " sending remote unicast message " + msg + " to " + destination);
 		messageReceived(msg, System.currentTimeMillis());
 	}
@@ -628,7 +628,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (notify) {
 			notifyRouteListeners(removeParametersMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch);
 
-			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), getNewDistance(removeParametersMessage));
+			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), currentNeighbors, getNewDistance(removeParametersMessage));
 			logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
 			peer.enqueueBroadcast(newRemoveParametersMessage);
 		}
@@ -686,7 +687,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 
 		if (notifyNeighbors) {
-			final GeneralizeSearchMessage newGeneralizeSearchMessage = new GeneralizeSearchMessage(generalizeSearchMessage, peer.getPeerID(), getNewDistance(generalizeSearchMessage));
+			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			final GeneralizeSearchMessage newGeneralizeSearchMessage = new GeneralizeSearchMessage(generalizeSearchMessage, peer.getPeerID(), currentNeighbors, getNewDistance(generalizeSearchMessage));
 
 			logger.trace("Peer " + peer.getPeerID() + " sending generalize search message " + newGeneralizeSearchMessage);
 			peer.enqueueBroadcast(newGeneralizeSearchMessage);
@@ -751,7 +753,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			final Set<MessageID> lostRoutes = new HashSet<MessageID>();
 			lostRoutes.addAll(removedSearchRoutes);
 			lostRoutes.addAll(removedParameterRoutes);
-			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), lostRoutes, repropagateSearches, getNewDistance(removeRouteMessage));
+			
+			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), currentNeighbors, lostRoutes, repropagateSearches, getNewDistance(removeRouteMessage));
 	
 			logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
 			peer.enqueueBroadcast(newRemoveRouteMessage);
@@ -800,7 +804,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final SearchMessage searchMessage = new SearchMessage(parameters, payload, peer.getPeerID(), MAX_TTL, 0, searchType);
+		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), currentNeighbors, parameters, payload, MAX_TTL, 0, searchType);
 		final String payloadType = (payload == null)?"null":payload.getType();
 		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
@@ -814,7 +819,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final RemoveParametersMessage removeParametersMessage = new RemoveParametersMessage(removedParameters, peer.getPeerID());
+		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final RemoveParametersMessage removeParametersMessage = new RemoveParametersMessage(peer.getPeerID(), currentNeighbors, removedParameters);
 		messageReceived(removeParametersMessage, System.currentTimeMillis());
 	}
 
@@ -822,7 +828,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final GeneralizeSearchMessage generalizeSearchMessage = new GeneralizeSearchMessage(parameters, routeIDs, peer.getPeerID());
+		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final GeneralizeSearchMessage generalizeSearchMessage = new GeneralizeSearchMessage(peer.getPeerID(), currentNeighbors, parameters, routeIDs);
 		messageReceived(generalizeSearchMessage, System.currentTimeMillis());
 	}
 
@@ -845,8 +852,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private void sendRemoveRouteMessage(final Set<MessageID> lostRoutes) {
 		if (!enabled)
 			return;
-		
-		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), lostRoutes, false);
+
+		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), currentNeighbors, lostRoutes, false);
 		messageReceived(removeRouteMessage, System.currentTimeMillis());
 	}
 
@@ -856,7 +864,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		// Create a copy of the message for broadcasting using the current node
 		// as the new sender. This message responds to the received one
-		final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), getNewDistance(searchMessage));
+		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), currentNeighbors, getNewDistance(searchMessage));
 		for (final Parameter p : searchMessage.getSearchedParameters()) {
 			final int tableDistance = pDisseminator.getEstimatedDistance(p);
 			final int previousDistance = searchMessage.getPreviousDistance(p);
@@ -885,11 +894,10 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (newSearchMessage.hasTTL()) {
 			receiversTable.retainAll(uTable.getActiveSearches());
 			
-			final Set<PeerID> currentNeighbors = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-			currentNeighbors.removeAll(receiversTable.getReceivers(newSearchMessage));
-			
-			if (forcePropagation || !currentNeighbors.isEmpty()) {
-				receiversTable.addReceivers(newSearchMessage, currentNeighbors);
+			final Set<PeerID> currentNeighborSet = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			currentNeighborSet.removeAll(receiversTable.getReceivers(newSearchMessage));
+			if (forcePropagation || !currentNeighborSet.isEmpty()) {
+				receiversTable.addReceivers(newSearchMessage, currentNeighborSet);
 				
 				peer.enqueueBroadcast(newSearchMessage);
 				logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newSearchMessage);

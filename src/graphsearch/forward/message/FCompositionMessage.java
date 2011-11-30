@@ -17,6 +17,7 @@ import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
 import peer.message.PayloadMessage;
+import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
 
 public class FCompositionMessage extends RemoteMessage implements PayloadMessage {
@@ -67,7 +68,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 	 *            remaining time for this message to expire
 	 */
 	public FCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime) {
-		super(sourceService.getPeerID());
+		super(sourceService.getPeerID(), new ArrayList<PeerID>());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;

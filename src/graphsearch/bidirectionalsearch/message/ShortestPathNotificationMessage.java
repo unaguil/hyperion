@@ -41,7 +41,7 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	}
 
 	public ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
-		super(source);
+		super(source, new ArrayList<PeerID>());
 
 		this.searchID = searchID;
 
@@ -53,7 +53,7 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	}
 
 	protected ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath, final Service destination) {
-		super(source);
+		super(source, new ArrayList<PeerID>());
 
 		this.searchID = searchID;
 

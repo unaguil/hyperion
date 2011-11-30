@@ -140,11 +140,7 @@ final class MessageProcessor extends WaitableThread {
 				
 				waitingMessages.clear();
 
-				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), bundleMessages);
-				List<PeerID> expectedDestinations = new ArrayList<PeerID>();
-				expectedDestinations.addAll(destinations.getPeerSet());
-				bundleMessage.setExpectedDestinations(expectedDestinations);
-				
+				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
 				msgCounter.addSent(bundleMessage.getClass());
 				
 				if (Peer.USE_RELIABLE_BROADCAST)

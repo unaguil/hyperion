@@ -5,6 +5,7 @@ import graphcreation.services.Service;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -27,8 +28,8 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 		
 	}
 
-	public CollisionResponseMessage(final Map<Service, Integer> serviceTable, final PeerID source) {
-		super(source);
+	public CollisionResponseMessage(final PeerID source, final Map<Service, Integer> serviceTable) {
+		super(source, new ArrayList<PeerID>());
 		serviceDistanceTable.putAll(serviceTable);
 	}
 
@@ -57,7 +58,7 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 
 	@Override
 	public PayloadMessage copy() {
-		return new CollisionResponseMessage(serviceDistanceTable, getSource());
+		return new CollisionResponseMessage(getSource(), serviceDistanceTable);
 	}
 
 	public void addDistance(final int distance) {

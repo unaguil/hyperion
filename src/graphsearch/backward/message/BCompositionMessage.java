@@ -76,7 +76,7 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 	 *            the peerID which created the message
 	 */
 	public BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final PeerID peerID) {
-		super(sourceService.getPeerID());
+		super(sourceService.getPeerID(), new ArrayList<PeerID>());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
@@ -90,7 +90,7 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 	}
 
 	private BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final MessagePart newMessagePart) {
-		super(sourceService.getPeerID());
+		super(sourceService.getPeerID(), new ArrayList<PeerID>());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;

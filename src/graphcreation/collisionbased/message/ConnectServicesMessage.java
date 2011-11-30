@@ -33,8 +33,8 @@ public class ConnectServicesMessage extends RemoteMessage implements PayloadMess
 		
 	}
 
-	public ConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final PeerID source) {
-		super(source);
+	public ConnectServicesMessage(final PeerID source, final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors) {
+		super(source, new ArrayList<PeerID>());
 		this.remoteAncestors.putAll(remoteAncestors);
 		this.remoteSuccessors.putAll(remoteSuccessors);
 	}
@@ -54,7 +54,7 @@ public class ConnectServicesMessage extends RemoteMessage implements PayloadMess
 
 	@Override
 	public PayloadMessage copy() {
-		return new ConnectServicesMessage(getRemoteSuccessors(), getRemoteAncestors(), getSource());
+		return new ConnectServicesMessage(getSource(), getRemoteSuccessors(), getRemoteAncestors());
 	}
 
 	@Override

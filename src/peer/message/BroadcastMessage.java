@@ -34,8 +34,9 @@ public abstract class BroadcastMessage implements Externalizable {
 		messageID = null;
 	}
 	
-	public BroadcastMessage(final PeerID sender) {
+	public BroadcastMessage(final PeerID sender, final List<PeerID> expectedDestinations) {
 		this.messageID = new MessageID(sender, MessageIDGenerator.getNewID());
+		this.expectedDestinations.addAll(expectedDestinations);
 	}
 
 	public long getID() {
@@ -52,10 +53,6 @@ public abstract class BroadcastMessage implements Externalizable {
 
 	public String getType() {
 		return getClass().getName();
-	}
-
-	public void setExpectedDestinations(final List<PeerID> expectedDestinations) {
-		this.expectedDestinations.addAll(expectedDestinations);
 	}
 
 	public void removeExpectedDestination(final PeerID peerID) {

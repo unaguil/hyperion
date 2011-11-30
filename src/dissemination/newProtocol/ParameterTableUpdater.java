@@ -4,8 +4,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -488,8 +490,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		// Only send message if tables are non empty
 		if (!updateTable.isEmpty()) {
 			TableMessage tableMessage;
-
-			tableMessage = new TableMessage(updateTable, peer.getPeerID(), payload);
+			
+			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			tableMessage = new TableMessage(peer.getPeerID(), currentNeighbors, updateTable, payload);
 
 			logger.trace("Peer " + peer.getPeerID() + " sending update table message " + tableMessage);
 			

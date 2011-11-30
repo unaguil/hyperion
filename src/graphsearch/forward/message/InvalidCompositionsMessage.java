@@ -36,7 +36,7 @@ public class InvalidCompositionsMessage extends RemoteMessage implements Payload
 	}
 
 	public InvalidCompositionsMessage(final PeerID source) {
-		super(source);
+		super(source, new ArrayList<PeerID>());
 	}
 
 	public void addInvalidLocalService(final SearchID searchID, final Service invalidLocalService, final Set<ServiceDistance> successors) {

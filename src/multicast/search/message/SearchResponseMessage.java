@@ -51,7 +51,7 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 	 *            the source of the message
 	 */
 	public SearchResponseMessage(final PeerID destination, final Set<Parameter> foundParameters, final PayloadMessage payload, final PeerID source, final MessageID respondedRouteID) {
-		super(new PeerIDSet(Collections.singleton(destination)), payload, source);
+		super(source, new PeerIDSet(Collections.singleton(destination)), payload);
 		this.parameters.addAll(foundParameters);
 		this.respondedRouteID = respondedRouteID;
 	}

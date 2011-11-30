@@ -3,6 +3,7 @@ package peer.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.List;
 
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
@@ -26,8 +27,8 @@ public class MessageString extends BroadcastMessage {
 		content = null;
 	}
 
-	public MessageString(final PeerID sender, final String content) {
-		super(sender);
+	public MessageString(final PeerID sender, final List<PeerID> expectedDestinations, final String content) {
+		super(sender, expectedDestinations);
 		this.content = content;
 	}
 
