@@ -63,6 +63,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	// delegated listener for parameter table changes
 	private final TableChangedListener tableChangedListener;
+	
+	private final SearchMessageReceivers receiversTable = new SearchMessageReceivers();
 
 	// A reference to the route table
 	private UnicastTable uTable;
@@ -189,6 +191,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 		
+		logger.trace("Peer " + peer.getPeerID() + " removing dissapeared neighbors from search message receivers table");
+		receiversTable.removeNeighbors(neighbors.getPeerSet());
+		
 		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
 		
 		synchronized (uTable) { 
@@ -205,7 +210,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		synchronized (uTable) {
 			for (final SearchMessage searchMessage : uTable.getActiveSearches())
-				propagateSearchMessage(searchMessage);
+				propagateSearchMessage(searchMessage, true);
 		}
 	}
 
@@ -353,7 +358,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		// Propagate all searches
 		for (final SearchMessage searchMessage : propagatedSearches)
-			propagateSearchMessage(searchMessage);
+			propagateSearchMessage(searchMessage, false);
 	}
 
 	/*
@@ -778,7 +783,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			if (!foundParameters.isEmpty())
 				acceptSearchMessage(searchMessage, foundParameters);
 
-			propagateSearchMessage(searchMessage);
+			propagateSearchMessage(searchMessage, false);
 		}
 	}
 
@@ -846,45 +851,51 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	// Called when search is a propagated search
-	private void propagateSearchMessage(final SearchMessage searchMessage) {
+	private void propagateSearchMessage(final SearchMessage searchMessage, boolean forcePropagation) {
 		logger.trace("Peer " + peer.getPeerID() + " propagating search " + searchMessage);
 		
 		// Create a copy of the message for broadcasting using the current node
 		// as the new sender. This message responds to the received one
-		final SearchMessage newMsg = new SearchMessage(searchMessage, peer.getPeerID(), getNewDistance(searchMessage));
+		final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), getNewDistance(searchMessage));
 		for (final Parameter p : searchMessage.getSearchedParameters()) {
 			final int tableDistance = pDisseminator.getEstimatedDistance(p);
 			final int previousDistance = searchMessage.getPreviousDistance(p);
 
 			if (previousDistance <= tableDistance && !(previousDistance == 0 && tableDistance == 0)) {
 				// The message is getting closer to a parameter. TTL is restored
-				newMsg.restoreTTL(p, MAX_TTL);
+				newSearchMessage.restoreTTL(p, MAX_TTL);
 
-				logger.trace("Peer " + peer.getPeerID() + " restored message " + newMsg + " TTL. Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
+				logger.trace("Peer " + peer.getPeerID() + " restored message " + newSearchMessage + " TTL. Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
 			} else // The message is getting farer (or there is no information)
 			// from the parameter and the message was not received from the
 			// current node
 			if (!searchMessage.getSource().equals(peer.getPeerID())) {
-				newMsg.decTTL(p);
+				newSearchMessage.decTTL(p);
 
-				logger.trace("Peer " + peer.getPeerID() + " decremented TTL of message " + newMsg + " to " + newMsg.getTTL(p) + ". Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
+				logger.trace("Peer " + peer.getPeerID() + " decremented TTL of message " + newSearchMessage + " to " + newSearchMessage.getTTL(p) + ". Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
 			}
 
 			// Set the message parameter distance as known by the current node
 			// table.
-			newMsg.setCurrentDistance(p, tableDistance);
+			newSearchMessage.setCurrentDistance(p, tableDistance);
 		}
 
 		// If the message TTL is greater than zero message is sent, else it is
 		// thrown
-		if (newMsg.hasTTL()) {
-			peer.enqueueBroadcast(newMsg);
-
-			logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newMsg);
-			return;
-		}
-
-		logger.trace("Peer " + peer.getPeerID() + " has thrown message " + newMsg + " due TTL");
+		if (newSearchMessage.hasTTL()) {
+			receiversTable.retainAll(uTable.getActiveSearches());
+			
+			final Set<PeerID> currentNeighbors = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+			currentNeighbors.removeAll(receiversTable.getReceivers(newSearchMessage));
+			
+			if (forcePropagation || !currentNeighbors.isEmpty()) {
+				receiversTable.addReceivers(newSearchMessage, currentNeighbors);
+				
+				peer.enqueueBroadcast(newSearchMessage);
+				logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newSearchMessage);
+			}
+		} else 
+			logger.trace("Peer " + peer.getPeerID() + " has thrown message " + newSearchMessage + " due TTL");
 	}
 
 	@Override
