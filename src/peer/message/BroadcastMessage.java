@@ -54,8 +54,8 @@ public abstract class BroadcastMessage implements Externalizable {
 		return getClass().getName();
 	}
 
-	public void removeExpectedDestination(final PeerID peerID) {
-		expectedDestinations.remove(peerID);
+	public boolean removeExpectedDestination(final PeerID peerID) {
+		return expectedDestinations.remove(peerID);
 	}
 
 	public List<PeerID> getExpectedDestinations() {
