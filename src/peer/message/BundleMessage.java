@@ -40,6 +40,7 @@ public class BundleMessage extends BroadcastMessage {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 		messages.addAll(Arrays.asList((BroadcastMessage[])in.readObject()));
 	}
 
@@ -47,6 +48,7 @@ public class BundleMessage extends BroadcastMessage {
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
 		
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 		out.writeObject(messages.toArray(new BroadcastMessage[0]));
 	}
 }

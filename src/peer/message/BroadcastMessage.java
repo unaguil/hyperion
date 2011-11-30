@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public abstract class BroadcastMessage implements Externalizable {
 	// the identification of the message (peer, id)
 	private final MessageID messageID;
 
-	private List<PeerID> expectedDestinations = new ArrayList<PeerID>();
+	protected List<PeerID> expectedDestinations = new ArrayList<PeerID>();
 
 	public BroadcastMessage() {
 		messageID = null;
@@ -80,17 +79,15 @@ public abstract class BroadcastMessage implements Externalizable {
 	@Override
 	public String toString() {
 		return messageID.toString();
-	}
+	} 
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		UnserializationUtils.setFinalField(BroadcastMessage.class, this, "messageID", in.readObject());
-		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeObject(messageID);
-		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 	}
 }
