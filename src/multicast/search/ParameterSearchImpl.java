@@ -839,7 +839,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(destination, parameters, payload, peer.getPeerID(), respondedRouteID);
+		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(peer.getPeerID(), destination, parameters, payload, respondedRouteID);
 
 		logger.trace("Peer " + peer.getPeerID() + " sending search response message " + searchResponseMessage);
 		

@@ -105,7 +105,7 @@ public class UnicastTableTest {
 	}
 
 	private SearchResponseMessage createSearchResponseMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender, final SearchMessage searchMessage) {
-		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(PeerID.VOID_PEERID, parameters, null, source, searchMessage.getRemoteMessageID());
+		final SearchResponseMessage searchResponseMessage = new SearchResponseMessage(source, PeerID.VOID_PEERID, parameters, null, searchMessage.getRemoteMessageID());
 
 		return new SearchResponseMessage(searchResponseMessage, sender, PeerID.VOID_PEERID, 0);
 	}

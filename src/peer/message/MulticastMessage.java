@@ -16,5 +16,5 @@ public interface MulticastMessage {
 	 * 
 	 * @return the set of destination neighbors
 	 */
-	public PeerIDSet getDestinations();
+	public PeerIDSet getDestNeighbors();
 }

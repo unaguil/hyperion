@@ -438,7 +438,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		if (message instanceof MulticastMessage) {
 			final MulticastMessage multicastMessage = (MulticastMessage) message;
 			// Check if this peer is a receptor of this message
-			if (!multicastMessage.getDestinations().contains(peerID))
+			if (!multicastMessage.getDestNeighbors().contains(peerID))
 				return;
 		}
 

@@ -114,7 +114,7 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	}
 
 	@Override
-	public PeerIDSet getDestinations() {
+	public PeerIDSet getDestNeighbors() {
 		return throughPeers;
 	}
 
@@ -125,7 +125,7 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 
 	@Override
 	public String toString() {
-		return super.toString() + " (To:" + getDestinations() + ")";
+		return super.toString() + " (To:" + getDestNeighbors() + ")";
 	}
 
 	@Override

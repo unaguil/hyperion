@@ -40,17 +40,16 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 
 	/**
 	 * Constructor of the search response message.
-	 * 
+	 * @param source
+	 *            the source of the message
 	 * @param destination
 	 *            the destination of the message
 	 * @param foundParameters
 	 *            the parameters found in this node
 	 * @param payload
 	 *            the payload of the response message
-	 * @param source
-	 *            the source of the message
 	 */
-	public SearchResponseMessage(final PeerID destination, final Set<Parameter> foundParameters, final PayloadMessage payload, final PeerID source, final MessageID respondedRouteID) {
+	public SearchResponseMessage(final PeerID source, final PeerID destination, final Set<Parameter> foundParameters, final PayloadMessage payload, final MessageID respondedRouteID) {
 		super(source, new PeerIDSet(Collections.singleton(destination)), payload);
 		this.parameters.addAll(foundParameters);
 		this.respondedRouteID = respondedRouteID;
