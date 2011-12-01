@@ -401,9 +401,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		if (message instanceof SearchMessage)
 			processSearchMessage((SearchMessage) message);
-		else if (message instanceof RemoteMulticastMessage) {
+		else if (message instanceof SearchResponseMessage)
+			processSearchResponseMessage((SearchResponseMessage) message);
+		else if (message instanceof RemoteMulticastMessage)
 			processMulticastMessage((RemoteMulticastMessage) message);
-		} else if (message instanceof RemoveRouteMessage)
+		else if (message instanceof RemoveRouteMessage)
 			processRemoveRouteMessage((RemoveRouteMessage) message);
 		else if (message instanceof RemoveParametersMessage)
 			processRemoveParametersMessage((RemoveParametersMessage) message);
@@ -514,29 +516,16 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!multicastMessage.getThroughPeers().contains(peer.getPeerID()))
 			return;
 
-		synchronized (uTable) {
-			// Update route table if message contains route information
-			if (multicastMessage instanceof SearchResponseMessage)
-				uTable.updateUnicastTable((SearchResponseMessage) multicastMessage);
-		}
-
 		// Check if message must be accepted
 		boolean messageAccepted = false;
 		if (multicastMessage.getRemoteDestinations().contains(peer.getPeerID())) {
 			messageAccepted = true;
-
-			if (multicastMessage instanceof SearchResponseMessage) {
-				acceptSearchResponseMessage((SearchResponseMessage) multicastMessage);
-				return;
-			}
-
 			// Remove current destination from destination list
 			multicastMessage.removeRemoteDestination(peer.getPeerID());
 		}
 
 		// Remove invalid destinations. A destination is invalid if cannot be
 		// reached from current peer according to route table
-		
 		synchronized (uTable) {
 			for (final PeerID destination : multicastMessage.getRemoteDestinations())
 				if (!uTable.knowsRouteTo(destination))
@@ -555,17 +544,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				}
 			}
 
-			if (multicastMessage instanceof SearchResponseMessage) {
-				final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage((SearchResponseMessage) multicastMessage, peer.getPeerID(), throughPeers.iterator().next(), getNewDistance(multicastMessage));
-
-				logger.trace("Peer " + peer.getPeerID() + " multicasting search response " + newSearchResponseMessage);
-				peer.enqueueBroadcast(newSearchResponseMessage);
-			} else {
-				final RemoteMulticastMessage newRemoteMulticastMessage = new RemoteMulticastMessage(multicastMessage, peer.getPeerID(), throughPeers, getNewDistance(multicastMessage));
-
-				logger.trace("Peer " + peer.getPeerID() + " multicasting message " + newRemoteMulticastMessage);
-				peer.enqueueBroadcast(newRemoteMulticastMessage);
-			}
+			final RemoteMulticastMessage newRemoteMulticastMessage = new RemoteMulticastMessage(multicastMessage, peer.getPeerID(), throughPeers, getNewDistance(multicastMessage));
+			logger.trace("Peer " + peer.getPeerID() + " multicasting message " + newRemoteMulticastMessage);
+			peer.enqueueBroadcast(newRemoteMulticastMessage);
 		} else
 			logger.trace("Peer " + peer.getPeerID() + " discarded multicast message " + multicastMessage + ". No more valid destinations.");
 
@@ -573,6 +554,41 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (messageAccepted)
 			acceptMulticastMessage(multicastMessage);
 	}
+	
+	// process the search response messages in the current node
+		private void processSearchResponseMessage(final SearchResponseMessage searchResponseMessage) {
+			logger.trace("Peer " + peer.getPeerID() + " processing search response message " + searchResponseMessage);
+			// Check if the current peer is valid to pass through the multicast
+			// message
+			if (!searchResponseMessage.getThroughPeers().contains(peer.getPeerID()))
+				return;
+
+			synchronized (uTable) {
+				uTable.updateUnicastTable(searchResponseMessage);
+			}
+
+			// Check if message must be accepted
+			if (searchResponseMessage.getRemoteDestinations().contains(peer.getPeerID())) {
+				acceptSearchResponseMessage(searchResponseMessage);
+				return;					
+			}
+
+			boolean routeToDest = false;
+			PeerID throughPeer = null;
+			synchronized (uTable) {
+				routeToDest = uTable.knowsSearchRoute(searchResponseMessage.getRespondedRouteID());
+				if (routeToDest)
+					throughPeer = uTable.getNeighborSearch(searchResponseMessage.getRespondedRouteID());
+			}
+
+			// Check if more destinations are available after purging invalid ones
+			if (routeToDest) {				
+				final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage(searchResponseMessage, peer.getPeerID(), throughPeer, getNewDistance(searchResponseMessage));
+				logger.trace("Peer " + peer.getPeerID() + " multicasting search response " + newSearchResponseMessage);
+				peer.enqueueBroadcast(newSearchResponseMessage);
+			} else
+				logger.trace("Peer " + peer.getPeerID() + " discarded multicast message " + searchResponseMessage + ". No more valid destinations.");
+		}
 
 	private void processRemoveParametersMessage(final RemoveParametersMessage removeParametersMessage) {
 		logger.trace("Peer " + peer.getPeerID() + " processing remove parameters message " + removeParametersMessage);

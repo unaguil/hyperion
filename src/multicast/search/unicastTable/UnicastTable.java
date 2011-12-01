@@ -115,7 +115,6 @@ public class UnicastTable implements XMLSerializable {
 				return false;
 
 			final Route route = (Route) o;
-
 			return routeID.equals(route.routeID);
 		}
 
@@ -311,6 +310,10 @@ public class UnicastTable implements XMLSerializable {
 
 		return false;
 	}
+	
+	public boolean knowsSearchRoute(MessageID searchRouteID) {
+		return getSearchRoute(searchRouteID) != null;
+	}
 
 	public int getDistanceTo(final PeerID dest) {
 		for (final Route route : getAllRoutes())
@@ -469,6 +472,10 @@ public class UnicastTable implements XMLSerializable {
 		logger.trace("Peer " + peerID + " available routes to " + destination + ": " + availableRoutes);
 		
 		return availableRoutes.get(availableRoutes.size() - 1).getNeighbor();
+	}
+	
+	public PeerID getNeighborSearch(final MessageID searchRouteID) {
+		return getSearchRoute(searchRouteID).getNeighbor();		
 	}
 
 	/**
