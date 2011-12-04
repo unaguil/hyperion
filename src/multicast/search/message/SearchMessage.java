@@ -28,7 +28,7 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
+public class SearchMessage extends RemoteMessage implements EnvelopeMessage, PayloadMessage {
 
 	// this class is used to represent a searched parameter
 	private static class ParameterEntry implements Externalizable {
@@ -368,5 +368,10 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		out.writeUTF(searchType.toString());
 		out.writeObject(previousSender);
 		out.writeObject(payload);
+	}
+
+	@Override
+	public PayloadMessage copy() {
+		return new SearchMessage(this, getSender(), this.expectedDestinations, this.getDistance()); 
 	}
 }
