@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -41,6 +43,9 @@ final class MessageProcessor extends WaitableThread {
 	private int unprocessedMessages = 0;
 
 	private final ReliableBroadcast reliableBroadcast;
+	
+	private final AtomicBoolean delayNext = new AtomicBoolean(false);
+	private final AtomicLong delayTime = new AtomicLong();
 	
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
@@ -96,13 +101,25 @@ final class MessageProcessor extends WaitableThread {
 			
 			processAllReceivedMessages();
 			
-			final int randomRange = Math.round(RANDOM_WAIT / 2.0f);				
+			final long randomWait = r.nextInt(RANDOM_WAIT) + 1;				
 			try {
-				final int randomValue = r.nextInt(randomRange) + randomRange;
- 				Thread.sleep(randomValue);
+				Thread.sleep(randomWait);
 			} catch (InterruptedException e) {
 				finishThread();
 			}
+			
+			do {				
+				if (delayNext.get()) {
+					delayNext.set(false);
+					try {
+						Thread.sleep(delayTime.get());
+					} catch (InterruptedException e) {
+						finishThread();
+					}
+				}
+				
+				processAllReceivedMessages();
+			} while (delayNext.get());
 			
 			if (!waitingMessages.isEmpty())	 {
 				logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
@@ -176,9 +193,14 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		//final long time = ReliableBroadcast.getBackoffTime(broadcastMessage.getExpectedDestinations().size());
-		//delayNextMessage(time);
+		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
+		delayNextMessage(time);
 		
 		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);
+	}
+	
+	private void delayNextMessage(long time) {
+		delayTime.set(time);
+		delayNext.set(true); 
 	}
 }
