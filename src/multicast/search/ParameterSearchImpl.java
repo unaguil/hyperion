@@ -523,17 +523,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			// Remove current destination from destination list
 			multicastMessage.removeRemoteDestination(peer.getPeerID());
 		}
-		
-		//check if multicast message contains a search message
-		if (multicastMessage.hasPayload() && multicastMessage.getPayload() instanceof SearchMessage) {
-			SearchMessage searchMessage = (SearchMessage) multicastMessage.getPayload();
-			//create a new search message with the real neighbor propgation information
-			final SearchMessage newSearchMessage = new SearchMessage(searchMessage, multicastMessage.getSender(), new ArrayList<PeerID>(), getNewDistance(searchMessage));
-			synchronized (uTable) {
-				uTable.updateUnicastTable(newSearchMessage);
-			}
-		}
-		
+
 		// Remove invalid destinations. A destination is invalid if cannot be
 		// reached from current peer according to route table
 		synchronized (uTable) {
@@ -561,15 +551,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			logger.trace("Peer " + peer.getPeerID() + " discarded multicast message " + multicastMessage + ". No more valid destinations.");
 
 		// Finally accept message by current node if needed
-		if (messageAccepted) {
-			//check if peer must accept a direct search message
-			if (multicastMessage.hasPayload() && multicastMessage.getPayload() instanceof SearchMessage) {
-				SearchMessage searchMessage = (SearchMessage) multicastMessage.getPayload();
-				checkSearchAcceptance(searchMessage);
-			}
-			else 
-				acceptMulticastMessage(multicastMessage);
-		}
+		if (messageAccepted)
+			acceptMulticastMessage(multicastMessage);
 	}
 	
 	// process the search response messages in the current node
@@ -582,18 +565,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 			synchronized (uTable) {
 				uTable.updateUnicastTable(searchResponseMessage);
-			}
-			
-			//check waiting searches 
-			synchronized (uTable) {
-				Set<SearchMessage> relatedWaitingSearches = uTable.getRelatedWaitingSearches(searchResponseMessage);
-				if (!relatedWaitingSearches.isEmpty()) {
-					logger.trace("Peer " + peer.getPeerID() + " checking related waiting searches for search response " + searchResponseMessage);
-					for (final SearchMessage waitingSearch : relatedWaitingSearches) {
-						sendUnicastMessage(searchResponseMessage.getSource(), waitingSearch);
-						uTable.sentDirectSearchToPeer(searchResponseMessage.getSource(), waitingSearch);
-					}
-				}
 			}
 
 			// Check if message must be accepted
@@ -678,19 +649,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
 			peer.enqueueBroadcast(newRemoveParametersMessage);
 		}
-		
-		propagateChangedSearches();
-	}
-
-	private void propagateChangedSearches() {
-		//propagate searches which changed from waiting to active
-		Set<SearchMessage> changedSearchMessages = new HashSet<SearchMessage>();
-		synchronized (uTable) {
-			changedSearchMessages.addAll(uTable.checkWaitingSearches());
-		}
-		
-		for (final SearchMessage changedSearchMessage : changedSearchMessages)
-			propagateSearchMessage(changedSearchMessage, true);
 	}
 
 	private void notifyRouteListeners(final PeerID source, final Set<MessageID> removedSearchRoutes, final Set<MessageID> removedParameterRoutes, final Map<MessageID, Set<Parameter>> lostParameters, final Map<MessageID, Set<Parameter>> canceledParameterSearch) {
@@ -802,8 +760,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (removeRouteMessage.mustRepropagateSearches()) {
 			// Propagate current active searches
 			repropagateSearches(peer.getDetector().getCurrentNeighbors());
-		} else
-			propagateChangedSearches();
+		}
 
 		if (notify)
 			notifyRouteListeners(removeRouteMessage.getSource(), removedSearchRoutes, removedParameterRoutes, lostParameters, canceledParameterSearch);
@@ -831,57 +788,22 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 		
 		if (updated) {
-			checkSearchAcceptance(searchMessage);
-			
-			//check if message must wait
-			boolean mustWait = false;
-			synchronized (uTable) {
-				mustWait = uTable.searchMustWait(searchMessage);
-			}
-			
-			if (mustWait) {
-				logger.trace("Peer " + peer.getPeerID() + " search " + searchMessage + " must wait");
-				addWaitingMessage(searchMessage);
-			}
-			else
-				propagateSearchMessage(searchMessage, false);
-		}
-	}
-
-	private void checkSearchAcceptance(final SearchMessage searchMessage) {
-		// If the current peer provides any of the searched parameters
-		// accept the message
-		final Set<Parameter> foundParameters = new HashSet<Parameter>();
-		for (final Parameter p : searchMessage.getSearchedParameters())
-			if (searchMessage.getSearchType().equals(SearchType.Exact)) {
-				if (pDisseminator.isLocalParameter(p))
-					foundParameters.add(p);
-			} else if (searchMessage.getSearchType().equals(SearchType.Generic)) {
-				final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
-				foundParameters.addAll(subsumedParameters);
-			}
-
-		if (!foundParameters.isEmpty())
-			acceptSearchMessage(searchMessage, foundParameters);
-	}
-	
-	private void addWaitingMessage(SearchMessage searchMessage) {
-		Set<PeerID> sources = new HashSet<PeerID>();
-		synchronized (uTable) {
-			if (uTable.addWaitingSearch(searchMessage)) {
-				//check if there are routes to searched parameters
-				for (final Parameter p : searchMessage.getSearchedParameters()) {
-					sources.addAll(uTable.getSourcePeers(p));				
+			// If the current peer provides any of the searched parameters
+			// accept the message
+			final Set<Parameter> foundParameters = new HashSet<Parameter>();
+			for (final Parameter p : searchMessage.getSearchedParameters())
+				if (searchMessage.getSearchType().equals(SearchType.Exact)) {
+					if (pDisseminator.isLocalParameter(p))
+						foundParameters.add(p);
+				} else if (searchMessage.getSearchType().equals(SearchType.Generic)) {
+					final Set<Parameter> subsumedParameters = pDisseminator.subsumesLocalParameter(p);
+					foundParameters.addAll(subsumedParameters);
 				}
-			}
-		}
-		
-		if (!sources.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " direct propagation of search message " + searchMessage + " to sources: " + sources);
-			for (final PeerID dest : sources)
-				uTable.sentDirectSearchToPeer(dest, searchMessage);
-				
-			sendMulticastMessage(new PeerIDSet(sources), searchMessage);
+
+			if (!foundParameters.isEmpty())
+				acceptSearchMessage(searchMessage, foundParameters);
+
+			propagateSearchMessage(searchMessage, false);
 		}
 	}
 

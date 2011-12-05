@@ -168,9 +168,6 @@ public class UnicastTable implements XMLSerializable {
 	// the list contains the active searches for the current node. It is related
 	// with a search route
 	private final List<SearchMessage> activeSearches = new ArrayList<SearchMessage>();
-	
-	//searches which are not propagated because other their parameters are already searched
-	private final Map<SearchMessage, Set<PeerID>> waitingSearches = new HashMap<SearchMessage, Set<PeerID>>();
 
 	// the identification of the peer which hosts the unicast table
 	private final PeerID peerID;
@@ -254,6 +251,10 @@ public class UnicastTable implements XMLSerializable {
 	}
 
 	/**
+	 * Removes a local parameter route
+	 */
+
+	/**
 	 * Gets the identification of the routes going to the passed destination
 	 * 
 	 * @param dest
@@ -292,9 +293,7 @@ public class UnicastTable implements XMLSerializable {
 	 * @return the list of active searches
 	 */
 	public List<SearchMessage> getActiveSearches() {
-		List<SearchMessage> searches = new ArrayList<SearchMessage>(activeSearches);
-		searches.remove(waitingSearches);
-		return searches;
+		return Collections.unmodifiableList(activeSearches);
 	}
 
 	/**
@@ -990,84 +989,5 @@ public class UnicastTable implements XMLSerializable {
 			return parameterRoute.getRespondedRouteID();
 		}
 		return null;
-	}
-
-	public boolean addWaitingSearch(SearchMessage searchMessage) {
-		if (!waitingSearches.keySet().contains(searchMessage)) {
-			waitingSearches.put(searchMessage, new HashSet<PeerID>());
-			return true;
-		}
-		return false;
-	}
-
-	public Set<PeerID> getSourcePeers(Parameter p) {
-		Set<PeerID> sources = new HashSet<PeerID>();
-		for (final Entry<ResponseRoute, Set<Parameter>> entry : parameterRoutes.entrySet()) {
-			if (entry.getValue().contains(p))
-				sources.add(entry.getKey().getRouteID().getPeer());
-		}
-		return sources;
-	}
-
-	public Set<SearchMessage> getRelatedWaitingSearches(SearchResponseMessage searchResponseMessage) {
-		Set<SearchMessage> relatedWaitingSearches = new HashSet<SearchMessage>();
-		for (final SearchMessage waitingSearch : waitingSearches.keySet()) {
-			if (!waitingSearches.get(waitingSearch).contains(searchResponseMessage.getSource())) {
-				Set<Parameter> searchedParameters = new HashSet<Parameter>(waitingSearch.getSearchedParameters());
-				searchedParameters.retainAll(searchResponseMessage.getParameters());
-				if (!searchedParameters.isEmpty())
-					relatedWaitingSearches.add(waitingSearch);
-			}
-		}				
-				
-		return relatedWaitingSearches;
-	}
-	
-	public void sentDirectSearchToPeer(final PeerID dest, final SearchMessage waitingSearchMessage) {
-		waitingSearches.get(waitingSearchMessage).add(dest);
-	}
-	
-	public boolean searchMustWait(final SearchMessage searchMessage) {
-		final Map<Parameter, Integer> searchedParameters = new HashMap<Parameter, Integer>();
-		for (final SearchMessage activeSearch : getActiveSearches()) {
-			if (!activeSearch.equals(searchMessage)) {
-				for (final Parameter p : activeSearch.getSearchedParameters()) {
-					if (!searchedParameters.containsKey(p))
-						searchedParameters.put(p, new Integer(activeSearch.getTTL(p)));
-					else {
-						Integer previousTTL = searchedParameters.get(p);
-						if (activeSearch.getTTL(p) > previousTTL.intValue())
-							searchedParameters.put(p, new Integer(activeSearch.getTTL(p)));
-					}
-				}
-			}
-		}
-		
-		//check if all parameters are searched with a TTL greater than the obtained from the current message and are completely responded
-		for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
-			if (!searchedParameters.keySet().contains(searchedParameter) || searchedParameters.get(searchedParameter).intValue() < searchMessage.getTTL(searchedParameter)
-					|| !hasResponse(searchedParameter)) 
-				return false;
-		}
-		return true;
-	} 
-	
-	private boolean hasResponse(Parameter p) {
-		for (final Set<Parameter> foundParameters : parameterRoutes.values())
-			if (foundParameters.contains(p))
-				return true;
-		return false;
-	}
-	
-	public Set<SearchMessage> checkWaitingSearches() {
-		Set<SearchMessage> changedSearches = new HashSet<SearchMessage>();
-		for (final Iterator<SearchMessage> it = waitingSearches.keySet().iterator(); it.hasNext(); ) {
-			SearchMessage waitingSearchMessage = it.next();
-			if (!searchMustWait(waitingSearchMessage)) {
-				changedSearches.add(waitingSearchMessage);
-				it.remove();
-			}
-		}
-		return changedSearches;
 	}
 }
