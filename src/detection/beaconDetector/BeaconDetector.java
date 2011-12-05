@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,6 +38,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	private class BeaconSendThread extends WaitableThread {
 
 		private final BeaconDetector beaconDetector;
+		
+		private final Random r = new Random();
+		private static final int RANDOM_DELAY = 15;
 
 		public BeaconSendThread(final BeaconDetector beaconDetector) {
 			this.beaconDetector = beaconDetector;
@@ -44,6 +48,14 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		@Override
 		public void run() {
+			try {
+				final int initialDelay = r.nextInt(RANDOM_DELAY) + 1;
+				Thread.sleep(initialDelay);
+			} catch (InterruptedException e) {
+				finishThread();
+				return;
+			}
+			
 			// send initial beacon
 			beaconDetector.sendBeacon();
 
@@ -124,7 +136,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	private boolean init = false;
 
-	private final int NOTIFY_TIME = 10;
+	private final int NOTIFY_TIME = 30;
 
 	/**
 	 * Constructor of the class. Configures internal properties using global
