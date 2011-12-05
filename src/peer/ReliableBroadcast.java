@@ -1,6 +1,7 @@
 package peer;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -43,6 +44,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private int tryNumber;
 	private long broadcastStartTime;
 	private long lastBroadcastTime;
+	private final AtomicInteger lastReceivedDestinations = new AtomicInteger();
 
 	private int MAX_TRIES = 3;
 
@@ -136,12 +138,12 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		}
 	}
 
-	private long getBackoffTime(final int factor, int currentNeighbors) {
-		return BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME * factor;
+	public static long getBackoffTime(int currentNeighbors) {
+		return currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME;
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
+		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME;
 	}
 
 	private boolean mustRebroadcast() {
@@ -170,28 +172,28 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			}
 		}
 
-		final long backoffTime = getBackoffTime(tryNumber, peer.getDetector().getCurrentNeighbors().size());
- 
-		if (mustRebroadcast() && backoffTime > 0) {
-			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
-			long startTime = System.currentTimeMillis();
-			boolean interrupted = false;
-			do {
-				Thread.yield();
-				interrupted = Thread.interrupted();
-				if (interrupted) {
-					rebroadcastThread.interrupt();
-					return;
-				}
-			} while (mustRebroadcast() && (System.currentTimeMillis() - startTime) < backoffTime && !interrupted);
-		}
+//		final long backoffTime = getBackoffTime(lastReceivedDestinations.get());
+// 
+//		if (mustRebroadcast() && backoffTime > 0) {
+//			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
+//			long startTime = System.currentTimeMillis();
+//			boolean interrupted = false;
+//			do {
+//				Thread.yield();
+//				interrupted = Thread.interrupted();
+//				if (interrupted) {
+//					rebroadcastThread.interrupt();
+//					return;
+//				}
+//			} while (mustRebroadcast() && (System.currentTimeMillis() - startTime) < backoffTime && !interrupted);
+//		}
 
 		if (mustRebroadcast()) {
 			synchronized (mutex) {
 				peer.broadcast(currentMessage);
 				reliableBroadcastCounter.addRebroadcastedMessage();
 				responseWaitTime = getResponseWaitTime(currentMessage.getExpectedDestinations().size());
-				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime + " waitingTime: " + responseWaitTime);
+				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + 0 + " waitingTime: " + responseWaitTime);
 				lastBroadcastTime = System.currentTimeMillis();
 				tryNumber++;
 				rebroadcast = false;
@@ -260,6 +262,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
 		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
 		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
+		lastReceivedDestinations.set(broadcastMessage.getExpectedDestinations().size());
 		DelayACK delayACK = new DelayACK(ackMessage, broadcastMessage.getExpectedDestinations(), msgCounter);
 		delayACK.start();
 	}
