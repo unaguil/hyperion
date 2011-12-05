@@ -3,6 +3,7 @@ package dissemination.newProtocol.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.List;
 
 import peer.message.BroadcastMessage;
@@ -85,6 +86,8 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		super.readExternal(in);
 		
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
+		
 		UnserializationUtils.setFinalField(TableMessage.class, this, "updateTable", in.readObject());
 		UnserializationUtils.setFinalField(TableMessage.class, this, "payload", in.readObject());
 	}
@@ -92,6 +95,8 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
+		
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 		
 		out.writeObject(updateTable);
 		out.writeObject(payload);

@@ -481,8 +481,23 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 			// Send a new table message with a specified payload and responding
 			// to received message
-			sendUpdateTableMessage(updateTable, payload);
+			
+			if (isNewInformation(tableMessage))
+				sendUpdateTableMessage(updateTable, payload);
 		}
+	}
+	
+	private boolean isNewInformation(TableMessage tableMessage) {
+		//obtain which peers where already affected by the table message
+		final Set<PeerID> alreadyAffectedPeers = new HashSet<PeerID>();
+		//the table message sender already knew the information
+		alreadyAffectedPeers.add(tableMessage.getSender());
+		//all message receivers
+		alreadyAffectedPeers.addAll(tableMessage.getExpectedDestinations());
+		//but the current node
+		alreadyAffectedPeers.remove(peer.getPeerID());
+		
+		return !alreadyAffectedPeers.containsAll(peer.getDetector().getCurrentNeighbors().getPeerSet());
 	}
 
 	// Sends a message which contains a table to be added or removed
