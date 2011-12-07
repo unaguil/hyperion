@@ -184,11 +184,14 @@ final class MessageProcessor extends WaitableThread {
 		return unprocessedMessages;
 	}
 
-	public void addResponse(final BroadcastMessage message, CommunicationLayer layer) {
+	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
 		synchronized (waitingMessages) {
-			if (layer.checkWaitingMessages(waitingMessages, message))			
+			if (layer.checkWaitingMessages(waitingMessages, message)) {			
 				waitingMessages.add(message);
+				return true;
+			}
 		}
+		return false;
 	}
 
 	public void addACKResponse(final ACKMessage ackMessage) {

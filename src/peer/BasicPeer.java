@@ -189,9 +189,10 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message, CommunicationLayer layer) {
-		messageProcessor.addResponse(message, layer);
-		logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
-		msgCounter.addSent(message.getClass());
+		if (messageProcessor.addResponse(message, layer)) {
+			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
+			msgCounter.addSent(message.getClass());
+		}
 	}
 
 	private class DelayedRandomInit extends Thread {
