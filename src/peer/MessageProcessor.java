@@ -126,13 +126,15 @@ final class MessageProcessor extends WaitableThread {
 				
 				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 				final PeerIDSet destinations = new PeerIDSet();
-
-				for (final BroadcastMessage broadcastMessage : waitingMessages) {
-					destinations.addPeers(broadcastMessage.getExpectedDestinations());
-					bundleMessages.add(broadcastMessage);
-				}
 				
-				waitingMessages.clear();
+				synchronized (waitingMessages) {
+					for (final BroadcastMessage broadcastMessage : waitingMessages) {
+						destinations.addPeers(broadcastMessage.getExpectedDestinations());
+						bundleMessages.add(broadcastMessage);
+					}
+					
+					waitingMessages.clear();
+				}
 
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
 				msgCounter.addSent(bundleMessage.getClass());
