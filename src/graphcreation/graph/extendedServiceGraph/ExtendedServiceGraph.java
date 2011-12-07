@@ -205,6 +205,16 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 			return INVALID_NODE_MARK;
 		}
 	}
+	
+	private static class DOTNodeNameProvider extends GraphNodeNameProvider {
+
+		@Override
+		public String getVertexName(final GraphNode node) {
+			String str = super.getVertexName(node).replace(':', '_');
+			str = str.replace('-', '_');
+			return str.replace('*', '_');
+		}
+	}
 
 	@Override
 	public void saveToXML(final OutputStream os) throws IOException {
@@ -226,14 +236,14 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 	}
 	
 	public void saveToDOT(final OutputStream os) {
-		final DOTExporter<GraphNode, EqualsEdge> exporter = new DOTExporter<GraphNode, EqualsEdge>(new GraphNodeNameProvider(), new GraphNodeNameProvider(), new IntegerEdgeNameProvider<EqualsEdge>());
+		final DOTExporter<GraphNode, EqualsEdge> exporter = new DOTExporter<GraphNode, EqualsEdge>(new DOTNodeNameProvider(), new DOTNodeNameProvider(), new IntegerEdgeNameProvider<EqualsEdge>());
 
 		final ExtendedServiceGraph copy = new ExtendedServiceGraph(taxonomy);
 		for (final Service service : serviceNodeMap.keySet())
 			// Only add non disconnected services
 			if (!isDisconnected(service))
 				copy.merge(service);
-
+		
 		exporter.export(new OutputStreamWriter(os), copy.getGraph());
 	}
 
