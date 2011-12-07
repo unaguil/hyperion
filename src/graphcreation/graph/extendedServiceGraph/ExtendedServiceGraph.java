@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
+import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.GraphMLExporter;
 import org.jgrapht.ext.IntegerEdgeNameProvider;
 import org.jgrapht.ext.VertexNameProvider;
@@ -222,6 +223,18 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 		} catch (final TransformerConfigurationException tce) {
 			throw new IOException(tce);
 		}
+	}
+	
+	public void saveToDOT(final OutputStream os) {
+		final DOTExporter<GraphNode, EqualsEdge> exporter = new DOTExporter<GraphNode, EqualsEdge>(new GraphNodeNameProvider(), new GraphNodeNameProvider(), new IntegerEdgeNameProvider<EqualsEdge>());
+
+		final ExtendedServiceGraph copy = new ExtendedServiceGraph(taxonomy);
+		for (final Service service : serviceNodeMap.keySet())
+			// Only add non disconnected services
+			if (!isDisconnected(service))
+				copy.merge(service);
+
+		exporter.export(new OutputStreamWriter(os), copy.getGraph());
 	}
 
 	private ConnectionNode createConnectionNode(final String fullID) throws InvalidParameterIDException {
