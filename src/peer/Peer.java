@@ -23,7 +23,7 @@ public interface Peer {
 
 	public void broadcast(BroadcastMessage message);
 
-	public void enqueueBroadcast(BroadcastMessage message);
+	public void enqueueBroadcast(BroadcastMessage message, CommunicationLayer layer);
 
 	public PeerID getPeerID();
 

@@ -514,7 +514,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			final String payloadType = (payload == null)?"null":payload.getType();
 			logger.debug("Peer " + peer.getPeerID() + " sending update table message with payload type of " + payloadType);
 			// Perform the broadcasting of table message
-			peer.enqueueBroadcast(tableMessage);
+			peer.enqueueBroadcast(tableMessage, this);
 		} else
 			logger.trace("Peer " + peer.getPeerID() + " update table is empty and is not sent");
 	}
@@ -525,5 +525,18 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payload);
 
 		return null;
+	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		for (final BroadcastMessage waitingMessage : waitingMessages) {
+			if (waitingMessage instanceof TableMessage) {
+				TableMessage waitingTableMessage = (TableMessage) waitingMessage;
+				TableMessage sendingTableMessage = (TableMessage) sendingMessage;
+				if (sendingTableMessage.getUpdateTable().equals(waitingTableMessage.getUpdateTable()))
+					return false;
+			}
+		}
+		return true;
 	}
 }

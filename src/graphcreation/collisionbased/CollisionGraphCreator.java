@@ -1012,4 +1012,9 @@ public class CollisionGraphCreator implements CommunicationLayer, TableChangedLi
 	public void disableMulticastLayer() {
 		((ParameterSearchImpl)pSearch).setDisabled();
 	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return true;		
+	}
 }

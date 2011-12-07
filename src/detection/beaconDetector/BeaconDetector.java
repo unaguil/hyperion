@@ -320,4 +320,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		msgCounter.addSent(beaconMessage.getClass());
 		peer.broadcast(beaconMessage);
 	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return true;
+	}
 }

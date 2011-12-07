@@ -140,4 +140,9 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 			notifyComposition(compositionNotificationMessage.getSearchID(), compositionNotificationMessage.getComposition());
 		}
 	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return true;
+	}
 }

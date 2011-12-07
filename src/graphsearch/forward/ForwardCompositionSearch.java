@@ -10,6 +10,7 @@ import graphsearch.forward.message.CompositionModificationMessage;
 import graphsearch.forward.message.FCompositionMessage;
 import graphsearch.forward.message.InvalidCompositionsMessage;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -75,5 +76,10 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 			final CompositionModificationMessage compositionModificationMessage = (CompositionModificationMessage) shortestPathNotificationMessage;
 			notifyCompositionModified(compositionModificationMessage.getSearchID(), compositionModificationMessage.getRemovedServices());
 		}
+	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return true;		
 	}
 }

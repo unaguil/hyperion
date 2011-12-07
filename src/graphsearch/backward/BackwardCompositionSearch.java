@@ -8,6 +8,7 @@ import graphsearch.backward.message.BCompositionMessage;
 import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
 import graphsearch.commonCompositionSearch.CommonCompositionSearch;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,5 +65,10 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 
 	@Override
 	public void acceptShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
+	}
+
+	@Override
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return true;
 	}
 }

@@ -1,5 +1,8 @@
 package peer;
 
+import java.util.List;
+
+import peer.message.BroadcastMessage;
 import peer.message.MessageReceivedListener;
 
 /**
@@ -22,4 +25,6 @@ public interface CommunicationLayer extends MessageReceivedListener {
 	 * layer should be finalized by this method.
 	 */
 	public void stop();
+
+	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage);
 }
