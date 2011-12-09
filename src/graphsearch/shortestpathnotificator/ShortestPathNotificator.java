@@ -39,8 +39,8 @@ public class ShortestPathNotificator {
 		final int pathDistance = shortestPathNotificationMessage.getPathDistance();
 
 		// check if the current peer has a shortest route to the destination
-		if (gCreator.getPSearch().knowsSearchRouteTo(destination.getPeerID())) {
-			final int multicastDistance = gCreator.getPSearch().getDistanceTo(destination.getPeerID());
+		if (gCreator.getPSearch().knowsRouteTo(destination.getPeerID())) {
+			final int multicastDistance = gCreator.getPSearch().getRoute(destination.getPeerID()).getDistance();
 			if (multicastDistance <= pathDistance) {
 
 				logger.trace("Peer " + peerID + " has a shortest route to destination peer " + destination.getPeerID());

@@ -1,13 +1,11 @@
 package multicast;
 
-import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchResponseMessage;
-import peer.message.MessageID;
 import peer.message.PayloadMessage;
-import taxonomy.parameter.Parameter;
+import peer.peerid.PeerID;
 
 /**
  * This interface defines those methods which are called by multicast layer in
@@ -37,8 +35,6 @@ public interface ParameterSearchListener extends MulticastMessageListener {
 	 *            parameter
 	 */
 	public void parametersFound(SearchResponseMessage message);
-
-	public void changedParameterRoutes(Map<MessageID, Set<Parameter>> lostParameters, Set<MessageID> lostParameterRoutes);
-
-	public void changedSearchRoutes(Map<MessageID, Set<Parameter>> changedSearchRoutes, Set<MessageID> lostSearchRoutes);
+	
+	public void lostDestinations(Set<PeerID> lostDestinations);
 }

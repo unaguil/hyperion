@@ -159,11 +159,11 @@ public class ConnectionsManagerTest {
 		cManager.updateConnections(searchResponseMessage4);
 		cManager.updateConnections(searchResponseMessage5);
 
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		lostRoutes.add(searchResponseMessage.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage2.getRemoteMessageID());
+		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage2.getSource());
 
-		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostRoutes);
+		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostDestinations);
 
 		assertEquals(1, notifications.size());
 
@@ -183,12 +183,12 @@ public class ConnectionsManagerTest {
 		cManager.updateConnections(searchResponseMessage4);
 		cManager.updateConnections(searchResponseMessage5);
 
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		lostRoutes.add(searchResponseMessage.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage2.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage3.getRemoteMessageID());
+		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage2.getSource());
+		lostDestinations.add(searchResponseMessage3.getSource());
 
-		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostRoutes);
+		final Map<PeerIDSet, Set<Service>> notifications = cManager.removeResponses(lostDestinations);
 
 		assertTrue(notifications.isEmpty());
 	}

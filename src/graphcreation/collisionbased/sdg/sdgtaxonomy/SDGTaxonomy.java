@@ -13,14 +13,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
-import peer.message.MessageID;
+import multicast.ParameterSearch;
+import multicast.Util;
+import multicast.search.Route;
 import peer.peerid.PeerID;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
@@ -36,15 +37,16 @@ import util.logger.Logger;
  */
 public class SDGTaxonomy implements SDG {
 
-	// table containing which services are accessed through each search route
-	// originated in a peer which detected a collision
-	private final Map<PeerID, CollisionInfo> collisionInfoTable = new HashMap<PeerID, CollisionInfo>();
+	//a set of known indirect routes
+	private final Set<IndirectRoute> indirectRoutes = new HashSet<IndirectRoute>();
 
 	// the local service dependency graph
 	private final ExtendedServiceGraph eServiceGraph;
 
 	// the id of the peer which hosts the service table
 	private final PeerID peerID;
+	
+	private final ParameterSearch pSearch;
 
 	// the used taxonomy
 	private final Taxonomy taxonomy;
@@ -59,9 +61,10 @@ public class SDGTaxonomy implements SDG {
 	 * @param taxonomy
 	 *            the taxonomy used for service calculation
 	 */
-	public SDGTaxonomy(final PeerID peerID, final Taxonomy taxonomy) {
+	public SDGTaxonomy(final PeerID peerID, final ParameterSearch pSearch, final Taxonomy taxonomy) {
 		this.peerID = peerID;
 		this.taxonomy = taxonomy;
+		this.pSearch = pSearch;
 		eServiceGraph = new ExtendedServiceGraph(taxonomy);
 	}
 
@@ -76,33 +79,13 @@ public class SDGTaxonomy implements SDG {
 	@Override
 	public void connectRemoteServices(final Service localService, final Set<ServiceDistance> remoteSuccessors, final Set<ServiceDistance> remoteAncestors, final PeerID collisionNode) throws NonLocalServiceException {
 		if (isLocal(localService)) {
-			for (final ServiceDistance remoteAncestor : remoteAncestors) {
-
-				// save which peer detected the collision for the remote service
-				if (!collisionInfoTable.containsKey(collisionNode))
-					collisionInfoTable.put(collisionNode, new CollisionInfo(peerID));
-				collisionInfoTable.get(collisionNode).add(remoteAncestor);
-
-				// add the remote ancestor to the graph
-				eServiceGraph.merge(remoteAncestor.getService());
-
-				// save the added service as a connected ancestor for the local
-				// service
-				collisionInfoTable.get(collisionNode).addAncestor(localService, remoteAncestor);
-			}
-
-			for (final ServiceDistance remoteSuccessor : remoteSuccessors) {
-				// save which collision node detected this connections
-				if (!collisionInfoTable.containsKey(collisionNode))
-					collisionInfoTable.put(collisionNode, new CollisionInfo(peerID));
-				collisionInfoTable.get(collisionNode).add(remoteSuccessor);
-
-				// add the remote ancestor to the graph
-				eServiceGraph.merge(remoteSuccessor.getService());
-
-				// save the added service as a connected successor for the local
-				// service
-				collisionInfoTable.get(collisionNode).addSuccessor(localService, remoteSuccessor);
+			final Set<ServiceDistance> remoteServices = new HashSet<ServiceDistance>(remoteSuccessors);
+			remoteServices.addAll(remoteAncestors);
+			
+			for (final ServiceDistance remoteService : remoteServices) {
+				eServiceGraph.merge(remoteService.getService());
+				IndirectRoute route = new IndirectRoute(remoteService.getService().getPeerID(), collisionNode, remoteService.getDistance());
+				indirectRoutes.add(route);
 			}
 		} else
 			throw new NonLocalServiceException();
@@ -111,50 +94,50 @@ public class SDGTaxonomy implements SDG {
 	@Override
 	public Set<ServiceDistance> getSuccessors(final Service service) {
 		final Set<ServiceDistance> successors = new HashSet<ServiceDistance>();
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			successors.addAll(collisionInfo.getSuccessors(service));
+		if (isLocal(service)) {
+			ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
+			for (final ServiceNode successorNode : eServiceGraph.getSuccessors(serviceNode, false)) {
+				if (isLocal(successorNode.getService()))
+					successors.add(new ServiceDistance(successorNode.getService(), new Integer(0)));
+				else
+					successors.add(new ServiceDistance(successorNode.getService(), getDistance(successorNode.getService().getPeerID())));
+			}
+		}
 		return successors;
+	}
+	
+	private Integer getDistance(final PeerID dest) {
+		final Route route = getRoute(dest);
+		if (route != null)
+			return new Integer(route.getDistance());
+		return null;
 	}
 
 	@Override
 	public Set<ServiceDistance> getAncestors(final Service service) {
 		final Set<ServiceDistance> ancestors = new HashSet<ServiceDistance>();
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			ancestors.addAll(collisionInfo.getAncestors(service));
+		if (isLocal(service)) {
+			ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
+			for (final ServiceNode ancestorNode : eServiceGraph.getAncestors(serviceNode, false)) {
+				if (isLocal(ancestorNode.getService()))
+					ancestors.add(new ServiceDistance(ancestorNode.getService(), new Integer(0)));
+				else
+					ancestors.add(new ServiceDistance(ancestorNode.getService(), getDistance(ancestorNode.getService().getPeerID())));
+			}
+		}
 		return ancestors;
 	}
 
 	@Override
-	public Set<ServiceDistance> getSuccessors(final Service service, final PeerID collisionPeerID) {
-		if (collisionInfoTable.containsKey(collisionPeerID))
-			return collisionInfoTable.get(collisionPeerID).getSuccessors(service);
-		return Collections.emptySet();
-	}
-
-	@Override
-	public Set<ServiceDistance> getAncestors(final Service service, final PeerID collisionPeerID) {
-		if (collisionInfoTable.containsKey(collisionPeerID))
-			return collisionInfoTable.get(collisionPeerID).getAncestors(service);
-		return Collections.emptySet();
-	}
-
-	@Override
-	public void removeLocalService(final Service service) {
+	public Set<ServiceDistance> removeLocalService(final Service service) {
 		if (eServiceGraph.removeService(service))
-			removeNonLocalDisconnectedServices();
-
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			collisionInfo.removeService(service);
+			return removeNonLocalDisconnectedServices();
+		return Collections.emptySet();
 	}
 
 	@Override
-	public void removeServiceConnectedBy(final Service service, final PeerID collisionPeerID) {
-		if (collisionInfoTable.containsKey(collisionPeerID))
-			collisionInfoTable.get(collisionPeerID).removeService(service);
-
-		final Set<Service> connectedServices = extractServices(getRemoteServices());
-		if (!connectedServices.contains(service))
-			eServiceGraph.removeService(service);
+	public void removeRemoteService(final Service service) {
+		eServiceGraph.removeService(service);
 	}
 
 	@Override
@@ -178,44 +161,81 @@ public class SDGTaxonomy implements SDG {
 						return true;
 		return false;
 	}
-
-	@Override
-	public void removeServicesFromRoute(final MessageID routeID) {
-		if (collisionInfoTable.containsKey(routeID.getPeer())) {
-			final Set<ServiceDistance> lostServices = new HashSet<ServiceDistance>(collisionInfoTable.get(routeID.getPeer()).getServices());
-
-			logger.trace("Peer " + peerID + " removing remote services " + lostServices);
-
-			collisionInfoTable.remove(routeID.getPeer());
-
-			// get those services which are already used in other connections
-			final Set<ServiceDistance> connectedServices = getRemoteServices();
-
-			// obtain those lost services which were not present in other
-			// connections
-			lostServices.removeAll(connectedServices);
-
-			for (final ServiceDistance lostService : lostServices)
-				eServiceGraph.removeService(lostService.getService());
-
-			removeNonLocalDisconnectedServices();
+	
+	private void removeIndirectRoutesThrough(final Set<PeerID> peers) {
+		for (final PeerID peer : peers) {
+			removeIndirectRouteThrough(peer);
 		}
 	}
-
-	@Override
-	public Set<ServiceDistance> servicesConnectedThrough(final MessageID routeID) {
-		if (collisionInfoTable.containsKey(routeID.getPeer()))
-			return new HashSet<ServiceDistance>(collisionInfoTable.get(routeID.getPeer()).getServices());
-
-		return new HashSet<ServiceDistance>();
+	
+	private void removeIndirectRouteThrough(final PeerID collisionNode) {
+		for (final Iterator<IndirectRoute> it = indirectRoutes.iterator(); it.hasNext(); ) {
+			IndirectRoute route = it.next(); 
+			if (route.getThrough().equals(collisionNode))
+				it.remove();
+		}
 	}
+	
+	@Override
+	public void removeIndirectRoute(final PeerID dest, final PeerID collisionNode) {
+		for (final Iterator<IndirectRoute> it = indirectRoutes.iterator(); it.hasNext(); ) {
+			IndirectRoute route = it.next(); 
+			if (route.getThrough().equals(collisionNode) && route.getDest().equals(dest))
+				it.remove();
+		}
+	}
+	
+	private boolean knowsRouteTo(final PeerID destination) {
+		return knowsIndirectRouteTo(destination) || pSearch.knowsRouteTo(destination);
+	}
+	
+	private boolean knowsIndirectRouteTo(final PeerID destination) {
+		for (final IndirectRoute route : indirectRoutes) {
+			if (route.getDest().equals(destination))
+				return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public Set<ServiceDistance> getInaccesibleServices() {
+		final Set<ServiceDistance> inaccesibleServices = new HashSet<ServiceDistance>();
+		for (final Service service : eServiceGraph.getServices()) {
+			if (!knowsRouteTo(service.getPeerID()))
+				inaccesibleServices.add(new ServiceDistance(service, null));
+		}
+		
+		return inaccesibleServices;
+	}
+	
+	@Override
+	public void checkServices(final Set<PeerID> lostDestinations, final Map<Service, Set<Service>> lostAncestors, final Map<Service, Set<Service>> lostSuccessors) {
+		synchronized (this) {
+			removeIndirectRoutesThrough(lostDestinations);
+			Set<ServiceDistance> lostServices = getInaccesibleServices();
+			logger.trace("Peer " + peerID + " lost services: " + lostServices);
 
-	private Set<ServiceDistance> getRemoteServices() {
-		final Set<ServiceDistance> remoteServices = new HashSet<ServiceDistance>();
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			remoteServices.addAll(collisionInfo.getServices());
+			for (final ServiceDistance remoteService : lostServices) {
+				for (final ServiceDistance successor : getLocalSuccessors(remoteService.getService())) {
+					if (!lostAncestors.containsKey(successor.getService()))
+						lostAncestors.put(successor.getService(), new HashSet<Service>());
+					lostAncestors.get(successor.getService()).add(remoteService.getService());
+				}
+			}
 
-		return remoteServices;
+			for (final ServiceDistance remoteService : lostServices) {
+				for (final ServiceDistance ancestor : getLocalAncestors(remoteService.getService())) {
+					if (!lostSuccessors.containsKey(ancestor.getService()))
+						lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
+					lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
+				}
+			}
+			
+			for (final ServiceDistance lostService : lostServices) 
+				removeRemoteService(lostService.getService());
+			
+			logger.trace("Peer " + peerID + " created new SDG" + this.toString());
+		}
 	}
 
 	@Override
@@ -232,34 +252,36 @@ public class SDGTaxonomy implements SDG {
 	public boolean isLocal(final Service service) {
 		return service.getPeerID().equals(peerID);
 	}
-
-	private Set<Service> extractServices(final Set<ServiceDistance> serviceDistances) {
-		final Set<Service> services = new HashSet<Service>();
-		for (final ServiceDistance sDistance : serviceDistances)
-			services.add(sDistance.getService());
-		return services;
-	}
 	
 	@Override
 	public Set<PeerID> getThroughCollisionNodes(final Service service) {
 		final Set<PeerID> collisionNodes = new HashSet<PeerID>();
-		for (final PeerID collisionNode : collisionInfoTable.keySet()) {
-			final Set<ServiceDistance> serviceDistances = collisionInfoTable.get(collisionNode).getServices();
-			if (extractServices(serviceDistances).contains((service)))
-				collisionNodes.add(collisionNode);
+		for (final IndirectRoute route : indirectRoutes) {
+			if (route.getDest().equals(service.getPeerID()))
+				collisionNodes.add(route.getThrough());
 		}
 		return collisionNodes;
 	}
+	
+	private Set<IndirectRoute> getIndirectRoutes(final PeerID destination) {
+		final Set<IndirectRoute> routes = new HashSet<IndirectRoute>();
+		for (final IndirectRoute indirectRoute : indirectRoutes) {
+			if (indirectRoute.getDest().equals(destination))
+				routes.add(indirectRoute);
+		}
+		return routes;
+	}
 
 	@Override
-	public List<Entry<PeerID, Integer>> getDistances(final PeerID destination) {
-		final Map<PeerID, Integer> distances = new HashMap<PeerID, Integer>();
-		for (final PeerID collisionNode : collisionInfoTable.keySet()) {
-			for (final ServiceDistance serviceDistance : collisionInfoTable.get(collisionNode).getServices())
-			if (serviceDistance.getService().getPeerID().equals(destination))
-				distances.put(collisionNode, serviceDistance.getDistance());
-		}
-		return new ArrayList<Entry<PeerID, Integer>>(distances.entrySet());
+	public Route getRoute(final PeerID destination) {
+		final List<Route> availableRoutes = new ArrayList<Route>();
+		availableRoutes.addAll(getIndirectRoutes(destination));
+		
+		final Route directRoute = pSearch.getRoute(destination);
+		if (directRoute != null)
+			availableRoutes.add(directRoute);
+		
+		return Util.getShortestRoute(availableRoutes);
 	}
 
 	@Override
@@ -292,26 +314,27 @@ public class SDGTaxonomy implements SDG {
 	public Set<ServiceDistance> getRemoteConnectedServices(final Service service) {
 		final Set<ServiceDistance> connectedServices = new HashSet<ServiceDistance>();
 
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			connectedServices.addAll(collisionInfo.getRemoteConnectedServices(service));
+		for (final ServiceDistance sDistance : getSuccessors(service))
+			if (!isLocal(sDistance.getService()))
+				connectedServices.add(sDistance);
+		
+		for (final ServiceDistance sDistance : getAncestors(service))
+			if (!isLocal(sDistance.getService()))
+				connectedServices.add(sDistance);
 
 		return connectedServices;
 	}
 
 	// removes all remote services which are not connected to local services
-	private void removeNonLocalDisconnectedServices() {
-		for (final Service s : eServiceGraph.getServices())
+	private Set<ServiceDistance> removeNonLocalDisconnectedServices() {
+		Set<ServiceDistance> removedRemotedServices = new HashSet<ServiceDistance>();
+		for (final Service s : eServiceGraph.getServices()) {
 			if (!isLocal(s) && eServiceGraph.isDisconnected(s)) {
 				eServiceGraph.removeService(s);
-
-				// remove services from their collision node
-				final Set<PeerID> collisionNodes = getThroughCollisionNodes(s);
-				for (final PeerID collisionNode : collisionNodes) {
-					collisionInfoTable.get(collisionNode).removeService(s);
-					if (collisionInfoTable.get(collisionNode).isEmpty())
-						collisionInfoTable.remove(collisionNode);
-				}
+				removedRemotedServices.add(new ServiceDistance(s, getDistance(s.getPeerID())));
 			}
+		}
+		return removedRemotedServices;
 	}
 
 	@Override
@@ -320,34 +343,28 @@ public class SDGTaxonomy implements SDG {
 	}
 
 	@Override
-	public Set<ServiceDistance> getLocalAncestors(final Service remoteService, final PeerID collisionPeerID) {
-		if (collisionInfoTable.containsKey(collisionPeerID))
-			return collisionInfoTable.get(collisionPeerID).getLocalAncestors(remoteService);
-
-		return Collections.emptySet();
-	}
-
-	@Override
-	public Set<ServiceDistance> getLocalSuccessors(final Service remoteService, final PeerID collisionPeerID) {
-		if (collisionInfoTable.containsKey(collisionPeerID))
-			return collisionInfoTable.get(collisionPeerID).getLocalSuccessors(remoteService);
-
-		return Collections.emptySet();
-	}
-
-	@Override
 	public Set<ServiceDistance> getLocalAncestors(final Service remoteService) {
 		final Set<ServiceDistance> localAncestors = new HashSet<ServiceDistance>();
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			localAncestors.addAll(collisionInfo.getLocalAncestors(remoteService));
+		
+		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService); 
+		for (final ServiceNode ancestor : eServiceGraph.getAncestors(serviceNode, false)) {
+			if (isLocal(ancestor.getService()))
+				localAncestors.add(new ServiceDistance(ancestor.getService(), getDistance(ancestor.getService().getPeerID())));
+		}
+		
 		return localAncestors;
 	}
 
 	@Override
 	public Set<ServiceDistance> getLocalSuccessors(final Service remoteService) {
-		final Set<ServiceDistance> successors = new HashSet<ServiceDistance>();
-		for (final CollisionInfo collisionInfo : collisionInfoTable.values())
-			successors.addAll(collisionInfo.getLocalSuccessors(remoteService));
-		return successors;
+		Set<ServiceDistance> localSuccesors = new HashSet<ServiceDistance>();
+		
+		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService);
+		for (final ServiceNode succesor : eServiceGraph.getSuccessors(serviceNode, false)) {
+			if (isLocal(succesor.getService()))
+				localSuccesors.add(new ServiceDistance(succesor.getService(), getDistance(succesor.getService().getPeerID())));
+		}
+		
+		return localSuccesors;
 	}
 }

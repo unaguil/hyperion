@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.SearchResponseMessage;
-import peer.message.MessageID;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.Taxonomy;
@@ -96,11 +95,11 @@ public class ConnectionsManager {
 	 *            the routes which have been lost
 	 * @return the notifications for colliding peers
 	 */
-	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<MessageID> lostRoutes) {
+	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<PeerID> lostDestinations) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
 		for (Iterator<Connection> it = detectedConnections.iterator(); it.hasNext(); ) {
 			Connection connection = it.next();
-			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeResponses(lostRoutes);
+			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeResponses(lostDestinations);
 			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
 				final PeerIDSet peers = entry.getKey();
 				if (!notifications.containsKey(peers))

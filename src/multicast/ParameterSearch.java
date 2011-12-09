@@ -1,7 +1,9 @@
 package multicast;
 
+import java.util.List;
 import java.util.Set;
 
+import multicast.search.Route;
 import multicast.search.message.SearchMessage.SearchType;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
@@ -74,20 +76,12 @@ public interface ParameterSearch extends XMLSerializable {
 	 */
 	public void sendUnicastMessage(PeerID destination, PayloadMessage payload);
 
-	/**
-	 * Checks if the current node knows search routes to the specified peer
-	 * 
-	 * @param dest
-	 *            the peer to check
-	 * @return true if the layer knows routes to the specified peer, false
-	 *         otherwise
-	 */
-	public boolean knowsSearchRouteTo(PeerID dest);
-
 	// Sends a message which searches for specified parameters
 	public void sendSearchMessage(Set<Parameter> parameters, PayloadMessage payload, SearchType searchType);
 
-	public int getDistanceTo(PeerID peerID);
+	public Route getRoute(PeerID destination);
 
 	boolean knowsRouteTo(PeerID dest);
+
+	public List<? extends Route> getAllRoutes();
 }

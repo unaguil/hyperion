@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
@@ -51,10 +52,19 @@ public class ConnectServicesMessage extends RemoteMessage implements PayloadMess
 	public String toString() {
 		return super.toString() + " remoteAncestors: " + remoteAncestors + " remoteSuccessors: " + remoteSuccessors;
 	}
+	
+	private Map<Service, Set<ServiceDistance>> deepCopyMap(final Map<Service, Set<ServiceDistance>> sourceMap) {
+		final Map<Service, Set<ServiceDistance>> deepCopyMap = new HashMap<Service, Set<ServiceDistance>>();
+		for (final Entry<Service, Set<ServiceDistance>> entry : sourceMap.entrySet()) {
+			deepCopyMap.put(entry.getKey(), new HashSet<ServiceDistance>());
+			deepCopyMap.get(entry.getKey()).addAll(entry.getValue());
+		}
+		return deepCopyMap;
+	}
 
 	@Override
 	public PayloadMessage copy() {
-		return new ConnectServicesMessage(getSource(), getRemoteSuccessors(), getRemoteAncestors());
+		return new ConnectServicesMessage(getSource(), deepCopyMap(getRemoteSuccessors()), deepCopyMap(getRemoteAncestors()));
 	}
 
 	@Override

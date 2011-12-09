@@ -13,6 +13,7 @@ import java.util.Set;
 import multicast.search.message.RemoteMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
 
 public class DisconnectServicesMessage extends RemoteMessage implements PayloadMessage {
 
@@ -23,17 +24,28 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 
 	private final Set<Service> lostServices = new HashSet<Service>();
 	
+	private final boolean servicesWereRemoved;
+	
 	public DisconnectServicesMessage() {
-		
+		this.servicesWereRemoved = true;
 	}
 
-	public DisconnectServicesMessage(final PeerID source, final Set<Service> lostServices) {
+	public DisconnectServicesMessage(final PeerID source, final Set<Service> lostServices, final boolean servicesWereRemoved) {
 		super(source, new ArrayList<PeerID>());
 		this.lostServices.addAll(lostServices);
+		this.servicesWereRemoved = servicesWereRemoved;
 	}
 
 	public Set<Service> getLostServices() {
 		return lostServices;
+	}
+	
+	public PeerID getServicesPeer() {
+		return lostServices.iterator().next().getPeerID(); 
+	}
+	
+	public boolean wereServicesRemoved() {
+		return servicesWereRemoved;
 	}
 
 	@Override
@@ -43,7 +55,7 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 
 	@Override
 	public PayloadMessage copy() {
-		return new DisconnectServicesMessage(getSource(), getLostServices());
+		return new DisconnectServicesMessage(getSource(), getLostServices(), servicesWereRemoved);
 	}
 	
 	@Override
@@ -51,6 +63,7 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 		super.readExternal(in);
 		
 		lostServices.addAll(Arrays.asList((Service[])in.readObject()));
+		UnserializationUtils.setFinalField(DisconnectServicesMessage.class, this, "servicesWereRemoved", in.readBoolean());
 	}
 
 	@Override
@@ -58,5 +71,6 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 		super.writeExternal(out);
 		
 		out.writeObject(lostServices.toArray(new Service[0]));
+		out.writeBoolean(servicesWereRemoved);
 	}
 }

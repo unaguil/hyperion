@@ -252,10 +252,10 @@ public class ConnectionTest {
 
 	@Test
 	public void testRemoveResponses() {
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		lostRoutes.add(searchResponseMessage.getRemoteMessageID());
+		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		lostDestinations.add(searchResponseMessage.getSource());
 
-		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostRoutes);
+		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostDestinations);
 
 		assertEquals(1, notifications.size());
 
@@ -270,11 +270,11 @@ public class ConnectionTest {
 
 	@Test
 	public void testRemoveResponses2() {
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		lostRoutes.add(searchResponseMessage.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage2.getRemoteMessageID());
+		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage2.getSource());
 
-		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostRoutes);
+		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostDestinations);
 
 		assertEquals(1, notifications.size());
 
@@ -288,12 +288,12 @@ public class ConnectionTest {
 
 	@Test
 	public void testRemoveResponses3() {
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		lostRoutes.add(searchResponseMessage.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage2.getRemoteMessageID());
-		lostRoutes.add(searchResponseMessage3.getRemoteMessageID());
+		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage2.getSource());
+		lostDestinations.add(searchResponseMessage3.getSource());
 
-		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostRoutes);
+		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostDestinations);
 
 		assertTrue(notifications.isEmpty());
 	}

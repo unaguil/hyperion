@@ -3,11 +3,10 @@ package graphcreation.collisionbased.sdg;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 
-import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 
-import peer.message.MessageID;
+import multicast.search.Route;
 import peer.peerid.PeerID;
 import serialization.xml.XMLSerializable;
 import taxonomy.parameter.InputParameter;
@@ -31,7 +30,7 @@ public interface SDG extends XMLSerializable {
 	 * @param service
 	 *            the service to remove
 	 */
-	public void removeLocalService(Service service);
+	public Set<ServiceDistance> removeLocalService(Service service);
 
 	/**
 	 * Connects a set of remote services with a local one
@@ -67,28 +66,6 @@ public interface SDG extends XMLSerializable {
 	 */
 	public Set<ServiceDistance> getAncestors(Service localService);
 
-	/**
-	 * Gets the successors of the passed service
-	 * 
-	 * @param localService
-	 *            the service whose successors are obtained
-	 * @return the successors of the specified service
-	 */
-	public Set<ServiceDistance> getSuccessors(Service localService, PeerID collisionPeerID);
-
-	/**
-	 * Gets the ancestors of the passed service
-	 * 
-	 * @param localService
-	 *            the service whose ancestors are obtained
-	 * @return the ancestors of the specified service
-	 */
-	public Set<ServiceDistance> getAncestors(Service localService, PeerID collisionPeerID);
-
-	public Set<ServiceDistance> getLocalAncestors(Service remoteService, PeerID collisionPeerID);
-
-	public Set<ServiceDistance> getLocalSuccessors(Service remoteService, PeerID collisionPeerID);
-
 	public Set<ServiceDistance> getLocalAncestors(Service remoteService);
 
 	public Set<ServiceDistance> getLocalSuccessors(Service remoteService);
@@ -102,15 +79,6 @@ public interface SDG extends XMLSerializable {
 	 * @return the services which have some of the specified parameters
 	 */
 	public Set<Service> findLocalCompatibleServices(Set<Parameter> parameters);
-
-	/**
-	 * Removes the services obtained from the specified route
-	 * 
-	 * @param routeID
-	 *            the route whose services are removed
-	 * @return the
-	 */
-	public void removeServicesFromRoute(MessageID routeID);
 
 	/**
 	 * Gets a service using its service identifier.
@@ -169,10 +137,14 @@ public interface SDG extends XMLSerializable {
 	 * @return true if the service is contained in the SDG, false otherwise
 	 */
 	public boolean hasService(Service service);
+	
+	public Route getRoute(PeerID destination);
 
-	void removeServiceConnectedBy(Service service, PeerID peerID);
+	public void removeRemoteService(Service remoteService);
 
-	public Set<ServiceDistance> servicesConnectedThrough(MessageID routeID);
+	public void checkServices(Set<PeerID> lostDestinations, Map<Service, Set<Service>> lostAncestors, Map<Service, Set<Service>> lostSuccessors);
 
-	public List<Entry<PeerID, Integer>> getDistances(PeerID destination);
+	public void removeIndirectRoute(PeerID dest, PeerID collisionNode);
+
+	public Set<ServiceDistance> getInaccesibleServices();	
 }

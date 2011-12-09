@@ -8,6 +8,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
@@ -58,7 +59,11 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 
 	@Override
 	public PayloadMessage copy() {
-		return new CollisionResponseMessage(getSource(), serviceDistanceTable);
+		final Map<Service, Integer> serviceDistanceTableCopy = new HashMap<Service, Integer>();
+		for (final Entry<Service, Integer> entry : serviceDistanceTable.entrySet())
+			serviceDistanceTableCopy.put(entry.getKey(), new Integer(entry.getValue().intValue()));
+		
+		return new CollisionResponseMessage(getSource(), serviceDistanceTableCopy);
 	}
 
 	public void addDistance(final int distance) {

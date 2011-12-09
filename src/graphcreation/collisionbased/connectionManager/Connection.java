@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.SearchResponseMessage;
-import peer.message.MessageID;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.BasicTaxonomy;
@@ -289,24 +288,24 @@ public class Connection {
 	 * @return a map containing the peers which must notified and the lost
 	 *         services to notify
 	 */
-	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<MessageID> routes) {
+	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<PeerID> fromPeers) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
 
 		// Check input services
-		final Set<Service> lostInputServices = removeResponses(routes, inputResponses);
+		final Set<Service> lostInputServices = removeResponses(fromPeers, inputResponses);
 		final PeerIDSet outputPeers = getOutputPeers();
 		// Remove those disappeared peers
-		for (final MessageID routeID : routes)
-			outputPeers.remove(routeID.getPeer());
+		for (final PeerID peerID : fromPeers)
+			outputPeers.remove(peerID);
 		if (!lostInputServices.isEmpty() && !outputPeers.isEmpty())
 			notifications.put(outputPeers, lostInputServices);
 
 		// Check output services
-		final Set<Service> lostOutputServices = removeResponses(routes, outputResponses);
+		final Set<Service> lostOutputServices = removeResponses(fromPeers, outputResponses);
 		final PeerIDSet inputPeers = getInputPeers();
 		// Remove those disappeared peers
-		for (final MessageID routeID : routes)
-			inputPeers.remove(routeID.getPeer());
+		for (final PeerID peerID : fromPeers)
+			inputPeers.remove(peerID);
 		if (!lostOutputServices.isEmpty() && !inputPeers.isEmpty())
 			notifications.put(inputPeers, lostOutputServices);
 
@@ -357,11 +356,11 @@ public class Connection {
 	}
 
 	// removes the responses identified by the passed routes
-	private Set<Service> removeResponses(final Set<MessageID> routes, final Set<SearchResponseMessage> responses) {
+	private Set<Service> removeResponses(final Set<PeerID> fromPeers, final Set<SearchResponseMessage> responses) {
 		final Set<Service> lostServices = new HashSet<Service>();
 		for (final Iterator<SearchResponseMessage> it = responses.iterator(); it.hasNext();) {
 			final SearchResponseMessage response = it.next();
-			if (routes.contains(response.getRemoteMessageID())) {
+			if (fromPeers.contains(response.getSource())) {
 				final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) response.getPayload();
 				it.remove();
 
