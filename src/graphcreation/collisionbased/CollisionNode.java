@@ -55,10 +55,32 @@ class CollisionNode {
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 	}
 
-	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
+	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
+		
+		if (!removedParameters.isEmpty()) {	
+			logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
+
+			// obtain which previously detected collisions are affected by
+			// parameter removal
+			final Set<Connection> removedConnections = cManager.checkCollisions(removedParameters);
+	
+			if (!removedConnections.isEmpty()) {
+				// obtain those parameters whose search must be canceled
+				final Set<Parameter> canceledParameters = new HashSet<Parameter>();
+				for (final Connection connection : removedConnections) {
+					final Collision collision = connection.getCollision();
+					canceledParameters.add(collision.getInput());
+					canceledParameters.add(collision.getOutput());
+				}
+	
+				// send cancel search message
+				gCreator.getPSearch().sendCancelSearchMessage(canceledParameters);
+			}	
+		}
+		
 		if (!addedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
 
