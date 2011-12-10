@@ -210,32 +210,30 @@ public class SDGTaxonomy implements SDG {
 	
 	@Override
 	public void checkServices(final Set<PeerID> lostDestinations, final Map<Service, Set<Service>> lostAncestors, final Map<Service, Set<Service>> lostSuccessors) {
-		synchronized (this) {
-			removeIndirectRoutesThrough(lostDestinations);
-			Set<ServiceDistance> lostServices = getInaccesibleServices();
-			logger.trace("Peer " + peerID + " lost services: " + lostServices);
+		removeIndirectRoutesThrough(lostDestinations);
+		Set<ServiceDistance> lostServices = getInaccesibleServices();
+		logger.trace("Peer " + peerID + " lost services: " + lostServices);
 
-			for (final ServiceDistance remoteService : lostServices) {
-				for (final ServiceDistance successor : getLocalSuccessors(remoteService.getService())) {
-					if (!lostAncestors.containsKey(successor.getService()))
-						lostAncestors.put(successor.getService(), new HashSet<Service>());
-					lostAncestors.get(successor.getService()).add(remoteService.getService());
-				}
+		for (final ServiceDistance remoteService : lostServices) {
+			for (final ServiceDistance successor : getLocalSuccessors(remoteService.getService())) {
+				if (!lostAncestors.containsKey(successor.getService()))
+					lostAncestors.put(successor.getService(), new HashSet<Service>());
+				lostAncestors.get(successor.getService()).add(remoteService.getService());
 			}
-
-			for (final ServiceDistance remoteService : lostServices) {
-				for (final ServiceDistance ancestor : getLocalAncestors(remoteService.getService())) {
-					if (!lostSuccessors.containsKey(ancestor.getService()))
-						lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
-					lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
-				}
-			}
-			
-			for (final ServiceDistance lostService : lostServices) 
-				removeRemoteService(lostService.getService());
-			
-			logger.trace("Peer " + peerID + " created new SDG" + this.toString());
 		}
+
+		for (final ServiceDistance remoteService : lostServices) {
+			for (final ServiceDistance ancestor : getLocalAncestors(remoteService.getService())) {
+				if (!lostSuccessors.containsKey(ancestor.getService()))
+					lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
+				lostSuccessors.get(ancestor.getService()).add(remoteService.getService());
+			}
+		}
+		
+		for (final ServiceDistance lostService : lostServices) 
+			removeRemoteService(lostService.getService());
+		
+		logger.trace("Peer " + peerID + " created new SDG" + this.toString());
 	}
 
 	@Override

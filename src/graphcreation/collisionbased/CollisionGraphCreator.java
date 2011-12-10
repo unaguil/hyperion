@@ -188,12 +188,12 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			
 			for (final ServiceDistance sDistance : remoteConnectedServices)
 				collisionPeers.addAll(sdg.getThroughCollisionNodes(sDistance.getService()));
+		}
 
-			try {
-				commit(addedServices, removedServices);
-			} catch (NonLocalServiceException e) {
-				
-			}
+		try {
+			commit(addedServices, removedServices);
+		} catch (NonLocalServiceException e) {
+			
 		}
 		
 		if (!remoteConnectedServices.isEmpty())
@@ -211,23 +211,27 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 					pSearch.addLocalParameter(parameter);
 			}
 
-			sdg.addLocalService(addedService);
+			synchronized (sdg) {
+				sdg.addLocalService(addedService);
+			}
 		}
 
-		for (final Service removedService : removedServices)
-			if (sdg.isLocal(removedService)) {
-				for (final Parameter parameter : removedService.getParameters()) {
-					decReference(parameter);
-
-					// Only remove parameter if reference count is 0
-					if (refCount(parameter) == 0)
-						pSearch.removeLocalParameter(parameter);
+		synchronized (sdg) {
+			for (final Service removedService : removedServices)
+				if (sdg.isLocal(removedService)) {
+					for (final Parameter parameter : removedService.getParameters()) {
+						decReference(parameter);
+	
+						// Only remove parameter if reference count is 0
+						if (refCount(parameter) == 0)
+							pSearch.removeLocalParameter(parameter);
+					}
+	
+					sdg.removeLocalService(removedService);
 				}
-
-				sdg.removeLocalService(removedService);
-			}
-
-		pSearch.commit();
+	
+			pSearch.commit();
+		}
 	}
 
 	private void incReference(final Parameter p) {
@@ -329,36 +333,38 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		
 		Set<Service> lostServices = new HashSet<Service>();
 
-		if (disconnectServicesMessage.wereServicesRemoved())
-			lostServices.addAll(disconnectServicesMessage.getLostServices());
-		else {
-			sdg.removeIndirectRoute(disconnectServicesMessage.getServicesPeer(), disconnectServicesMessage.getSource());
-			for (final ServiceDistance inaccesibleService : sdg.getInaccesibleServices())
-				lostServices.add(inaccesibleService.getService());
-		}
-		
-		for (final Service remoteService : lostServices)
-			// test that service really exists in graph before removal
-			if (sdg.hasService(remoteService)) {
-				// get the current ancestors and successors of the removed
-				// service
-				final Set<ServiceDistance> beforeAncestors = sdg.getLocalAncestors(remoteService);
-				final Set<ServiceDistance> beforeSuccessors = sdg.getLocalSuccessors(remoteService);
-
-				sdg.removeRemoteService(remoteService);
-
-				for (final ServiceDistance ancestor : beforeAncestors) {
-					if (!lostSuccessors.containsKey(ancestor.getService()))
-						lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
-					lostSuccessors.get(ancestor.getService()).add(remoteService);
-				}
-
-				for (final ServiceDistance successor : beforeSuccessors) {
-					if (!lostAncestors.containsKey(successor.getService()))
-						lostAncestors.put(successor.getService(), new HashSet<Service>());
-					lostAncestors.get(successor.getService()).add(remoteService);
-				}
+		synchronized (sdg) {
+			if (disconnectServicesMessage.wereServicesRemoved())
+				lostServices.addAll(disconnectServicesMessage.getLostServices());
+			else {
+				sdg.removeIndirectRoute(disconnectServicesMessage.getServicesPeer(), disconnectServicesMessage.getSource());
+				for (final ServiceDistance inaccesibleService : sdg.getInaccesibleServices())
+					lostServices.add(inaccesibleService.getService());
 			}
+			
+			for (final Service remoteService : lostServices)
+				// test that service really exists in graph before removal
+				if (sdg.hasService(remoteService)) {
+					// get the current ancestors and successors of the removed
+					// service
+					final Set<ServiceDistance> beforeAncestors = sdg.getLocalAncestors(remoteService);
+					final Set<ServiceDistance> beforeSuccessors = sdg.getLocalSuccessors(remoteService);
+	
+					sdg.removeRemoteService(remoteService);
+	
+					for (final ServiceDistance ancestor : beforeAncestors) {
+						if (!lostSuccessors.containsKey(ancestor.getService()))
+							lostSuccessors.put(ancestor.getService(), new HashSet<Service>());
+						lostSuccessors.get(ancestor.getService()).add(remoteService);
+					}
+	
+					for (final ServiceDistance successor : beforeSuccessors) {
+						if (!lostAncestors.containsKey(successor.getService()))
+							lostAncestors.put(successor.getService(), new HashSet<Service>());
+						lostAncestors.get(successor.getService()).add(remoteService);
+					}
+				}
+		}
 		
 		if (!lostAncestors.isEmpty())
 			graphCreationListener.lostAncestors(lostAncestors);
@@ -453,7 +459,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		final Map<Service, Set<Service>> lostAncestors = new HashMap<Service, Set<Service>>();
 		final Map<Service, Set<Service>> lostSuccessors = new HashMap<Service, Set<Service>>();
 		
-		sdg.checkServices(lostDestinations, lostAncestors, lostSuccessors);
+		synchronized (sdg) {
+			sdg.checkServices(lostDestinations, lostAncestors, lostSuccessors);
+		}
 
 		if (!lostAncestors.isEmpty())
 			graphCreationListener.lostAncestors(lostAncestors);
