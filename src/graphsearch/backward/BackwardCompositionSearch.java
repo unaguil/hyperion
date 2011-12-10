@@ -1,5 +1,6 @@
 package graphsearch.backward;
 
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.CompositionListener;
@@ -22,7 +23,7 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 	private BackwardComposer backwardComposer;
 
 	public BackwardCompositionSearch(final Peer peer, final CompositionListener compositionListener) {
-		super(peer, compositionListener);
+		super(peer, compositionListener, GraphType.BACKWARD);
 	}
 
 	@Override

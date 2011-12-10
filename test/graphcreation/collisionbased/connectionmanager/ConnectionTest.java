@@ -3,6 +3,7 @@ package graphcreation.collisionbased.connectionmanager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.collisionbased.connectionManager.Connection;
@@ -41,9 +42,9 @@ public class ConnectionTest {
 
 	@Before
 	public void setUp() throws Exception {
-		connection1 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")));
-		connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")));
-		connection3 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")));
+		connection1 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")), GraphType.BIDIRECTIONAL);
+		connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
+		connection3 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")), GraphType.BIDIRECTIONAL);
 
 		Set<Parameter> foundParameters = new HashSet<Parameter>();
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
@@ -110,7 +111,7 @@ public class ConnectionTest {
 
 	@Test
 	public void testAddSearchResponse() throws InvalidParameterIDException {
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")));
+		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
 
 		assertTrue(connection.addSearchResponse(searchResponseMessage).isEmpty());
 
@@ -339,7 +340,7 @@ public class ConnectionTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")), taxonomy);
+		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")), taxonomy, GraphType.BIDIRECTIONAL);
 
 		assertTrue(connection.addSearchResponse(searchResponseMessage).isEmpty());
 

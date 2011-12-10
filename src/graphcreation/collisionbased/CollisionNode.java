@@ -2,6 +2,7 @@ package graphcreation.collisionbased;
 
 import graphcreation.GraphCreationListener;
 import graphcreation.GraphCreator;
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.collisionbased.collisiondetector.CollisionDetector;
 import graphcreation.collisionbased.connectionManager.Connection;
@@ -48,11 +49,11 @@ class CollisionNode {
 	// the connections manager
 	private final ConnectionsManager cManager;
 	
-	public CollisionNode(final Peer peer, final GraphCreator gCreator, final GraphCreationListener graphCreationListener) {
+	public CollisionNode(final Peer peer, final GraphCreator gCreator, final GraphCreationListener graphCreationListener, final GraphType graphType) {
 		this.peer = peer;
 		this.gCreator = gCreator;
 		this.graphCreationListener = graphCreationListener;
-		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
 
 	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
@@ -271,6 +272,8 @@ class CollisionNode {
 		synchronized (cManager) {
 			updatedConnections.putAll(cManager.updateConnections(searchResponseMessage));
 		}
+		
+		logger.trace("Peer " + peer.getPeerID() + " updated connections: " + updatedConnections);
 
 		final PeerIDSet notifiedPeers = new PeerIDSet();
 
@@ -282,8 +285,8 @@ class CollisionNode {
 			logger.trace("Peer " + peer.getPeerID() + " connection " + connection + " updated");
 
 			final PeerIDSet partialPeers = e.getValue();
-			final Map<ServiceDistance, Set<ServiceDistance>> currentSuccessors = getSuccessors(connection, collisionResponseMessage, partialPeers);
-			final Map<ServiceDistance, Set<ServiceDistance>> currentAncestors = getAncestors(connection, collisionResponseMessage, partialPeers);
+			final Map<ServiceDistance, Set<ServiceDistance>> currentSuccessors = getSuccessors(connection, collisionResponseMessage);
+			final Map<ServiceDistance, Set<ServiceDistance>> currentAncestors = getAncestors(connection, collisionResponseMessage);
 
 			final Map<ServiceDistance, Set<ServiceDistance>> inverseSuccessors = new HashMap<ServiceDistance, Set<ServiceDistance>>();
 			final Map<ServiceDistance, Set<ServiceDistance>> inverseAncestors = new HashMap<ServiceDistance, Set<ServiceDistance>>();
@@ -322,14 +325,14 @@ class CollisionNode {
 
 	}
 	
-	private Map<ServiceDistance, Set<ServiceDistance>> getSuccessors(final Connection connection, final CollisionResponseMessage collisionResponseMessage, final PeerIDSet validPeers) {
+	private Map<ServiceDistance, Set<ServiceDistance>> getSuccessors(final Connection connection, final CollisionResponseMessage collisionResponseMessage) {
 		final Map<ServiceDistance, Set<ServiceDistance>> successors = new HashMap<ServiceDistance, Set<ServiceDistance>>();
 
 		// Get those input services which are valid
-		final Set<ServiceDistance> validInputServices = getValidServices(connection.getInputServicesTable(), validPeers);
+		final Set<ServiceDistance> inputServices = connection.getInputServicesTable();
 
 		// Add services to a graph
-		final ExtendedServiceGraph eServiceGraph = createServiceGraph(collisionResponseMessage.getServices(), validInputServices);
+		final ExtendedServiceGraph eServiceGraph = createServiceGraph(collisionResponseMessage.getServices(), inputServices);
 
 		// Get successor relations between the new received services and the
 		// input services
@@ -338,8 +341,8 @@ class CollisionNode {
 
 			for (final ServiceNode realSuccessor : eServiceGraph.getSuccessors(eServiceGraph.getServiceNode(receivedService), false))
 				// Check if it is a valid successor
-				if (validInputServices.contains(new ServiceDistance(realSuccessor.getService(), Integer.valueOf(0)))) {
-					final ServiceDistance realSuccessorDistance = findServiceDistance(validInputServices, realSuccessor.getService());
+				if (inputServices.contains(new ServiceDistance(realSuccessor.getService(), Integer.valueOf(0)))) {
+					final ServiceDistance realSuccessorDistance = findServiceDistance(inputServices, realSuccessor.getService());
 					if (!successors.containsKey(receivedServiceDistance))
 						successors.put(receivedServiceDistance, new HashSet<ServiceDistance>());
 					successors.get(receivedServiceDistance).add(realSuccessorDistance);
@@ -348,13 +351,13 @@ class CollisionNode {
 		return successors;
 	}
 	
-	private Map<ServiceDistance, Set<ServiceDistance>> getAncestors(final Connection connection, final CollisionResponseMessage collisionResponseMessage, final PeerIDSet validPeers) {
+	private Map<ServiceDistance, Set<ServiceDistance>> getAncestors(final Connection connection, final CollisionResponseMessage collisionResponseMessage) {
 		final Map<ServiceDistance, Set<ServiceDistance>> ancestors = new HashMap<ServiceDistance, Set<ServiceDistance>>();
 		// Get those input services which are valid
-		final Set<ServiceDistance> validOutputServices = getValidServices(connection.getOutputServicesTable(), validPeers);
+		final Set<ServiceDistance> outputServices = connection.getOutputServicesTable();
 
 		// Add services to a graph
-		final ExtendedServiceGraph eServiceGraph = createServiceGraph(collisionResponseMessage.getServices(), validOutputServices);
+		final ExtendedServiceGraph eServiceGraph = createServiceGraph(collisionResponseMessage.getServices(), outputServices);
 
 		// Get successor relations between the new received services and the
 		// input services
@@ -362,8 +365,8 @@ class CollisionNode {
 			final ServiceDistance receivedServiceDistance = new ServiceDistance(receivedService, collisionResponseMessage.getDistance(receivedService));
 			for (final ServiceNode realAncestor : eServiceGraph.getAncestors(eServiceGraph.getServiceNode(receivedService), false))
 				// Check if it is a valid successor
-				if (validOutputServices.contains(new ServiceDistance(realAncestor.getService(), Integer.valueOf(0)))) {
-					final ServiceDistance ancestorServiceDistance = findServiceDistance(validOutputServices, realAncestor.getService());
+				if (outputServices.contains(new ServiceDistance(realAncestor.getService(), Integer.valueOf(0)))) {
+					final ServiceDistance ancestorServiceDistance = findServiceDistance(outputServices, realAncestor.getService());
 					if (!ancestors.containsKey(receivedServiceDistance))
 						ancestors.put(receivedServiceDistance, new HashSet<ServiceDistance>());
 					ancestors.get(receivedServiceDistance).add(ancestorServiceDistance);
@@ -404,14 +407,6 @@ class CollisionNode {
 			updatedDistances.add(new ServiceDistance(sDistance.getService(), newDistance));
 		}
 		return updatedDistances;
-	}
-	
-	private Set<ServiceDistance> getValidServices(final Set<ServiceDistance> serviceDistances, final PeerIDSet validPeers) {
-		final Set<ServiceDistance> validServices = new HashSet<ServiceDistance>();
-		for (final ServiceDistance sDistance : serviceDistances)
-			if (validPeers.contains(sDistance.getService().getPeerID()))
-				validServices.add(sDistance);
-		return validServices;
 	}
 
 	private ExtendedServiceGraph createServiceGraph(final Set<Service> receivedServices, final Set<ServiceDistance> validServices) {

@@ -1,6 +1,9 @@
 package graphsearch.forward.forwardCompositionTable;
 
 import graphcreation.GraphCreator;
+import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
+import graphcreation.graph.extendedServiceGraph.node.ConnectionNode;
+import graphcreation.graph.servicegraph.node.ServiceNode;
 import graphcreation.services.Service;
 import graphsearch.forward.message.FCompositionMessage;
 
@@ -65,12 +68,31 @@ class SearchEntry {
 
 		calculateNewCovers(service, fCompositionMessage);
 	}
+	
+	private Set<InputParameter> getConnectedInputs(final Service service, final Service ancestor) {
+		final ExtendedServiceGraph eServiceGraph = new ExtendedServiceGraph(gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+		eServiceGraph.merge(service);
+		eServiceGraph.merge(ancestor);
+		
+		final ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
+		final ServiceNode ancestorNode = eServiceGraph.getServiceNode(ancestor);
+		final Set<ConnectionNode> connections = eServiceGraph.getAncestorORNodes(serviceNode, false);
+		final Set<ConnectionNode> ancestorConnections = eServiceGraph.getSucessorORNodes(ancestorNode, false);
+
+		connections.retainAll(ancestorConnections);
+
+		final Set<InputParameter> connectedInputs = new HashSet<InputParameter>();
+		for (final ConnectionNode connection : connections)
+			connectedInputs.add(connection.getInput());
+
+		return connectedInputs;
+	}
 
 	private void calculateNewCovers(final Service service, final FCompositionMessage fCompositionMessage) {
 		// Obtain which parameters of the local service are covered by the
 		// ancestor service
 		final Service ancestor = fCompositionMessage.getSourceService();
-		final Set<InputParameter> connectedInputs = gCreator.getConnectedInputs(service, ancestor);
+		final Set<InputParameter> connectedInputs = getConnectedInputs(service, ancestor);
 
 		coverInputs(service, connectedInputs);
 	}

@@ -9,7 +9,6 @@ import java.util.Set;
 import multicast.search.Route;
 import peer.peerid.PeerID;
 import serialization.xml.XMLSerializable;
-import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.Parameter;
 
 public interface SDG extends XMLSerializable {
@@ -116,18 +115,6 @@ public interface SDG extends XMLSerializable {
 	 * @return the set of remote connected services
 	 */
 	public Set<ServiceDistance> getRemoteConnectedServices(Service service);
-
-	/**
-	 * Gets the input parameters of the specified service which are connected to
-	 * the passed ancestor
-	 * 
-	 * @param service
-	 *            the service whose connected inputs are obtained
-	 * @param ancestor
-	 *            the ancestor which the inputs are connected to
-	 * @return the connected inputs of the service
-	 */
-	public Set<InputParameter> getConnectedInputs(Service service, Service ancestor);
 
 	/**
 	 * Checks if the passed service is contained in the SDK

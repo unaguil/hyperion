@@ -1,5 +1,6 @@
 package graphcreation.collisionbased.connectionManager;
 
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.collisionbased.message.CollisionResponseMessage;
@@ -36,6 +37,8 @@ public class Connection {
 
 	// the taxonomy used during management
 	private final Taxonomy taxonomy;
+	
+	private final GraphType graphType;
 
 	/**
 	 * Constructor of the connection. A default empty taxonomy is used.
@@ -43,9 +46,10 @@ public class Connection {
 	 * @param collision
 	 *            the collision represented by this connection
 	 */
-	public Connection(final Collision collision) {
+	public Connection(final Collision collision, final GraphType graphType) {
 		this.collision = collision;
 		this.taxonomy = new BasicTaxonomy();
+		this.graphType = graphType;
 	}
 
 	/**
@@ -56,9 +60,10 @@ public class Connection {
 	 * @param taxonomy
 	 *            the taxonomy used during management
 	 */
-	public Connection(final Collision collision, final Taxonomy taxonomy) {
+	public Connection(final Collision collision, final Taxonomy taxonomy, final GraphType graphType) {
 		this.collision = collision;
 		this.taxonomy = taxonomy;
+		this.graphType = graphType;
 	}
 
 	/**
@@ -99,6 +104,14 @@ public class Connection {
 
 		return inputPeers;
 	}
+	
+	private boolean notifyInputs() {
+		return graphType == GraphType.BIDIRECTIONAL || graphType == GraphType.BACKWARD;
+	}
+	
+	private boolean notifyOutputs() {
+		return graphType == GraphType.BIDIRECTIONAL || graphType == GraphType.FORWARD;
+	}
 
 	/**
 	 * Adds a response message to this connection. The search response must
@@ -120,22 +133,28 @@ public class Connection {
 				if (p instanceof InputParameter && taxonomy.subsumes(collision.getInput().getID(), p.getID())) {
 					final boolean added = inputResponses.add(searchResponseMessage);
 					if (added && isConnected()) {
-						// Notify output peers if it is connected
-						for (final SearchResponseMessage outputResponse : getConnectedOutputResponses(searchResponseMessage))
-							notifiedPeers.addPeer(outputResponse.getSource());
-						// And the added peer
-						notifiedPeers.addPeer(searchResponseMessage.getSource());
+						if (notifyOutputs()) {
+							// Notify output peers if it is connected
+							for (final SearchResponseMessage outputResponse : getConnectedOutputResponses(searchResponseMessage))
+								notifiedPeers.addPeer(outputResponse.getSource());
+						}
+						// And the added input peer
+						if (notifyInputs())
+							notifiedPeers.addPeer(searchResponseMessage.getSource());
 					}
 					// if response contains any parameter which is subsumed by
 					// the output of the collision add it as output response
 				} else if (p instanceof OutputParameter && taxonomy.subsumes(collision.getOutput().getID(), p.getID())) {
 					final boolean added = outputResponses.add(searchResponseMessage);
 					if (added && isConnected()) {
-						// Notify input peers if it is connected
-						for (final SearchResponseMessage inputResponse : getConnectedInputResponses(searchResponseMessage))
-							notifiedPeers.addPeer(inputResponse.getSource());
-						// And the added peer
-						notifiedPeers.addPeer(searchResponseMessage.getSource());
+						if (notifyInputs()) {
+							// Notify input peers if it is connected
+							for (final SearchResponseMessage inputResponse : getConnectedInputResponses(searchResponseMessage))
+								notifiedPeers.addPeer(inputResponse.getSource());
+						}
+						// And the added output peer
+						if (notifyOutputs())
+							notifiedPeers.addPeer(searchResponseMessage.getSource());
 					}
 				}
 
@@ -282,9 +301,9 @@ public class Connection {
 
 	/**
 	 * Removes the responses received from the specified peers
-	 * 
 	 * @param routes
 	 *            the responses coming from the specified routes
+	 * 
 	 * @return a map containing the peers which must notified and the lost
 	 *         services to notify
 	 */
@@ -297,7 +316,7 @@ public class Connection {
 		// Remove those disappeared peers
 		for (final PeerID peerID : fromPeers)
 			outputPeers.remove(peerID);
-		if (!lostInputServices.isEmpty() && !outputPeers.isEmpty())
+		if (notifyOutputs() && !lostInputServices.isEmpty() && !outputPeers.isEmpty())
 			notifications.put(outputPeers, lostInputServices);
 
 		// Check output services
@@ -306,7 +325,7 @@ public class Connection {
 		// Remove those disappeared peers
 		for (final PeerID peerID : fromPeers)
 			inputPeers.remove(peerID);
-		if (!lostOutputServices.isEmpty() && !inputPeers.isEmpty())
+		if (notifyInputs() && !lostOutputServices.isEmpty() && !inputPeers.isEmpty())
 			notifications.put(inputPeers, lostOutputServices);
 
 		return notifications;
@@ -327,13 +346,13 @@ public class Connection {
 		boolean removed = removeServices(services, source, inputResponses);
 		final PeerIDSet outputPeers = getOutputPeers();
 
-		if (removed && !outputPeers.isEmpty())
+		if (notifyOutputs() && removed && !outputPeers.isEmpty())
 			notifications.put(outputPeers, services);
 
 		// Check output services
 		removed = removeServices(services, source, outputResponses);
 		final PeerIDSet inputPeers = getInputPeers();
-		if (removed && !inputPeers.isEmpty())
+		if (notifyInputs() && removed && !inputPeers.isEmpty())
 			notifications.put(inputPeers, services);
 
 		return notifications;

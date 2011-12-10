@@ -103,7 +103,6 @@ public class ForwardComposer {
 			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
 
 			if (Utility.isGoalService(service)) {
-
 				logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
 				notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition());
 			} else // send the forward composition message if TTL and search
@@ -112,7 +111,9 @@ public class ForwardComposer {
 				// Remove those successors which are GOAL services not
 				// compatible with the current search
 				final Set<Service> services = Utility.getServices(successors);
+				System.out.println("Successors: " + services);
 				final Set<Service> validSuccessors = getValidSuccessors(services, mergedForwardMessage.getComposition());
+				System.out.println("Valid successors: " + services);
 				forwardCompositionMessage(mergedForwardMessage, validSuccessors);
 			} else
 				logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");

@@ -1,5 +1,6 @@
 package graphsearch.bidirectionalsearch;
 
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphcreation.services.ServiceList;
@@ -37,7 +38,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	private final Logger logger = Logger.getLogger(BidirectionalSearch.class);
 
 	public BidirectionalSearch(final Peer peer, final CompositionListener compositionListener) {
-		super(peer, compositionListener);
+		super(peer, compositionListener, GraphType.BIDIRECTIONAL);
 	}
 
 	@Override

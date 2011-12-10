@@ -4,7 +4,6 @@ import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.collisionbased.sdg.NonLocalServiceException;
 import graphcreation.collisionbased.sdg.SDG;
 import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
-import graphcreation.graph.extendedServiceGraph.node.ConnectionNode;
 import graphcreation.graph.servicegraph.node.ServiceNode;
 import graphcreation.services.Service;
 
@@ -280,22 +279,6 @@ public class SDGTaxonomy implements SDG {
 			availableRoutes.add(directRoute);
 		
 		return Util.getShortestRoute(availableRoutes);
-	}
-
-	@Override
-	public Set<InputParameter> getConnectedInputs(final Service service, final Service ancestor) {
-		final ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
-		final ServiceNode ancestorNode = eServiceGraph.getServiceNode(ancestor);
-		final Set<ConnectionNode> connections = eServiceGraph.getAncestorORNodes(serviceNode, false);
-		final Set<ConnectionNode> ancestorConnections = eServiceGraph.getSucessorORNodes(ancestorNode, false);
-
-		connections.retainAll(ancestorConnections);
-
-		final Set<InputParameter> connectedInputs = new HashSet<InputParameter>();
-		for (final ConnectionNode connection : connections)
-			connectedInputs.add(connection.getInput());
-
-		return connectedInputs;
 	}
 
 	@Override

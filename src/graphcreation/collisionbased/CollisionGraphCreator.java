@@ -42,7 +42,6 @@ import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
-import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.Parameter;
 import util.logger.Logger;
 import dissemination.DistanceChange;
@@ -88,10 +87,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	 *            the communication peer
 	 * 
 	 */
-	public CollisionGraphCreator(final Peer peer, final MulticastMessageListener mMessageListener, final GraphCreationListener graphCreationListener) {
+	public CollisionGraphCreator(final Peer peer, final MulticastMessageListener mMessageListener, final GraphCreationListener graphCreationListener, final GraphType graphType) {
 		this.peer = peer;
 		this.pSearch = new ParameterSearchImpl(peer, this, this);
-		this.collisionNode = new CollisionNode(peer, this, graphCreationListener);
+		this.collisionNode = new CollisionNode(peer, this, graphCreationListener, graphType);
 		this.mMessageListener = mMessageListener;
 		this.graphCreationListener = graphCreationListener;
 
@@ -509,13 +508,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	public Set<ServiceDistance> getSuccessors(Service service) {
 		synchronized (sdg) {
 			return sdg.getSuccessors(service);
-		}
-	}
-
-	@Override
-	public Set<InputParameter> getConnectedInputs(Service service, Service ancestor) {
-		synchronized (sdg) {
-			return sdg.getConnectedInputs(service, ancestor);
 		}
 	}
 

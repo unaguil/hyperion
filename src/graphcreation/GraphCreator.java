@@ -9,9 +9,10 @@ import java.util.Set;
 import multicast.ParameterSearch;
 import peer.message.PayloadMessage;
 import serialization.xml.XMLSerializable;
-import taxonomy.parameter.InputParameter;
 
 public interface GraphCreator extends XMLSerializable {
+	
+	public enum GraphType { FORWARD, BACKWARD, BIDIRECTIONAL }
 
 	public void forwardMessage(PayloadMessage payload, Set<Service> destinations);
 
@@ -39,6 +40,4 @@ public interface GraphCreator extends XMLSerializable {
 	public Set<ServiceDistance> getAncestors(Service service);
 
 	public Set<ServiceDistance> getSuccessors(Service service);
-
-	public Set<InputParameter> getConnectedInputs(Service service, Service ancestor);
 }

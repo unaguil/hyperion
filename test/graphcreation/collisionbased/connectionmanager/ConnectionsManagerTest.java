@@ -2,6 +2,7 @@ package graphcreation.collisionbased.connectionmanager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.collisionbased.connectionManager.Connection;
 import graphcreation.collisionbased.connectionManager.ConnectionsManager;
@@ -42,7 +43,7 @@ public class ConnectionsManagerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		cManager = new ConnectionsManager(new BasicTaxonomy());
+		cManager = new ConnectionsManager(new BasicTaxonomy(), GraphType.BIDIRECTIONAL);
 
 		cManager.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")));
 		cManager.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")));
@@ -105,7 +106,7 @@ public class ConnectionsManagerTest {
 
 		Map<Connection, PeerIDSet> updatedConnections = cManager.updateConnections(searchResponseMessage2);
 		assertEquals(1, updatedConnections.size());
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), emptyTaxonomy);
+		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), emptyTaxonomy,  GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection));
 		assertEquals(2, updatedConnections.get(connection).size());
 		assertTrue(updatedConnections.get(connection).contains(new PeerID("1")));
@@ -113,7 +114,7 @@ public class ConnectionsManagerTest {
 
 		updatedConnections = cManager.updateConnections(searchResponseMessage3);
 		assertEquals(1, updatedConnections.size());
-		final Connection connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), emptyTaxonomy);
+		final Connection connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), emptyTaxonomy, GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection2));
 		assertEquals(2, updatedConnections.get(connection2).size());
 		assertTrue(updatedConnections.get(connection2).contains(new PeerID("1")));
@@ -274,7 +275,7 @@ public class ConnectionsManagerTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final ConnectionsManager cManagerWithTaxonomy = new ConnectionsManager(taxonomy);
+		final ConnectionsManager cManagerWithTaxonomy = new ConnectionsManager(taxonomy, GraphType.BIDIRECTIONAL);
 
 		cManagerWithTaxonomy.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")));
 		cManagerWithTaxonomy.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C")));
@@ -283,7 +284,7 @@ public class ConnectionsManagerTest {
 
 		Map<Connection, PeerIDSet> updatedConnections = cManagerWithTaxonomy.updateConnections(searchResponseMessage2);
 		assertEquals(1, updatedConnections.size());
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")));
+		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection));
 		assertEquals(2, updatedConnections.get(connection).size());
 		assertTrue(updatedConnections.get(connection).contains(new PeerID("1")));
@@ -291,7 +292,7 @@ public class ConnectionsManagerTest {
 
 		updatedConnections = cManagerWithTaxonomy.updateConnections(searchResponseMessage3);
 		assertEquals(1, updatedConnections.size());
-		final Connection connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")));
+		final Connection connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection2));
 		assertEquals(2, updatedConnections.get(connection2).size());
 		assertTrue(updatedConnections.get(connection2).contains(new PeerID("1")));

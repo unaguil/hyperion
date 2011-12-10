@@ -1,5 +1,6 @@
 package graphsearch.forward;
 
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.CompositionListener;
@@ -24,7 +25,7 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 	private ForwardComposer forwardComposer;
 
 	public ForwardCompositionSearch(final Peer peer, final CompositionListener compositionListener) {
-		super(peer, compositionListener);
+		super(peer, compositionListener, GraphType.FORWARD);
 	}
 
 	@Override

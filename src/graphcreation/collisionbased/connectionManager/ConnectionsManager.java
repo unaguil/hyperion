@@ -1,5 +1,6 @@
 package graphcreation.collisionbased.connectionManager;
 
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.services.Service;
 
@@ -25,6 +26,8 @@ public class ConnectionsManager {
 	private static final long CLEAN_INVALID_TIME = 60000;
 	
 	private final ConditionRegister<Connection> invalidConnections = new ConditionRegister<Connection>(CLEAN_INVALID_TIME);
+	
+	private final GraphType graphType;
 
 	// the taxonomy used during management
 	private final Taxonomy taxonomy;
@@ -32,8 +35,9 @@ public class ConnectionsManager {
 	/**
 	 * Constructor of the connections manager
 	 */
-	public ConnectionsManager(final Taxonomy taxonomy) {
+	public ConnectionsManager(final Taxonomy taxonomy, final GraphType graphType) {
 		this.taxonomy = taxonomy;
+		this.graphType = graphType;
 	}
 
 	/**
@@ -45,7 +49,7 @@ public class ConnectionsManager {
 	 * @param
 	 */
 	public void addConnection(final Collision collision) {
-		detectedConnections.add(new Connection(collision, taxonomy));
+		detectedConnections.add(new Connection(collision, taxonomy, graphType));
 	}
 
 	/**
@@ -187,6 +191,6 @@ public class ConnectionsManager {
 	}
 	
 	public boolean contains(final Collision collision) {
-		return detectedConnections.contains(new Connection(collision, taxonomy)); 
+		return detectedConnections.contains(new Connection(collision, taxonomy, graphType)); 
 	}
 }

@@ -2,6 +2,7 @@ package graphsearch.commonCompositionSearch;
 
 import graphcreation.GraphCreationListener;
 import graphcreation.GraphCreator;
+import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.CollisionGraphCreator;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
@@ -55,9 +56,9 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 
 	private final Logger logger = Logger.getLogger(CommonCompositionSearch.class);
 
-	public CommonCompositionSearch(final Peer peer, final CompositionListener compositionListener) {
+	public CommonCompositionSearch(final Peer peer, final CompositionListener compositionListener, final GraphType graphType) {
 		this.peer = peer;
-		this.gCreator = new CollisionGraphCreator(peer, this, this);
+		this.gCreator = new CollisionGraphCreator(peer, this, this, graphType);
 		this.compositionListener = compositionListener;
 
 		try {
