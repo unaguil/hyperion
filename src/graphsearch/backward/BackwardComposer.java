@@ -38,13 +38,6 @@ public class BackwardComposer {
 		this.commonCompositionSearch = commonCompositionSearch;
 	}
 
-	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
-		// remove those covering sets which containing the disappeared ancestors
-		// for (Service service : lostAncestors.keySet())
-		// bCompositionData.removeCoveringSets(service,
-		// lostAncestors.get(service));
-	}
-
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
 		for (final Service service : newAncestors.keySet())
 			if (gCreator.isLocal(service)) {

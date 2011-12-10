@@ -45,7 +45,6 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 
 	@Override
 	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
-		backwardComposer.lostAncestors(lostAncestors);
 	}
 
 	@Override
