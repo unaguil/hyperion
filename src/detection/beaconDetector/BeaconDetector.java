@@ -58,7 +58,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			
 			// send initial beacon
 			beaconDetector.sendBeacon();
-
 			while (!Thread.interrupted()) {
 				logger.trace("Peer " + peer.getPeerID() + " beacon thread running");
 
@@ -84,8 +83,11 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 					// next beacon)
 					sleepTime = BEACON_TIME - elapsedTime;
 
+				int randomSleep = 0;
+				if (RANDOM_WAIT > 0)
+					randomSleep = r.nextInt(RANDOM_WAIT);
 				try {
-					Thread.sleep(sleepTime);
+					Thread.sleep(sleepTime + randomSleep);
 				} catch (final InterruptedException e) {
 					finishThread();
 					return;
@@ -109,6 +111,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Configuration properties
 	private int BEACON_TIME = 1000; // Default values
+	private int RANDOM_WAIT = 200;
 
 	// Stores the time of the last packet sent by this peer
 	private final AtomicLong lastSentTime = new AtomicLong();
@@ -120,7 +123,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Map which contains current neighbors
 	private final Map<PeerID, Long> neighborsTable = new ConcurrentHashMap<PeerID, Long>();
-	private final PeerIDSet newNeighbors = new PeerIDSet();
 
 	// Reference to the peer
 	private final Peer peer;
@@ -128,15 +130,12 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Thread which sends beacons periodically
 	private BeaconSendThread beaconThread;
-	private NeighborNotifier neighborNotifier;
 
 	private BeaconMessage beaconMessage;
 
 	private long LOST_TIME;
 
 	private boolean init = false;
-
-	private final int NOTIFY_TIME = 30;
 
 	/**
 	 * Constructor of the class. Configures internal properties using global
@@ -175,43 +174,20 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		return currentNeighbors;
 	}
 
-	private static class NeighborNotifier extends WaitableThread {
-
-		private final long notifyTime;
-		private final BeaconDetector beaconDetector;
-
-		public NeighborNotifier(final BeaconDetector beaconDetector, final int notifyTime) {
-			this.notifyTime = notifyTime;
-			this.beaconDetector = beaconDetector;
-		}
-
-		@Override
-		public void run() {
-			while (!Thread.interrupted()) {
-				beaconDetector.notifyNewNeighbors();
-				try {
-					Thread.sleep(notifyTime);
-				} catch (final InterruptedException e) {
-					this.threadFinished();
-					return;
-				}
-			}
-
-			this.threadFinished();
-		}
-	}
-
 	@Override
 	public void init() {
 		try {
 			final String beaconTimeStr = Configuration.getInstance().getProperty("beaconDetector.beaconTime");
 			BEACON_TIME = Integer.parseInt(beaconTimeStr);
 			logger.info("Peer " + peer.getPeerID() + " set BEACON_TIME to " + BEACON_TIME);
+
+			final String randomWaitStr = Configuration.getInstance().getProperty("messageProcessor.randomWait");
+			RANDOM_WAIT = Integer.parseInt(randomWaitStr);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = BEACON_TIME * 2;
+		LOST_TIME = (BEACON_TIME + RANDOM_WAIT) * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
@@ -221,21 +197,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		beaconThread = new BeaconSendThread(this);
 		beaconThread.start();
 
-		neighborNotifier = new NeighborNotifier(this, NOTIFY_TIME);
-		neighborNotifier.start();
-
 		init = true;
-	}
-
-	public void notifyNewNeighbors() {
-		final PeerIDSet neighbors = new PeerIDSet();
-		synchronized (newNeighbors) {
-			neighbors.addPeers(newNeighbors);
-			newNeighbors.clear();
-		}
-
-		if (!neighbors.isEmpty())
-			notifyAppearance(neighbors);
 	}
 
 	@Override
@@ -244,15 +206,15 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			// Check that the message was received from an unknown neighbor
 			final boolean newNeighbor = !neighborsTable.containsKey(message.getSender());
 
-			if (newNeighbor)
-				synchronized (newNeighbors) {
-					newNeighbors.addPeer(message.getSender());
-				}
-
 			// Update sender of the received message
 			neighborsTable.put(message.getSender(), Long.valueOf(System.currentTimeMillis()));
-
 			logger.trace("Peer " + peer.getPeerID() + " has updated neighbor " + message.getSender());
+			
+			if (newNeighbor) {
+				PeerIDSet newNeighbors = new PeerIDSet();
+				newNeighbors.addPeer(message.getSender());
+				notifyAppearance(newNeighbors);
+			}
 		}
 	}
 
@@ -265,7 +227,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	@Override
 	public void stop() {
-		neighborNotifier.stopAndWait();
 		beaconThread.stopAndWait();
 	}
 
@@ -285,9 +246,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 					logger.trace("Peer " + peer.getPeerID() + " removing neighbor " + neighbor + " elapsed time " + elapsedTime + " [" + System.currentTimeMillis() + " - " + timestamp + "]");
 					removedPeers.addPeer(neighbor);
 					it.remove();
-					synchronized (newNeighbors) {
-						newNeighbors.remove(neighbor);
-					}
 				}
 			}
 		}
