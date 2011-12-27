@@ -34,6 +34,7 @@ final class MessageProcessor extends WaitableThread {
 	private final Logger logger = Logger.getLogger(MessageProcessor.class);
 
 	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
+	private final List<Boolean> includedMessages = new ArrayList<Boolean>();
 
 	private final Random r = new Random();
 	
@@ -128,12 +129,16 @@ final class MessageProcessor extends WaitableThread {
 				final PeerIDSet destinations = new PeerIDSet();
 				
 				synchronized (waitingMessages) {
-					for (final BroadcastMessage broadcastMessage : waitingMessages) {
+					for (int i = 0; i < waitingMessages.size(); i++) {
+						final BroadcastMessage broadcastMessage = waitingMessages.get(i);
 						destinations.addPeers(broadcastMessage.getExpectedDestinations());
-						bundleMessages.add(broadcastMessage);
+						
+						if (includedMessages.get(i).booleanValue())
+							bundleMessages.add(broadcastMessage);
 					}
 					
 					waitingMessages.clear();
+					includedMessages.clear();
 				}
 
 				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
@@ -185,13 +190,18 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
+		boolean includedResponse = false;
 		synchronized (waitingMessages) {
-			if (layer.checkWaitingMessages(waitingMessages, message)) {			
-				waitingMessages.add(message);
-				return true;
-			}
+			includedResponse = layer.checkWaitingMessages(waitingMessages, message);
+			
+			if (includedResponse)
+				includedMessages.add(Boolean.TRUE);
+			else
+				includedMessages.add(Boolean.FALSE);
+			
+			waitingMessages.add(message);
 		}
-		return false;
+		return includedResponse;
 	}
 
 	public void addACKResponse(final ACKMessage ackMessage) {
