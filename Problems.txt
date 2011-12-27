@@ -1,4 +1,0 @@
-  Dissemination
- ===============
- 
-  * nodeMoving1-> no ha obtenido el valor correcto para la tabla del nodo que se mueve
