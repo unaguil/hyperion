@@ -202,8 +202,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), addedLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, null);
 
 		// Send the tables using a table message only if neighbors exist
-		if (!peer.getDetector().getCurrentNeighbors().isEmpty())
-			sendUpdateTableMessage(finalUpdateTable, payload);
+		final PeerIDSet currentNeighbors = peer.getDetector().getCurrentNeighbors();
+		if (!currentNeighbors.isEmpty())
+			sendUpdateTableMessage(finalUpdateTable, currentNeighbors, payload);
 
 		final CommitedParameters commitedParameters = new CommitedParameters(addedLocalParameters, removedLocalParameters);
 
@@ -314,16 +315,8 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				sendUpdate = true;
 		}
 		
-		if (sendUpdate) {
-			final PeerIDSet destinations = new PeerIDSet();
-			final PeerIDSet currentNeighbors = peer.getDetector().getCurrentNeighbors();
-			
-			for (final PeerID neighbor : neighbors)
-				if (currentNeighbors.contains(neighbor))
-					destinations.addPeer(neighbor);
-
-			sendUpdateTableMessage(newNeighborTable, null);
-		}
+		if (sendUpdate)
+			sendUpdateTableMessage(newNeighborTable, neighbors, null);
 
 		neighborListener.appearedNeighbors(neighbors);
 	}
@@ -351,7 +344,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		logger.trace("Peer " + peer.getPeerID() + " update table: " + finalUpdateTable);
 
 		if (!finalUpdateTable.isEmpty())
-			sendUpdateTableMessage(finalUpdateTable, null);
+			sendUpdateTableMessage(finalUpdateTable, peer.getDetector().getCurrentNeighbors(), null);
 
 		neighborListener.dissapearedNeighbors(neighbors);
 	}
@@ -479,35 +472,17 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			logger.trace("Peer " + peer.getPeerID() + " addedParameters: " + addedParameters + " removedParameters: " + removedParameters);
 			logger.trace("Peer " + peer.getPeerID() + " adding payload " + payload + " to table message");
 
-			// Send a new table message with a specified payload and responding
-			// to received message
-			
-			if (isNewInformation(tableMessage))
-				sendUpdateTableMessage(updateTable, payload);
+			sendUpdateTableMessage(updateTable, peer.getDetector().getCurrentNeighbors(), payload);
 		}
-	}
-	
-	private boolean isNewInformation(TableMessage tableMessage) {
-		//obtain which peers where already affected by the table message
-		final Set<PeerID> alreadyAffectedPeers = new HashSet<PeerID>();
-		//the table message sender already knew the information
-		alreadyAffectedPeers.add(tableMessage.getSender());
-		//all message receivers
-		alreadyAffectedPeers.addAll(tableMessage.getExpectedDestinations());
-		//but the current node
-		alreadyAffectedPeers.remove(peer.getPeerID());
-		
-		return !alreadyAffectedPeers.containsAll(peer.getDetector().getCurrentNeighbors().getPeerSet());
 	}
 
 	// Sends a message which contains a table to be added or removed
-	private void sendUpdateTableMessage(final UpdateTable updateTable, final PayloadMessage payload) {
+	private void sendUpdateTableMessage(final UpdateTable updateTable, final PeerIDSet destNeighbors, final PayloadMessage payload) {
 		// Only send message if tables are non empty
 		if (!updateTable.isEmpty()) {
 			TableMessage tableMessage;
 			
-			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-			tableMessage = new TableMessage(peer.getPeerID(), currentNeighbors, updateTable, payload);
+			tableMessage = new TableMessage(peer.getPeerID(), new ArrayList<PeerID>(destNeighbors.getPeerSet()), updateTable, payload);
 
 			logger.trace("Peer " + peer.getPeerID() + " sending update table message " + tableMessage);
 			
