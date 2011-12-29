@@ -138,7 +138,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	public void acceptShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
 		if (shortestPathNotificationMessage instanceof CompositionNotificationMessage) {
 			final CompositionNotificationMessage compositionNotificationMessage = (CompositionNotificationMessage) shortestPathNotificationMessage;
-			notifyComposition(compositionNotificationMessage.getSearchID(), compositionNotificationMessage.getComposition());
+			notifyComposition(compositionNotificationMessage.getSearchID(), compositionNotificationMessage.getComposition(), 0);
 		}
 	}
 

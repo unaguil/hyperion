@@ -156,6 +156,6 @@ public class BackwardComposer {
 	}
 
 	protected void notifyComposition(final SearchID searchID, final Set<Service> services) {
-		commonCompositionSearch.notifyComposition(searchID, services);
+		commonCompositionSearch.notifyComposition(searchID, services, 0);
 	}
 }

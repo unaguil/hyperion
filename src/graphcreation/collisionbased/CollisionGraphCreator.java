@@ -374,11 +374,11 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		traceSDG();
 	}
 
-	private void processForwardMessage(final ForwardMessage forwardMessage) {
+	private void processForwardMessage(final ForwardMessage forwardMessage, final int distance) {
 		logger.trace("Peer " + peer.getPeerID() + " accepted a forward message from " + forwardMessage.getSource() + " to " + forwardMessage.getDestinations());
 
 		// get destinations from services
-		pSearch.sendMulticastMessage(getDestinations(forwardMessage.getDestinations()), forwardMessage.getPayload());
+		pSearch.sendMulticastMessage(getDestinations(forwardMessage.getDestinations()), forwardMessage.getPayload(), distance);
 	}
 
 	@Override
@@ -393,7 +393,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		else if (payload instanceof RemovedServicesMessage)
 			collisionNode.processRemovedServicesMessage((RemovedServicesMessage) payload);
 		else if (payload instanceof ForwardMessage)
-			processForwardMessage((ForwardMessage) payload);
+			processForwardMessage((ForwardMessage) payload, distance);
 		else {
 			// the message must be processed by the upper layers
 			mMessageListener.multicastMessageAccepted(source, payload, distance);

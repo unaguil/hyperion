@@ -81,7 +81,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		ConnectionsFilter.filter(foundRemoteSuccessors, foundRemoteAncestors);
 	}
 
-	public void notifyComposition(final SearchID searchID, final Set<Service> services) {
+	public void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops) {
 		// create the extended service graph using the received services
 		// TODO when the composition graph is created there could appear more
 		// connections. Indirect paths exists among some services/nodes.
@@ -90,7 +90,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 			composition.merge(service);
 
 		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID);
-		compositionListener.compositionFound(composition, searchID);
+		compositionListener.compositionFound(composition, searchID, hops);
 	}
 
 	public void notifyCompositionsLost(final SearchID searchID, final Set<Service> services) {

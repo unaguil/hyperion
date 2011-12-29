@@ -64,6 +64,8 @@ public interface ParameterSearch extends XMLSerializable {
 	// sends a remote multicast message. This message is routed to multiple
 	// remote destinations.
 	public void sendMulticastMessage(PeerIDSet destinations, PayloadMessage payload);
+	
+	public void sendMulticastMessage(PeerIDSet destinations, PayloadMessage payload, int distance);
 
 	/**
 	 * Sends a remote unicast message. This message is routed to a unique remote

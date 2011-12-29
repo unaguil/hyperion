@@ -46,6 +46,8 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 
 	private final long remainingTime;
 	
+	private int hops = 0;
+	
 	public FCompositionMessage() {
 		sourceService = null;
 		searchID = null;
@@ -116,6 +118,14 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 	public int getTTL() {
 		return ttl;
 	}
+	
+	public int getHops() {
+		return hops;
+	}
+	
+	public void addHops(int hops) {
+		this.hops += hops;		
+	}
 
 	/**
 	 * Gets the remaining time for this message to expire
@@ -145,6 +155,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		final FCompositionMessage fCompositionMessage = new FCompositionMessage(getSearchID(), getSourceService(), getDestServices(), getTTL(), getRemainingTime());
 		fCompositionMessage.compositionServices.addAll(this.compositionServices);
 		fCompositionMessage.successorDistances.putAll(this.successorDistances);
+		fCompositionMessage.hops = this.hops;
 		return fCompositionMessage;
 	}
 
@@ -156,6 +167,8 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 				successorDistances.put(service, new HashSet<ServiceDistance>());
 			successorDistances.get(service).addAll(fCompositionMessage.successorDistances.get(service));
 		}
+		
+		hops += fCompositionMessage.hops;
 	}
 
 	public Map<Service, Set<ServiceDistance>> getSuccessorDistances() {
@@ -173,6 +186,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "searchID", in.readObject());
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "ttl", in.readInt());
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readLong());
+		hops = in.readInt();
 	}
 
 	@Override
@@ -186,6 +200,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		out.writeObject(searchID);
 		out.writeInt(ttl);
 		out.writeLong(remainingTime);
+		out.writeInt(hops);
 	}
 	
 	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {

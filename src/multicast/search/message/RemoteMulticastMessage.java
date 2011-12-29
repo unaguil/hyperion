@@ -57,6 +57,13 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 		this.payload = payload;
 		this.throughPeers.addPeers(Collections.singleton(source));
 	}
+	
+	public RemoteMulticastMessage(final PeerID source, final PeerIDSet remoteDestinations, final PayloadMessage payload, final int distance) {
+		super(source, Collections.singletonList(source), distance);
+		this.remoteDestinations.addPeers(remoteDestinations);
+		this.payload = payload;
+		this.throughPeers.addPeers(Collections.singleton(source));
+	}
 
 	/**
 	 * Constructor of the remote multicast message. It uses another message as

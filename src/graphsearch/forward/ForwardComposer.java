@@ -104,16 +104,14 @@ public class ForwardComposer {
 
 			if (Utility.isGoalService(service)) {
 				logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
-				notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition());
+				notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition(), mergedForwardMessage.getHops());
 			} else // send the forward composition message if TTL and search
 			// remaining time is greater than 0
 			if (mergedForwardMessage.getTTL() > 0 && mergedForwardMessage.getRemainingTime() > 0) {
 				// Remove those successors which are GOAL services not
 				// compatible with the current search
 				final Set<Service> services = Utility.getServices(successors);
-				System.out.println("Successors: " + services);
 				final Set<Service> validSuccessors = getValidSuccessors(services, mergedForwardMessage.getComposition());
-				System.out.println("Valid successors: " + services);
 				forwardCompositionMessage(mergedForwardMessage, validSuccessors);
 			} else
 				logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
@@ -132,8 +130,8 @@ public class ForwardComposer {
 		return fCompositionMessage;
 	}
 
-	protected void notifyComposition(final SearchID searchID, final Set<Service> services) {
-		commonCompositionSearch.notifyComposition(searchID, services);
+	protected void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops) {
+		commonCompositionSearch.notifyComposition(searchID, services, hops);
 	}
 
 	protected Set<Service> getValidSuccessors(final Set<Service> successors, final Set<Service> composition) {
@@ -147,7 +145,7 @@ public class ForwardComposer {
 
 	public void receivedFComposition(final FCompositionMessage fCompositionMessage) {
 		logger.debug("Peer " + peer.getPeerID() + " received forward composition search " + fCompositionMessage.getSearchID() + " from service " + fCompositionMessage.getSourceService() + " to services " + fCompositionMessage.getDestServices());
-
+		logger.trace("Peer " + peer.getPeerID() + " received forward composition search " + fCompositionMessage.getSearchID() + " with hops " + fCompositionMessage.getHops());
 		for (final ServiceDistance sDistance : fCompositionMessage.getDestServices()) {
 			final Service service = sDistance.getService();
 

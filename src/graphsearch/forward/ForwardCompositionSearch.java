@@ -54,8 +54,11 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 
 	@Override
 	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
-		if (payload instanceof FCompositionMessage)
-			forwardComposer.receivedFComposition((FCompositionMessage) payload);
+		if (payload instanceof FCompositionMessage) {
+			final FCompositionMessage fCompositionMessage = (FCompositionMessage) payload;
+			fCompositionMessage.addHops(distance);
+			forwardComposer.receivedFComposition(fCompositionMessage);
+		}
 		if (payload instanceof InvalidCompositionsMessage)
 			forwardComposer.receivedInvalidComposition((InvalidCompositionsMessage) payload);
 		if (payload instanceof CompositionModificationMessage)

@@ -405,10 +405,22 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			return;
 		
 		final RemoteMulticastMessage msg = new RemoteMulticastMessage(peer.getPeerID(), destinations, payload);
+		sendMulticastMessage(destinations, payload, msg);
+	}
 
+	private void sendMulticastMessage(final PeerIDSet destinations, final PayloadMessage payload, final RemoteMulticastMessage msg) {
 		final String payloadType = (payload == null)?"null":payload.getType();
 		logger.debug("Peer " + peer.getPeerID() + " sending remote multicast message " + msg + " with payload type of " + payloadType + " to " + destinations);
 		messageReceived(msg, System.currentTimeMillis());
+	}
+	
+	@Override
+	public void sendMulticastMessage(final PeerIDSet destinations, final PayloadMessage payload, final int distance) {
+		if (!enabled)
+			return;
+		
+		final RemoteMulticastMessage msg = new RemoteMulticastMessage(peer.getPeerID(), destinations, payload, distance);
+		sendMulticastMessage(destinations, payload, msg);
 	}
 
 	/*

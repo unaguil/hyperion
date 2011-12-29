@@ -129,7 +129,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	}
 
 	@Override
-	public void compositionFound(final ExtendedServiceGraph composition, final SearchID searchID) {}
+	public void compositionFound(final ExtendedServiceGraph composition, final SearchID searchID, final int hops) {}
 
 	@Override
 	public void compositionTimeExpired(final SearchID searchID) {}

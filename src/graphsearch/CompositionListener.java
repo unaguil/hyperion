@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface CompositionListener {
 
-	public void compositionFound(ExtendedServiceGraph composition, SearchID searchID);
+	public void compositionFound(ExtendedServiceGraph composition, SearchID searchID, int hops);
 
 	public void compositionTimeExpired(SearchID searchID);
 
