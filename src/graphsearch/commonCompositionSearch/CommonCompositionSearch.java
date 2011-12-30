@@ -89,7 +89,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		for (final Service service : services)
 			composition.merge(service);
 
-		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID);
+		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID + " hops: " + hops);
 		compositionListener.compositionFound(composition, searchID, hops);
 	}
 
