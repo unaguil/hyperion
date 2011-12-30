@@ -123,8 +123,8 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		return hops;
 	}
 	
-	public void addHops(int hops) {
-		this.hops += hops;		
+	public void addHops(int addedHops) {
+		this.hops += addedHops;		
 	}
 
 	/**
