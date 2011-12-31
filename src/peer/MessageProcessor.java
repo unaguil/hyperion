@@ -50,7 +50,7 @@ final class MessageProcessor extends WaitableThread {
 	private final AtomicBoolean delayNext = new AtomicBoolean(false);
 	private final AtomicLong delayTime = new AtomicLong();
 	
-	private final static int DELAY = 5;
+	private final static int DELAY = 10;
 	
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
