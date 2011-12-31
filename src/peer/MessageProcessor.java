@@ -2,8 +2,11 @@ package peer;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,7 +37,7 @@ final class MessageProcessor extends WaitableThread {
 	private final Logger logger = Logger.getLogger(MessageProcessor.class);
 
 	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
-	private final List<Boolean> includedMessages = new ArrayList<Boolean>();
+	private final Map<BroadcastMessage, Boolean> includedMessages = new HashMap<BroadcastMessage, Boolean>();
 
 	private final Random r = new Random();
 	
@@ -122,33 +125,32 @@ final class MessageProcessor extends WaitableThread {
 				processAllReceivedMessages();
 			} while (delayNext.get());
 			
-			if (!waitingMessages.isEmpty())	 {
-				logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
-				
-				final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
-				final PeerIDSet destinations = new PeerIDSet();
-				
-				synchronized (waitingMessages) {
-					for (int i = 0; i < waitingMessages.size(); i++) {
-						final BroadcastMessage broadcastMessage = waitingMessages.get(i);
+			synchronized (waitingMessages) {
+				if (!waitingMessages.isEmpty())	 {
+					logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
+					
+					final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
+					final PeerIDSet destinations = new PeerIDSet();
+					
+					for (final BroadcastMessage broadcastMessage : waitingMessages) {
 						destinations.addPeers(broadcastMessage.getExpectedDestinations());
 						
-						if (includedMessages.get(i).booleanValue())
+						if (includedMessages.get(broadcastMessage).booleanValue())
 							bundleMessages.add(broadcastMessage);
 					}
 					
 					waitingMessages.clear();
 					includedMessages.clear();
+	
+					final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
+					msgCounter.addSent(bundleMessage.getClass());
+					
+					if (Peer.USE_RELIABLE_BROADCAST)
+						reliableBroadcast.broadcast(bundleMessage);
+					else
+						peer.broadcast(bundleMessage);
+					
 				}
-
-				final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
-				msgCounter.addSent(bundleMessage.getClass());
-				
-				if (Peer.USE_RELIABLE_BROADCAST)
-					reliableBroadcast.broadcast(bundleMessage);
-				else
-					peer.broadcast(bundleMessage);
-				
 			}
 		}
 
@@ -192,12 +194,12 @@ final class MessageProcessor extends WaitableThread {
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
 		boolean includedResponse = false;
 		synchronized (waitingMessages) {
-			includedResponse = layer.checkWaitingMessages(waitingMessages, message);
+			includedResponse = layer.checkWaitingMessages(Collections.unmodifiableList(waitingMessages), message);
 			
 			if (includedResponse)
-				includedMessages.add(Boolean.TRUE);
+				includedMessages.put(message, Boolean.TRUE);
 			else
-				includedMessages.add(Boolean.FALSE);
+				includedMessages.put(message, Boolean.FALSE);
 			
 			waitingMessages.add(message);
 		}
