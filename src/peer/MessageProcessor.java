@@ -154,14 +154,16 @@ final class MessageProcessor extends WaitableThread {
 				includedMessages.clear();					
 			}
 		}
+
+		if (!bundleMessages.isEmpty()) {	
+			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
+			msgCounter.addSent(bundleMessage.getClass());
 		
-		final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
-		msgCounter.addSent(bundleMessage.getClass());
-		
-		if (Peer.USE_RELIABLE_BROADCAST)
-			reliableBroadcast.broadcast(bundleMessage);
-		else
-			peer.broadcast(bundleMessage);
+			if (Peer.USE_RELIABLE_BROADCAST)
+				reliableBroadcast.broadcast(bundleMessage);
+			else
+				peer.broadcast(bundleMessage);
+		}
 	}
 
 	private void processAllReceivedMessages() {
