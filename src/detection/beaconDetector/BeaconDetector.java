@@ -40,7 +40,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		private final BeaconDetector beaconDetector;
 		
 		private final Random r = new Random();
-		private static final int RANDOM_DELAY = 15;
 
 		public BeaconSendThread(final BeaconDetector beaconDetector) {
 			this.beaconDetector = beaconDetector;
@@ -48,13 +47,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		@Override
 		public void run() {
-			try {
-				final int initialDelay = r.nextInt(RANDOM_DELAY) + 1;
-				Thread.sleep(initialDelay);
-			} catch (InterruptedException e) {
-				finishThread();
-				return;
-			}
+			randomSleep();
 			
 			// send initial beacon
 			beaconDetector.sendBeacon();
@@ -83,11 +76,10 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 					// next beacon)
 					sleepTime = BEACON_TIME - elapsedTime;
 
-				int randomSleep = 0;
-				if (RANDOM_WAIT > 0)
-					randomSleep = r.nextInt(RANDOM_WAIT);
+				randomSleep();
+				
 				try {
-					Thread.sleep(sleepTime + randomSleep);
+					Thread.sleep(sleepTime);
 				} catch (final InterruptedException e) {
 					finishThread();
 					return;
@@ -95,6 +87,16 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			}
 			
 			finishThread();
+		}
+
+		private void randomSleep() {
+			try {
+				final int initialDelay = r.nextInt(RANDOM_DELAY) + 1;
+				Thread.sleep(initialDelay);
+			} catch (InterruptedException e) {
+				finishThread();
+				return;
+			}
 		}
 
 		private void finishThread() {
@@ -110,8 +112,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	}
 
 	// Configuration properties
+	private static final int RANDOM_DELAY = 15;
 	private int BEACON_TIME = 1000; // Default values
-	private int RANDOM_WAIT = 200;
 
 	// Stores the time of the last packet sent by this peer
 	private final AtomicLong lastSentTime = new AtomicLong();
@@ -180,14 +182,11 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			final String beaconTimeStr = Configuration.getInstance().getProperty("beaconDetector.beaconTime");
 			BEACON_TIME = Integer.parseInt(beaconTimeStr);
 			logger.info("Peer " + peer.getPeerID() + " set BEACON_TIME to " + BEACON_TIME);
-
-			final String randomWaitStr = Configuration.getInstance().getProperty("messageProcessor.randomWait");
-			RANDOM_WAIT = Integer.parseInt(randomWaitStr);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = (BEACON_TIME + RANDOM_WAIT) * 2;
+		LOST_TIME = (BEACON_TIME + RANDOM_DELAY) * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
