@@ -19,7 +19,6 @@ import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
-import config.Configuration;
 
 /**
  * This class implements a message processor used for decoupling it from the
@@ -54,8 +53,6 @@ final class MessageProcessor extends WaitableThread {
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
 
-	private int RANDOM_WAIT = 100;
-
 	/**
 	 * Constructor of the message processor
 	 * 
@@ -69,17 +66,6 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void init() {
-		try {
-			final String randomWaitStr = Configuration.getInstance().getProperty("messageProcessor.randomWait");
-			final int value = Integer.parseInt(randomWaitStr);
-			if (value > 0)
-				RANDOM_WAIT = value;
-
-			logger.info("Peer " + peer.getPeerID() + " set RANDOM_WAIT to " + RANDOM_WAIT);
-		} catch (final Exception e) {
-			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
-		}
-
 		start();
 
 		reliableBroadcast.start();
@@ -100,12 +86,12 @@ final class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {			
-			processAllReceivedMessages();
-			
+		while (!Thread.interrupted()) {						
 			randomSleep();
 			
 			applyNextMessageDelay();
+			
+			processAllReceivedMessages();
 			
 			processResponses();
 		}
@@ -114,7 +100,8 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() {
-		final long randomWait = r.nextInt(RANDOM_WAIT) + 1;				
+		final int neighbors = peer.getDetector().getCurrentNeighbors().size(); 
+		final long randomWait = r.nextInt((neighbors + 1) * BasicPeer.ACK_TRANSMISSION_TIME) + 1;				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {
@@ -132,8 +119,6 @@ final class MessageProcessor extends WaitableThread {
 					finishThread();
 				}
 			}
-			
-			processAllReceivedMessages();
 		} while (delayNext.get());
 	}
 
