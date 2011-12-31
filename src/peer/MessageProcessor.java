@@ -100,16 +100,14 @@ final class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {
-			final long currentTime = System.currentTimeMillis();
-			
+		while (!Thread.interrupted()) {			
 			processAllReceivedMessages();
 			
 			randomSleep();
 			
 			applyNextMessageDelay();
 			
-			processResponses(currentTime);
+			processResponses();
 		}
 
 		finishThread();
@@ -139,14 +137,12 @@ final class MessageProcessor extends WaitableThread {
 		} while (delayNext.get());
 	}
 
-	private void processResponses(final long currentTime) {
+	private void processResponses() {
 		final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 		final PeerIDSet destinations = new PeerIDSet();
 		
 		synchronized (waitingMessages) {
-			if (!waitingMessages.isEmpty())	 {
-				logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
-								
+			if (!waitingMessages.isEmpty())	 {								
 				for (final BroadcastMessage broadcastMessage : waitingMessages) {
 					destinations.addPeers(broadcastMessage.getExpectedDestinations());
 					
