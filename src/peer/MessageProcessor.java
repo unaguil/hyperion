@@ -50,6 +50,8 @@ final class MessageProcessor extends WaitableThread {
 	private final AtomicBoolean delayNext = new AtomicBoolean(false);
 	private final AtomicLong delayTime = new AtomicLong();
 	
+	private final static int DELAY = 5;
+	
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
 
@@ -101,7 +103,7 @@ final class MessageProcessor extends WaitableThread {
 
 	private void randomSleep() {
 		final int neighbors = peer.getDetector().getCurrentNeighbors().size(); 
-		final long randomWait = r.nextInt((neighbors + 1) * BasicPeer.ACK_TRANSMISSION_TIME) + 1;				
+		final long randomWait = r.nextInt((neighbors + 1) * DELAY) + 1;				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {
