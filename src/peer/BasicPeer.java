@@ -316,14 +316,12 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	public void stopPeer() {
 		unitialize();
 		
-		// Communication layers are stopped in reverse order of initialization
-		logger.trace("Peer " + peerID + " stopping communication layers");
-		Collections.reverse(communicationLayers);
-		for (final CommunicationLayer layer : communicationLayers)
-			layer.stop();
+		stopCommunicationLayers();
 		
-		logger.trace("Peer " + peerID + " communication layers stopped");
-		
+		stopThreads();
+	}
+
+	private void stopThreads() {
 		//stop receiving thread
 		logger.trace("Peer " + peerID + " stopping receiving thread");
 		receivingThread.stopAndWait();
@@ -335,6 +333,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		// Stop message processor
 		logger.trace("Peer " + peerID + " stopping message processor thread");
 		messageProcessor.stopAndWait();
+		
+		logger.trace("Peer " + peerID + " all threads stopped");
 
 		try {
 			logger.trace("Peer " + peerID + " finalizing communication provider");
@@ -342,6 +342,16 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		} catch (final IOException e) {
 			logger.error("Peer " + peerID + " had problem finalizing communication " + e.getMessage());
 		}
+	}
+
+	private void stopCommunicationLayers() {
+		// Communication layers are stopped in reverse order of initialization
+		logger.trace("Peer " + peerID + " stopping communication layers");
+		Collections.reverse(communicationLayers);
+		for (final CommunicationLayer layer : communicationLayers)
+			layer.stop();
+		
+		logger.trace("Peer " + peerID + " communication layers stopped");
 	}
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
