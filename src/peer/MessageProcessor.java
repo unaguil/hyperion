@@ -105,55 +105,67 @@ final class MessageProcessor extends WaitableThread {
 			
 			processAllReceivedMessages();
 			
-			final long randomWait = r.nextInt(RANDOM_WAIT) + 1;				
-			try {
-				Thread.sleep(randomWait);
-			} catch (InterruptedException e) {
-				finishThread();
-			}
+			randomSleep();
 			
-			do {				
-				if (delayNext.get()) {
-					delayNext.set(false);
-					try {
-						Thread.sleep(delayTime.get());
-					} catch (InterruptedException e) {
-						finishThread();
-					}
-				}
-				
-				processAllReceivedMessages();
-			} while (delayNext.get());
+			applyNextMessageDelay();
 			
-			final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
-			final PeerIDSet destinations = new PeerIDSet();
-			
-			synchronized (waitingMessages) {
-				if (!waitingMessages.isEmpty())	 {
-					logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
-									
-					for (final BroadcastMessage broadcastMessage : waitingMessages) {
-						destinations.addPeers(broadcastMessage.getExpectedDestinations());
-						
-						if (includedMessages.get(broadcastMessage).booleanValue())
-							bundleMessages.add(broadcastMessage);
-					}
-					
-					waitingMessages.clear();
-					includedMessages.clear();					
-				}
-			}
-			
-			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
-			msgCounter.addSent(bundleMessage.getClass());
-			
-			if (Peer.USE_RELIABLE_BROADCAST)
-				reliableBroadcast.broadcast(bundleMessage);
-			else
-				peer.broadcast(bundleMessage);
+			processResponses(currentTime);
 		}
 
 		finishThread();
+	}
+
+	private void randomSleep() {
+		final long randomWait = r.nextInt(RANDOM_WAIT) + 1;				
+		try {
+			Thread.sleep(randomWait);
+		} catch (InterruptedException e) {
+			finishThread();
+		}
+	}
+
+	private void applyNextMessageDelay() {
+		do {				
+			if (delayNext.get()) {
+				delayNext.set(false);
+				try {
+					Thread.sleep(delayTime.get());
+				} catch (InterruptedException e) {
+					finishThread();
+				}
+			}
+			
+			processAllReceivedMessages();
+		} while (delayNext.get());
+	}
+
+	private void processResponses(final long currentTime) {
+		final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
+		final PeerIDSet destinations = new PeerIDSet();
+		
+		synchronized (waitingMessages) {
+			if (!waitingMessages.isEmpty())	 {
+				logger.debug("Peer " + peer.getPeerID() + " slept during " + (System.currentTimeMillis() - currentTime));
+								
+				for (final BroadcastMessage broadcastMessage : waitingMessages) {
+					destinations.addPeers(broadcastMessage.getExpectedDestinations());
+					
+					if (includedMessages.get(broadcastMessage).booleanValue())
+						bundleMessages.add(broadcastMessage);
+				}
+				
+				waitingMessages.clear();
+				includedMessages.clear();					
+			}
+		}
+		
+		final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
+		msgCounter.addSent(bundleMessage.getClass());
+		
+		if (Peer.USE_RELIABLE_BROADCAST)
+			reliableBroadcast.broadcast(bundleMessage);
+		else
+			peer.broadcast(bundleMessage);
 	}
 
 	private void processAllReceivedMessages() {
