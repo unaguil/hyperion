@@ -144,7 +144,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME + destinations * MessageProcessor.DELAY;
+		return BasicPeer.TRANSMISSION_TIME + (destinations + 1) * BasicPeer.RANDOM_DELAY;
 	}
 
 	private boolean mustRebroadcast() {
@@ -173,7 +173,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			}
 		}
 
-		final long delayTime = r.nextInt(MessageProcessor.DELAY);
+		final long delayTime = r.nextInt(BasicPeer.RANDOM_DELAY);
 		if (mustRebroadcast() && delayTime > 0) {
 			try {
 				Thread.sleep(delayTime);

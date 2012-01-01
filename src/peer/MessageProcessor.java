@@ -41,8 +41,6 @@ final class MessageProcessor extends WaitableThread {
 
 	private final ReliableBroadcast reliableBroadcast;
 	
-	public final static int DELAY = 10;
-	
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
 
@@ -91,7 +89,7 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = r.nextInt(DELAY) + 1;				
+		final long randomWait = r.nextInt(BasicPeer.RANDOM_DELAY) + 1;				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {

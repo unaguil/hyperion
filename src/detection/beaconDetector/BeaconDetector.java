@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import peer.BasicPeer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
@@ -90,7 +91,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		private void randomSleep() {
 			try {
-				final int initialDelay = r.nextInt(RANDOM_DELAY) + 1;
+				final int initialDelay = r.nextInt(BasicPeer.RANDOM_DELAY) + 1;
 				Thread.sleep(initialDelay);
 			} catch (InterruptedException e) {
 				finishThread();
@@ -111,7 +112,6 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	}
 
 	// Configuration properties
-	private static final int RANDOM_DELAY = 15;
 	private int BEACON_TIME = 1000; // Default values
 
 	// Stores the time of the last packet sent by this peer
@@ -185,7 +185,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = (BEACON_TIME + RANDOM_DELAY) * 2;
+		LOST_TIME = (BEACON_TIME + BasicPeer.RANDOM_DELAY) * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
