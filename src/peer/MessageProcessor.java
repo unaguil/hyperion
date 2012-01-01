@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -47,10 +45,7 @@ final class MessageProcessor extends WaitableThread {
 
 	private final ReliableBroadcast reliableBroadcast;
 	
-	private final AtomicBoolean delayNext = new AtomicBoolean(false);
-	private final AtomicLong delayTime = new AtomicLong();
-	
-	private final static int DELAY = 10;
+	public final static int DELAY = 10;
 	
 	// the queue used for storing received messages
 	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
@@ -91,8 +86,6 @@ final class MessageProcessor extends WaitableThread {
 		while (!Thread.interrupted()) {						
 			randomSleep();
 			
-			applyNextMessageDelay();
-			
 			processAllReceivedMessages();
 			
 			processResponses();
@@ -101,27 +94,13 @@ final class MessageProcessor extends WaitableThread {
 		finishThread();
 	}
 
-	private void randomSleep() {
-		final int neighbors = peer.getDetector().getCurrentNeighbors().size(); 
-		final long randomWait = r.nextInt((neighbors + 1) * DELAY) + 1;				
+	private void randomSleep() { 
+		final long randomWait = r.nextInt(DELAY) + 1;				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {
 			finishThread();
 		}
-	}
-
-	private void applyNextMessageDelay() {
-		do {				
-			if (delayNext.get()) {
-				delayNext.set(false);
-				try {
-					Thread.sleep(delayTime.get());
-				} catch (InterruptedException e) {
-					finishThread();
-				}
-			}
-		} while (delayNext.get());
 	}
 
 	private void processResponses() {
@@ -188,10 +167,11 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
-		boolean includedResponse = false;
+		boolean includedResponse = true;
 		synchronized (waitingMessages) {
-			includedResponse = layer.checkWaitingMessages(Collections.unmodifiableList(waitingMessages), message);
-			
+			if (layer != null)
+				includedResponse = layer.checkWaitingMessages(Collections.unmodifiableList(waitingMessages), message);
+				
 			if (includedResponse)
 				includedMessages.put(message, Boolean.TRUE);
 			else
@@ -206,15 +186,7 @@ final class MessageProcessor extends WaitableThread {
 		reliableBroadcast.addACKResponse(ackMessage);
 	}
 
-	public void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		final long time = broadcastMessage.getExpectedDestinations().size() * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
-		delayNextMessage(time);
-		
-		reliableBroadcast.sendACKMessage(broadcastMessage, msgCounter);
-	}
-	
-	private void delayNextMessage(long time) {
-		delayTime.set(time);
-		delayNext.set(true); 
+	public boolean isSendingMessage() {
+		return reliableBroadcast.isProcessingMessage();
 	}
 }

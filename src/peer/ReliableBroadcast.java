@@ -1,11 +1,8 @@
 package peer;
 
-import java.util.List;
-
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
-import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastCounter;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
@@ -75,7 +72,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		rebroadcastThread.stopAndWait();
 	}
 
-	private boolean mustWait() {
+	public boolean isProcessingMessage() {
 		synchronized (mutex) {
 			return processingMessage;
 		}
@@ -83,12 +80,11 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 
 	public void broadcast(final BroadcastMessage broadcastMessage) {
 		// block while a message is being broadcasting
-		while (mustWait())
+		while (isProcessingMessage())
 			Thread.yield();
 
-		// bundle messages containing beacon messages only are directly
-		// broadcasted
-		if (broadcastMessage instanceof BundleMessage && containsOnlyBeaconMessages((BundleMessage) broadcastMessage)) {
+		// bundle messages containing only BeaconMessages or ACKMessages are directly broadcasted
+		if (broadcastMessage instanceof BundleMessage && containsOnlyBeaconMessages((BundleMessage) broadcastMessage) || containsOnlyACKMessages((BundleMessage) broadcastMessage)) {
 			peer.broadcast(broadcastMessage);
 			return;
 		}
@@ -117,6 +113,13 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				return false;
 		return true;
 	}
+	
+	public static boolean containsOnlyACKMessages(final BundleMessage bundleMessage) {
+		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
+			if (!(broadcastMessage instanceof ACKMessage))
+				return false;
+		return true;
+	}
 
 	public void addACKResponse(final ACKMessage ackMessage) {
 		// check if message is responded by the current ACK message
@@ -141,7 +144,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME + destinations * BasicPeer.ACK_TRANSMISSION_TIME + BasicPeer.ACK_TRANSMISSION_TIME;
+		return BasicPeer.TRANSMISSION_TIME + destinations * MessageProcessor.DELAY;
 	}
 
 	private boolean mustRebroadcast() {
@@ -223,48 +226,5 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	@Override
 	public void dissapearedNeighbors(final PeerIDSet neighbors) {
 		removeNeighbors(neighbors);
-	}
-	
-	private class DelayACK extends Thread {
-		
-		private final ACKMessage ackMessage;
-		private final List<PeerID> expectedDestinations;
-		private final MessageCounter msgCounter;
-		
-		public DelayACK(final ACKMessage ackMessage, List<PeerID> expectedDestinations, MessageCounter msgCounter) {
-			this.ackMessage = ackMessage;
-			this.expectedDestinations = expectedDestinations;
-			this.msgCounter = msgCounter;
-		}
-		
-		@Override
-		public void run() {
-			
-			int index = 0;
-			for (PeerID dest : expectedDestinations) {
-				if (dest.equals(peer.getPeerID()))
-					break;
-				index++;
-			}
-			
-			if (index > 0) {
-				final long time = index * BasicPeer.ACK_TRANSMISSION_TIME;
-				logger.debug("Peer " + peer.getPeerID() + " delayed ACK response " + ackMessage + " during " + time + " ms");
-				try {
-					Thread.sleep(time);
-				} catch (InterruptedException e) {
-				}
-			}		
-			
-			msgCounter.addSent(ackMessage.getClass());
-			peer.broadcast(ackMessage);
-		}
-	}
-
-	public void sendACKMessage(final BroadcastMessage broadcastMessage, MessageCounter msgCounter) {
-		final ACKMessage ackMessage = new ACKMessage(peer.getPeerID(), broadcastMessage.getMessageID());
-		logger.debug("Peer " + peer.getPeerID() + " sending ACK message " + ackMessage);
-		DelayACK delayACK = new DelayACK(ackMessage, broadcastMessage.getExpectedDestinations(), msgCounter);
-		delayACK.start();
 	}
 }

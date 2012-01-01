@@ -353,6 +353,13 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		
 		logger.trace("Peer " + peerID + " communication layers stopped");
 	}
+	
+	private void processACKMessages(final BundleMessage bundleMessage) {
+		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages()) {
+			if (broadcastMessage instanceof ACKMessage)
+				processACKMessage((ACKMessage) broadcastMessage);
+		}
+	}
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
@@ -389,10 +396,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		
 		// received ACK messages are processed
 		if (broadcastMessage instanceof ACKMessage) {
-			logger.trace("Peer " + peerID + " adding ACK message " + broadcastMessage);
-			ACKMessage ackMessage = (ACKMessage) broadcastMessage;
-			msgCounter.addReceived(ackMessage.getClass());
-			messageProcessor.addACKResponse(ackMessage);
+			processACKMessage((ACKMessage) broadcastMessage);
 			return;
 		}
 
@@ -412,11 +416,26 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		messageReceived(broadcastMessage);
 	}
 
+	private void processACKMessage(final ACKMessage ackMessage) {
+		logger.trace("Peer " + peerID + " adding ACK message " + ackMessage);
+		msgCounter.addReceived(ackMessage.getClass());
+		messageProcessor.addACKResponse(ackMessage);
+	}
+
 	private void processBundleMessage(final BundleMessage bundleMessage) {
 		msgCounter.addReceived(bundleMessage.getClass());
 		
 		// bundle messages containing only beacons are not further processed
 		if (ReliableBroadcast.containsOnlyBeaconMessages(bundleMessage))
+			return;
+		
+		processACKMessages(bundleMessage);
+		
+		// bundle messages containing only ACK messages are not further processed
+		if (ReliableBroadcast.containsOnlyACKMessages(bundleMessage))
+			return;
+		
+		if (bundleMessage.getMessages().isEmpty())
 			return;
 		
 		//messages which does not have this node as destination are discarded
@@ -435,10 +454,51 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
 			messageReceived(broadcastMessage);
 	}
+	
+	
+	private class DelayACK extends Thread {
+		
+		private final ACKMessage ackMessage;
+		
+		private final int ACK_DELAY = 10;
+		
+		public DelayACK(final ACKMessage ackMessage) {
+			this.ackMessage = ackMessage;
+		}
+		
+		@Override
+		public void run() {
+			final int sleepTime = r.nextInt(ACK_DELAY);
+			if (sleepTime > 0) {
+				try {
+					Thread.sleep(sleepTime);
+				} catch (InterruptedException e) {
+				}		
+			}
+			
+			msgCounter.addSent(ackMessage.getClass());
+			broadcast(ackMessage);
+		}
+	}
 
+	private void sendDirectACKMessage(final ACKMessage ackMessage) {
+		DelayACK delayACK = new DelayACK(ackMessage);
+		delayACK.start();
+	}
+
+	private void enqueueACKMessage(final ACKMessage ackMessage) {
+		enqueueBroadcast(ackMessage, null);
+		msgCounter.addSent(ackMessage.getClass());
+	}
+	
 	private void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		if (USE_RELIABLE_BROADCAST)
-			messageProcessor.sendACKMessage(broadcastMessage);
+		final ACKMessage ackMessage = new ACKMessage(peerID, broadcastMessage.getMessageID());
+		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
+		
+		if (messageProcessor.isSendingMessage())
+			sendDirectACKMessage(ackMessage);
+		else
+			enqueueACKMessage(ackMessage);
 	}
 
 	// Used by the message processor to process each dequeued message
