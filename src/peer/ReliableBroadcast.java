@@ -1,5 +1,7 @@
 package peer;
 
+import java.util.Random;
+
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
@@ -40,6 +42,8 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	private int tryNumber;
 	private long broadcastStartTime;
 	private long lastBroadcastTime;
+	
+	private final Random r = new Random();
 
 	private int MAX_TRIES = 3;
 
@@ -139,10 +143,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		}
 	}
 
-	private long getBackoffTime(final int factor, int currentNeighbors) {
-		return BasicPeer.TRANSMISSION_TIME + currentNeighbors * BasicPeer.ACK_TRANSMISSION_TIME * factor;
-	}
-
 	public long getResponseWaitTime(int destinations) {
 		return BasicPeer.TRANSMISSION_TIME + destinations * MessageProcessor.DELAY;
 	}
@@ -173,20 +173,14 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			}
 		}
 
-		final long backoffTime = getBackoffTime(tryNumber, peer.getDetector().getCurrentNeighbors().size());
- 
-		if (mustRebroadcast() && backoffTime > 0) {
-			logger.debug("Peer " + peer.getPeerID() + " waiting " + backoffTime + " ms for rebroadcast of message " + currentMessage.getMessageID());
-			long startTime = System.currentTimeMillis();
-			boolean interrupted = false;
-			do {
-				Thread.yield();
-				interrupted = Thread.interrupted();
-				if (interrupted) {
-					rebroadcastThread.interrupt();
-					return;
-				}
-			} while (mustRebroadcast() && (System.currentTimeMillis() - startTime) < backoffTime && !interrupted);
+		final long delayTime = r.nextInt(MessageProcessor.DELAY);
+		if (mustRebroadcast() && delayTime > 0) {
+			try {
+				Thread.sleep(delayTime);
+			} catch (InterruptedException e) {
+				rebroadcastThread.interrupt();
+				return;
+			}
 		}
 
 		if (mustRebroadcast()) {
@@ -194,7 +188,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				peer.broadcast(currentMessage);
 				
 				if (tryNumber == 1) {
-					logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " backoffTime " + backoffTime + " waitingTime: " + responseWaitTime);
+					logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations());
 					reliableBroadcastCounter.addRebroadcastedMessage();
 				}
 				
