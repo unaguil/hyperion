@@ -3,7 +3,7 @@ package peer.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Collections;
+import java.util.ArrayList;
 
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
@@ -22,7 +22,7 @@ public class ACKMessage extends BroadcastMessage {
 	}
 
 	public ACKMessage(final PeerID sender, final MessageID respondingTo) {
-		super(sender, Collections.singletonList(respondingTo.getPeer()));
+		super(sender, new ArrayList<PeerID>());
 		this.respondingTo = respondingTo;
 	}
 
