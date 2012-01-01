@@ -4,16 +4,13 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.MessageCounter;
-import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
@@ -34,7 +31,6 @@ final class MessageProcessor extends WaitableThread {
 	private final Logger logger = Logger.getLogger(MessageProcessor.class);
 
 	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
-	private final Map<BroadcastMessage, Boolean> includedMessages = new HashMap<BroadcastMessage, Boolean>();
 
 	private final Random r = new Random();
 	
@@ -112,17 +108,15 @@ final class MessageProcessor extends WaitableThread {
 				for (final BroadcastMessage broadcastMessage : waitingMessages) {
 					destinations.addPeers(broadcastMessage.getExpectedDestinations());
 					
-					if (includedMessages.get(broadcastMessage).booleanValue())
-						bundleMessages.add(broadcastMessage);
+					bundleMessages.add(broadcastMessage);
 				}
 				
-				waitingMessages.clear();
-				includedMessages.clear();					
+				waitingMessages.clear();					
 			}
 		}
 
 		if (!bundleMessages.isEmpty()) {	
-			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), new ArrayList<PeerID>(destinations.getPeerSet()), bundleMessages);
+			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), destinations.getPeerSet(), bundleMessages);
 			msgCounter.addSent(bundleMessage.getClass());
 		
 			if (Peer.USE_RELIABLE_BROADCAST)
@@ -167,19 +161,21 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
-		boolean includedResponse = true;
 		synchronized (waitingMessages) {
-			if (layer != null)
-				includedResponse = layer.checkWaitingMessages(Collections.unmodifiableList(waitingMessages), message);
+			if (layer != null) {
+				final BroadcastMessage duplicatedMessage = layer.isDuplicatedMessage(Collections.unmodifiableList(waitingMessages), message);
+				if (duplicatedMessage == null) {
+					waitingMessages.add(message);				
+					return true;
+				}
 				
-			if (includedResponse)
-				includedMessages.put(message, Boolean.TRUE);
-			else
-				includedMessages.put(message, Boolean.FALSE);
+				duplicatedMessage.addExpectedDestinations(message.getExpectedDestinations());
+				return false;
+			}
 			
-			waitingMessages.add(message);
+			waitingMessages.add(message);				
+			return true;
 		}
-		return includedResponse;
 	}
 
 	public void addACKResponse(final ACKMessage ackMessage) {

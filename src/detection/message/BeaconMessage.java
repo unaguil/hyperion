@@ -1,6 +1,6 @@
 package detection.message;
 
-import java.util.List;
+import java.util.Set;
 
 import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
@@ -30,7 +30,7 @@ public class BeaconMessage extends BroadcastMessage {
 	 * @param sentTime
 	 *            the time when the message was sent
 	 */
-	public BeaconMessage(final PeerID sender, final List<PeerID> expectedDestinations) {
+	public BeaconMessage(final PeerID sender, final Set<PeerID> expectedDestinations) {
 		super(sender, expectedDestinations);
 	}
 

@@ -3,8 +3,8 @@ package graphcreation.collisionbased.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,7 +26,7 @@ public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMes
 	}
 
 	public InhibeCollisionsMessage(final PeerID source, final Set<Inhibition> inhibitions) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 		inhibitedCollisions.addAll(inhibitions);
 	}
 

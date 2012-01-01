@@ -9,6 +9,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,7 +77,7 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 	 *            the peerID which created the message
 	 */
 	public BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final PeerID peerID) {
-		super(sourceService.getPeerID(), new ArrayList<PeerID>());
+		super(sourceService.getPeerID(), Collections.<PeerID> emptySet());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
@@ -90,7 +91,7 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 	}
 
 	private BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final MessagePart newMessagePart) {
-		super(sourceService.getPeerID(), new ArrayList<PeerID>());
+		super(sourceService.getPeerID(), Collections.<PeerID> emptySet());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;

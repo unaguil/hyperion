@@ -5,8 +5,8 @@ import graphcreation.services.Service;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 	}
 
 	public ForwardMessage(final PeerID source, final PayloadMessage payload, final Set<Service> destinations) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 		this.payload = payload;
 		this.destinations.addAll(destinations);
 	}

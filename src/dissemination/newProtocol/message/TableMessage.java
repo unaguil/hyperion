@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Set;
 
 import peer.message.BroadcastMessage;
 import peer.message.EnvelopeMessage;
@@ -52,7 +52,7 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	 * @param payload
 	 *            the message payload
 	 */
-	public TableMessage(final PeerID sender, final List<PeerID> expectedDestinations, final UpdateTable updateTable, final PayloadMessage payload) {
+	public TableMessage(final PeerID sender, final Set<PeerID> expectedDestinations, final UpdateTable updateTable, final PayloadMessage payload) {
 		super(sender, expectedDestinations);
 		this.updateTable = updateTable;
 		this.payload = payload;

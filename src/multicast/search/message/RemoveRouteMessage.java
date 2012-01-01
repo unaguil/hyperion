@@ -5,7 +5,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import peer.message.MessageID;
@@ -40,7 +39,7 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * @param lostRoutes
 	 *            the routes which have to be removed
 	 */
-	public RemoveRouteMessage(final PeerID source, final List<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, final boolean repropagateSearches) {
+	public RemoveRouteMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, final boolean repropagateSearches) {
 		super(source, expectedDestinations);
 		this.lostRoutes.addAll(lostRoutes);
 		this.repropagateSearches = repropagateSearches;
@@ -56,7 +55,7 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * @param newDistance
 	 *            the new distance traveled by the message
 	 */
-	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender, final List<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, final boolean repropagateSearches, final int newDistance) {
+	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, final boolean repropagateSearches, final int newDistance) {
 		super(removeRouteMessage, sender, expectedDestinations, newDistance);
 		this.lostRoutes.addAll(lostRoutes);
 		this.repropagateSearches = repropagateSearches;

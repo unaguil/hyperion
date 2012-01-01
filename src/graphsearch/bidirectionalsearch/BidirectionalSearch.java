@@ -143,7 +143,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
-		return true;
+	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return null;
 	}
 }

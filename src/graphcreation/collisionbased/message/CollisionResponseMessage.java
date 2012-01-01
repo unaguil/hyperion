@@ -5,7 +5,7 @@ import graphcreation.services.Service;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,7 +30,7 @@ public class CollisionResponseMessage extends RemoteMessage implements PayloadMe
 	}
 
 	public CollisionResponseMessage(final PeerID source, final Map<Service, Integer> serviceTable) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 		serviceDistanceTable.putAll(serviceTable);
 	}
 

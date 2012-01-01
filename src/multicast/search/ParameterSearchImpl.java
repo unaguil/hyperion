@@ -590,8 +590,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 
 		if (broadcastMessage) {
-			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), currentNeighbors, getNewDistance(removeParametersMessage));
+			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), getNewDistance(removeParametersMessage));
 			logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
 			peer.enqueueBroadcast(newRemoveParametersMessage, this);
 		}
@@ -635,8 +634,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 
 		if (notifyNeighbors) {
-			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-			final GeneralizeSearchMessage newGeneralizeSearchMessage = new GeneralizeSearchMessage(generalizeSearchMessage, peer.getPeerID(), currentNeighbors, getNewDistance(generalizeSearchMessage));
+			final GeneralizeSearchMessage newGeneralizeSearchMessage = new GeneralizeSearchMessage(generalizeSearchMessage, peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), getNewDistance(generalizeSearchMessage));
 
 			logger.trace("Peer " + peer.getPeerID() + " sending generalize search message " + newGeneralizeSearchMessage);
 			peer.enqueueBroadcast(newGeneralizeSearchMessage, this);
@@ -687,8 +685,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			searchListener.lostDestinations(lostDestinations);
 		
 		if (notify || repropagateSearches) {			
-			final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), currentNeighbors, removedRoutes, repropagateSearches, getNewDistance(removeRouteMessage));
+			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), removedRoutes, repropagateSearches, getNewDistance(removeRouteMessage));
 	
 			logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
 			peer.enqueueBroadcast(newRemoveRouteMessage, this);
@@ -737,8 +734,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), currentNeighbors, parameters, payload, MAX_TTL, 0, searchType);
+		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), parameters, payload, MAX_TTL, 0, searchType);
 		final String payloadType = (payload == null)?"null":payload.getType();
 		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
@@ -752,8 +748,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-		final RemoveParametersMessage removeParametersMessage = new RemoveParametersMessage(peer.getPeerID(), currentNeighbors, removedParameters);
+		final RemoveParametersMessage removeParametersMessage = new RemoveParametersMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), removedParameters);
 		messageReceived(removeParametersMessage, System.currentTimeMillis());
 	}
 
@@ -761,8 +756,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 		
-		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-		final GeneralizeSearchMessage generalizeSearchMessage = new GeneralizeSearchMessage(peer.getPeerID(), currentNeighbors, parameters, routeIDs);
+		final GeneralizeSearchMessage generalizeSearchMessage = new GeneralizeSearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), parameters, routeIDs);
 		messageReceived(generalizeSearchMessage, System.currentTimeMillis());
 	}
 
@@ -786,8 +780,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!enabled)
 			return;
 
-		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
-		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), currentNeighbors, lostRoutes, false);
+		final RemoveRouteMessage removeRouteMessage = new RemoveRouteMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), lostRoutes, false);
 		messageReceived(removeRouteMessage, System.currentTimeMillis());
 	}
 
@@ -798,7 +791,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		receiversTable.retainAll(uTable.getActiveSearches());
 		
 		//broadcast message only to those neighbors which did not receive the message previously
-		final List<PeerID> currentNeighbors = new ArrayList<PeerID>(peer.getDetector().getCurrentNeighbors().getPeerSet());
+		final Set<PeerID> currentNeighbors = peer.getDetector().getCurrentNeighbors().getPeerSet();
 		if (!forcePropagation)
 			currentNeighbors.removeAll(receiversTable.getReceivers(searchMessage));			
 		
@@ -853,7 +846,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	@Override
-	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
-		return !waitingMessages.contains(sendingMessage); 
+	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		for (final BroadcastMessage waitingMessage : waitingMessages) {
+			if (waitingMessage.equals(sendingMessage))
+				return waitingMessage;
+		}
+		return null;
 	}
 }

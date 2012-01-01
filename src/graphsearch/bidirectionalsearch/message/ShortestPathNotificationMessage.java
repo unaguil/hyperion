@@ -9,6 +9,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +42,7 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	}
 
 	public ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 
 		this.searchID = searchID;
 
@@ -53,7 +54,7 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	}
 
 	protected ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath, final Service destination) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 
 		this.searchID = searchID;
 

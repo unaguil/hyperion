@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -21,9 +20,6 @@ import multicast.search.message.SearchResponseMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import detection.NeighborDetector;
-import detection.NeighborEventsListener;
-
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
@@ -32,6 +28,8 @@ import peer.peerid.PeerIDSet;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
+import detection.NeighborDetector;
+import detection.NeighborEventsListener;
 
 public class UnicastTableTest {
 
@@ -50,8 +48,8 @@ public class UnicastTableTest {
 		public void stop() {}
 
 		@Override
-		public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
-			return false;
+		public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+			return null;
 		}
 
 		@Override
@@ -133,9 +131,9 @@ public class UnicastTableTest {
 	}
 
 	private SearchMessage createSearchMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender) {
-		final SearchMessage searchMessage = new SearchMessage(source, new ArrayList<PeerID>(), parameters, null, 0, 0, SearchType.Exact);
+		final SearchMessage searchMessage = new SearchMessage(source, Collections.<PeerID> emptySet(), parameters, null, 0, 0, SearchType.Exact);
 
-		return new SearchMessage(searchMessage, sender, new ArrayList<PeerID>(), 0);
+		return new SearchMessage(searchMessage, sender, Collections.<PeerID> emptySet(), 0);
 	}
 
 	private SearchResponseMessage createSearchResponseMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender, final SearchMessage searchMessage) {

@@ -9,6 +9,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 	 *            remaining time for this message to expire
 	 */
 	public FCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime) {
-		super(sourceService.getPeerID(), new ArrayList<PeerID>());
+		super(sourceService.getPeerID(), Collections.<PeerID> emptySet());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;

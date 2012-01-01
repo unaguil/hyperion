@@ -1,6 +1,6 @@
 package graphcreation.collisionbased.message;
 
-import java.util.ArrayList;
+import java.util.Collections;
 
 import multicast.search.message.RemoteMessage;
 import peer.message.PayloadMessage;
@@ -18,7 +18,7 @@ public class CollisionMessage extends RemoteMessage implements PayloadMessage {
 	}
 
 	public CollisionMessage(final PeerID source) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 	}
 
 	@Override

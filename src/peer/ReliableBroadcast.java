@@ -131,7 +131,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			if (processingMessage)
 				if (ackMessage.getRespondedMessageID().equals(currentMessage.getMessageID())) {
 					currentMessage.removeExpectedDestination(ackMessage.getSender());
-					logger.debug("Peer " + peer.getPeerID() + " added response from " + ackMessage.getSender() + " for " + currentMessage.getMessageID());
+					logger.trace("Peer " + peer.getPeerID() + " added response from " + ackMessage.getSender() + " for " + currentMessage.getMessageID() + " missing responses: " + currentMessage.getExpectedDestinations());
 					// check if all responses have being received
 					if (currentMessage.getExpectedDestinations().isEmpty()) {
 						final long deliveringTime = System.currentTimeMillis() - broadcastStartTime;

@@ -3,7 +3,7 @@ package multicast.search.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.List;
+import java.util.Set;
 
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
@@ -43,7 +43,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 * @param source
 	 *            the remote source of the message
 	 */
-	public RemoteMessage(final PeerID source, final List<PeerID> expectedDestinations) {
+	public RemoteMessage(final PeerID source, final Set<PeerID> expectedDestinations) {
 		super(source, expectedDestinations);
 		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
 		this.distance = 0;
@@ -57,7 +57,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 * @param distance
 	 *            the initial traversed distance by the message
 	 */
-	public RemoteMessage(final PeerID source, final List<PeerID> expectedDestinations, final int distance) {
+	public RemoteMessage(final PeerID source, final Set<PeerID> expectedDestinations, final int distance) {
 		super(source, expectedDestinations);
 		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
 		this.distance = distance;
@@ -73,7 +73,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 * @param respondingTo
 	 *            the message this one responds to
 	 */
-	public RemoteMessage(final RemoteMessage remoteMessage, final PeerID sender, final List<PeerID> expectedDestinations, final int newDistance) {
+	public RemoteMessage(final RemoteMessage remoteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final int newDistance) {
 		super(sender, expectedDestinations);
 		this.remoteMessageID = new MessageID(remoteMessage.getSource(), remoteMessage.getRemoteMessageID().getID());
 		this.distance = newDistance;

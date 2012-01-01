@@ -3,7 +3,6 @@ package multicast.search.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -52,14 +51,14 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	 *            the remote node which sent the message
 	 */
 	public RemoteMulticastMessage(final PeerID source, final PeerIDSet remoteDestinations, final PayloadMessage payload) {
-		super(source, Collections.singletonList(source));
+		super(source, Collections.singleton(source));
 		this.remoteDestinations.addPeers(remoteDestinations);
 		this.payload = payload;
 		this.throughPeers.addPeers(Collections.singleton(source));
 	}
 	
 	public RemoteMulticastMessage(final PeerID source, final PeerIDSet remoteDestinations, final PayloadMessage payload, final int distance) {
-		super(source, Collections.singletonList(source), distance);
+		super(source, Collections.singleton(source), distance);
 		this.remoteDestinations.addPeers(remoteDestinations);
 		this.payload = payload;
 		this.throughPeers.addPeers(Collections.singleton(source));
@@ -81,7 +80,7 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	 *            the new distance for the message
 	 */
 	public RemoteMulticastMessage(final RemoteMulticastMessage multicastMessage, final PeerID sender, final PeerIDSet throughPeers, final int newDistance) {
-		super(multicastMessage, sender, new ArrayList<PeerID>(throughPeers.getPeerSet()), newDistance);
+		super(multicastMessage, sender, throughPeers.getPeerSet(), newDistance);
 		this.remoteDestinations.addPeers(multicastMessage.getRemoteDestinations());
 		this.payload = multicastMessage.getPayload();
 		this.throughPeers.addPeers(throughPeers);

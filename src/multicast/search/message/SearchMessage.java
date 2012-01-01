@@ -7,7 +7,6 @@ import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -149,7 +148,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 	 * @param searchType
 	 *            the type of the search (exact, generic)
 	 */
-	public SearchMessage(final PeerID source, final List<PeerID> expectedDestinations, final Set<Parameter> parameters, final PayloadMessage payload, final int maxTTL, final int distance, final SearchType searchType) {
+	public SearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<Parameter> parameters, final PayloadMessage payload, final int maxTTL, final int distance, final SearchType searchType) {
 		super(source, expectedDestinations, distance);
 		this.payload = payload;
 		this.searchType = searchType;
@@ -168,7 +167,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 	 * @param respondingTo
 	 *            the message this one responds to
 	 */
-	public SearchMessage(final SearchMessage searchMessage, final PeerID sender, final List<PeerID> expectedDestinations, final int newDistance) {
+	public SearchMessage(final SearchMessage searchMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final int newDistance) {
 		super(searchMessage, sender, expectedDestinations, newDistance);
 		this.payload = searchMessage.payload;
 		this.searchType = searchMessage.searchType;

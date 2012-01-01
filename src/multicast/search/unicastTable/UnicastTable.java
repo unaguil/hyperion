@@ -376,7 +376,7 @@ public class UnicastTable implements XMLSerializable {
 				}
 			}
 
-			SearchMessage activeSearch = new SearchMessage(new PeerID(peer), new ArrayList<PeerID>(), searchedParameters, null, 0, 0, SearchType.Exact);
+			SearchMessage activeSearch = new SearchMessage(new PeerID(peer), Collections.<PeerID> emptySet(), searchedParameters, null, 0, 0, SearchType.Exact);
 			activeSearches.add(activeSearch);
 		}
 

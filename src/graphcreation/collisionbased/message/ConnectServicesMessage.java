@@ -8,6 +8,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +36,7 @@ public class ConnectServicesMessage extends RemoteMessage implements PayloadMess
 	}
 
 	public ConnectServicesMessage(final PeerID source, final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 		this.remoteAncestors.putAll(remoteAncestors);
 		this.remoteSuccessors.putAll(remoteSuccessors);
 	}

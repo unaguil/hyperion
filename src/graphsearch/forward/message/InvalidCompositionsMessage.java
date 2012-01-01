@@ -9,6 +9,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +37,7 @@ public class InvalidCompositionsMessage extends RemoteMessage implements Payload
 	}
 
 	public InvalidCompositionsMessage(final PeerID source) {
-		super(source, new ArrayList<PeerID>());
+		super(source, Collections.<PeerID> emptySet());
 	}
 
 	public void addInvalidLocalService(final SearchID searchID, final Service invalidLocalService, final Set<ServiceDistance> successors) {

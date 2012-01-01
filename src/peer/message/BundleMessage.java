@@ -27,7 +27,7 @@ public class BundleMessage extends BroadcastMessage {
 		
 	}
 
-	public BundleMessage(final PeerID sender, final List<PeerID> expectedDestinations, final List<BroadcastMessage> messages) {
+	public BundleMessage(final PeerID sender, final Set<PeerID> expectedDestinations, final List<BroadcastMessage> messages) {
 		super(sender, expectedDestinations);
 		this.messages.addAll(messages);
 	}
@@ -44,7 +44,7 @@ public class BundleMessage extends BroadcastMessage {
 			//Remove all those message whose destinations were removed
 			for (final Iterator<BroadcastMessage> it = messages.iterator(); it.hasNext(); ) {
 				BroadcastMessage broadcastMessage = it.next();
-				if (removedDestinations.containsAll(broadcastMessage.getExpectedDestinations()))
+				if ((broadcastMessage instanceof ACKMessage) && removedDestinations.containsAll(broadcastMessage.getExpectedDestinations()))
 					it.remove();
 			}
 			

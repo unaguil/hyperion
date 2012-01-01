@@ -1,6 +1,6 @@
 package peer.message;
 
-import java.util.ArrayList;
+import java.util.Collections;
 
 import peer.peerid.PeerID;
 
@@ -16,7 +16,7 @@ public class MessageStringPayload extends MessageString implements PayloadMessag
 	}
 
 	public MessageStringPayload(final PeerID sender, final String content) {
-		super(sender, new ArrayList<PeerID>(), content);
+		super(sender, Collections.<PeerID> emptySet(), content);
 	}
 
 	@Override

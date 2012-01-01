@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -482,7 +481,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		if (!updateTable.isEmpty()) {
 			TableMessage tableMessage;
 			
-			tableMessage = new TableMessage(peer.getPeerID(), new ArrayList<PeerID>(destNeighbors.getPeerSet()), updateTable, payload);
+			tableMessage = new TableMessage(peer.getPeerID(), destNeighbors.getPeerSet(), updateTable, payload);
 
 			logger.trace("Peer " + peer.getPeerID() + " sending update table message " + tableMessage);
 			
@@ -503,15 +502,15 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	}
 
 	@Override
-	public boolean checkWaitingMessages(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		for (final BroadcastMessage waitingMessage : waitingMessages) {
 			if (waitingMessage instanceof TableMessage) {
 				TableMessage waitingTableMessage = (TableMessage) waitingMessage;
 				TableMessage sendingTableMessage = (TableMessage) sendingMessage;
 				if (sendingTableMessage.getUpdateTable().equals(waitingTableMessage.getUpdateTable()))
-					return false;
+					return waitingTableMessage;
 			}
 		}
-		return true;
+		return null;
 	}
 }
