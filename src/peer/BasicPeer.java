@@ -417,7 +417,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	}
 
 	private void processACKMessage(final ACKMessage ackMessage) {
-		logger.trace("Peer " + peerID + " adding ACK message " + ackMessage);
 		msgCounter.addReceived(ackMessage.getClass());
 		messageProcessor.addACKResponse(ackMessage);
 	}
