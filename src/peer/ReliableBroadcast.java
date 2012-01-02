@@ -88,7 +88,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			Thread.yield();
 
 		// bundle messages containing only BeaconMessages or ACKMessages are directly broadcasted
-		if (broadcastMessage instanceof BundleMessage && containsOnlyBeaconMessages((BundleMessage) broadcastMessage) || containsOnlyACKMessages((BundleMessage) broadcastMessage)) {
+		if (broadcastMessage instanceof BundleMessage && (containsOnlyBeaconMessages((BundleMessage) broadcastMessage) || containsOnlyACKMessages((BundleMessage) broadcastMessage))) {
 			peer.broadcast(broadcastMessage);
 			return;
 		}
