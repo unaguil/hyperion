@@ -364,7 +364,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
 		msgCounter.addReceived(broadcastMessage.getClass());
 		
-		logger.trace("Peer " + peerID + " received " + broadcastMessage + " from node " + broadcastMessage.getSender() + " using broadcast");
 		logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
 		if (broadcastMessage instanceof BeaconMessage)
