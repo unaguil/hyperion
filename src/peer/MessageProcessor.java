@@ -122,10 +122,7 @@ final class MessageProcessor extends WaitableThread {
 			
 			applyJitter();
 		
-			if (Peer.USE_RELIABLE_BROADCAST)
-				reliableBroadcast.broadcast(bundleMessage);
-			else
-				peer.broadcast(bundleMessage);
+			reliableBroadcast.broadcast(bundleMessage);
 			
 			msgCounter.addSent(bundleMessage.getClass());
 		}

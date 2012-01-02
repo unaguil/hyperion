@@ -10,9 +10,7 @@ import peer.peerid.PeerID;
 import detection.NeighborDetector;
 
 public interface Peer {
-
-	public static final boolean USE_RELIABLE_BROADCAST = true;
-
+	
 	public void addCommunicationLayer(CommunicationLayer layer, Set<Class<? extends BroadcastMessage>> messageClasses) throws RegisterCommunicationLayerException;
 
 	public void addReceivingListener(Class<? extends BroadcastMessage> messageClass, MessageReceivedListener receivedListener) throws AlreadyRegisteredListenerException;
