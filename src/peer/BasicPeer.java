@@ -451,7 +451,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		receivedMessages.addEntry(bundleMessage.getMessageID());
 
 		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
-			messageReceived(broadcastMessage);
+			if (!(broadcastMessage instanceof ACKMessage))
+				messageReceived(broadcastMessage);
 	}
 	
 	
