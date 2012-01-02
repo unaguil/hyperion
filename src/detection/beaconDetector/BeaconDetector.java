@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import peer.BasicPeer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
@@ -46,11 +45,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		}
 
 		@Override
-		public void run() {
-			randomSleep();
-			
-			// send initial beacon
-			beaconDetector.sendBeacon();
+		public void run() {			
 			while (!Thread.interrupted()) {
 				logger.trace("Peer " + peer.getPeerID() + " beacon thread running");
 
@@ -66,17 +61,18 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 				// period of time
 
 				final long sleepTime;
-				if (elapsedTime >= BEACON_TIME) {
+				final int jitter = r.nextInt(MAX_JITTER);
+				final int beaconTime = BEACON_TIME - jitter;
+				
+				if (elapsedTime >= beaconTime) {
 					// Send the beacon
 					beaconDetector.sendBeacon();
 					// Schedule next beacon sleeping the thread
-					sleepTime = BEACON_TIME;
+					sleepTime = beaconTime;
 				} else
 					// Schedule timer for the difference of time (time for the
 					// next beacon)
-					sleepTime = BEACON_TIME - elapsedTime;
-
-				randomSleep();
+					sleepTime = beaconTime - elapsedTime; 
 				
 				try {
 					Thread.sleep(sleepTime);
@@ -88,17 +84,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			
 			finishThread();
 		}
-
-		private void randomSleep() {
-			try {
-				final int initialDelay = r.nextInt(BasicPeer.RANDOM_DELAY) + 1;
-				Thread.sleep(initialDelay);
-			} catch (InterruptedException e) {
-				finishThread();
-				return;
-			}
-		}
-
+		
 		private void finishThread() {
 			logger.trace("Peer " + peer.getPeerID() + " beacon thread finalized");
 			this.threadFinished();
@@ -133,6 +119,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	private BeaconSendThread beaconThread;
 
 	private BeaconMessage beaconMessage;
+	
+	private static final int MAX_JITTER = 25;
 
 	private long LOST_TIME;
 
@@ -185,7 +173,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = (BEACON_TIME + BasicPeer.RANDOM_DELAY) * 2;
+		LOST_TIME = (BEACON_TIME + MAX_JITTER) * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
