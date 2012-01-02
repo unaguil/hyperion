@@ -42,7 +42,9 @@ final class MessageProcessor extends WaitableThread {
 	private final ReliableBroadcast reliableBroadcast;
 	
 	// the queue used for storing received messages
-	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
+	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
+	
+	private static final int MAX_JITTER = 25;
 
 	/**
 	 * Constructor of the message processor
@@ -77,23 +79,25 @@ final class MessageProcessor extends WaitableThread {
 	@Override
 	public void run() {
 		// Processor loop
-		while (!Thread.interrupted()) {						
-			randomSleep();
-			
+		while (!Thread.interrupted()) {									
 			processAllReceivedMessages();
 			
 			processResponses();
+			
+			Thread.yield();
 		}
 
 		finishThread();
 	}
 
-	private void randomSleep() { 
-		final long randomWait = r.nextInt(BasicPeer.RANDOM_DELAY) + 1;				
-		try {
-			Thread.sleep(randomWait);
-		} catch (InterruptedException e) {
-			finishThread();
+	private void applyJitter() { 
+		final long jitter = r.nextInt(MAX_JITTER);		
+		if (jitter > 0) {
+			try {
+				Thread.sleep(jitter);
+			} catch (InterruptedException e) {
+				finishThread();
+			}
 		}
 	}
 
@@ -115,12 +119,15 @@ final class MessageProcessor extends WaitableThread {
 
 		if (!bundleMessages.isEmpty()) {	
 			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), destinations.getPeerSet(), bundleMessages);
-			msgCounter.addSent(bundleMessage.getClass());
+			
+			applyJitter();
 		
 			if (Peer.USE_RELIABLE_BROADCAST)
 				reliableBroadcast.broadcast(bundleMessage);
 			else
 				peer.broadcast(bundleMessage);
+			
+			msgCounter.addSent(bundleMessage.getClass());
 		}
 	}
 
@@ -158,7 +165,7 @@ final class MessageProcessor extends WaitableThread {
 		return unprocessedMessages;
 	}
 
-	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
+	public boolean enqueueResponse(final BroadcastMessage message, CommunicationLayer layer) {
 		synchronized (waitingMessages) {
 			if (layer != null) {
 				final BroadcastMessage duplicatedMessage = layer.isDuplicatedMessage(Collections.unmodifiableList(waitingMessages), message);

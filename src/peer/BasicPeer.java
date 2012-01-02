@@ -189,7 +189,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message, CommunicationLayer layer) {
-		if (messageProcessor.addResponse(message, layer)) {
+		if (messageProcessor.enqueueResponse(message, layer)) {
 			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
 			msgCounter.addSent(message.getClass());
 		}
