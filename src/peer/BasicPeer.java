@@ -434,9 +434,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		if (ReliableBroadcast.containsOnlyACKMessages(bundleMessage))
 			return;
 		
-		if (bundleMessage.getMessages().isEmpty())
-			return;
-		
 		//messages which does not have this node as destination are discarded
 		if (!bundleMessage.getExpectedDestinations().contains(peerID))
 			return;
