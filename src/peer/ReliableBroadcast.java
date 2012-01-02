@@ -72,6 +72,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	public void stopAndWait() {
 		synchronized (mutex) {
 			processingMessage = false;
+			performNotify();
 		}
 		rebroadcastThread.stopAndWait();
 	}
@@ -81,11 +82,27 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 			return processingMessage;
 		}
 	}
+	
+	protected void performNotify() {
+		synchronized (this) {
+			this.notifyAll();
+		}
+	}
+
+	private void performWait() {
+		synchronized (this) {
+			try {
+				this.wait();
+			} catch (final InterruptedException e) {
+				// do nothing
+			}
+		}
+	}
 
 	public void broadcast(final BroadcastMessage broadcastMessage) {
 		// block while a message is being broadcasting
 		while (isProcessingMessage())
-			Thread.yield();
+			this.performWait();
 
 		// bundle messages containing only BeaconMessages or ACKMessages are directly broadcasted
 		if (broadcastMessage instanceof BundleMessage && (containsOnlyBeaconMessages((BundleMessage) broadcastMessage) || containsOnlyACKMessages((BundleMessage) broadcastMessage))) {
@@ -138,6 +155,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 						reliableBroadcastCounter.addDeliveredMessage(deliveringTime);
 						logger.debug("Peer " + peer.getPeerID() + " delivered message " + currentMessage.getMessageID());
 						processingMessage = false;
+						performNotify();
 					}
 				}
 		}
@@ -162,9 +180,10 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				if (elapsedTime >= responseWaitTime) {
 					if (tryNumber == MAX_TRIES) {
 						// maximum tries reached. failed broadcast
-						processingMessage = false;
 						rebroadcast = false;
 						logger.debug("Peer " + peer.getPeerID() + " failed reliable broadcast " + currentMessage.getMessageID());
+						processingMessage = false;
+						performNotify();
 						return;
 					}
 
@@ -207,8 +226,10 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				for (final PeerID dissappearedNeighbor : disappearedNeighbors.getPeerSet())
 					currentMessage.removeExpectedDestination(dissappearedNeighbor);
 
-				if (currentMessage.getExpectedDestinations().isEmpty())
+				if (currentMessage.getExpectedDestinations().isEmpty()) {
 					processingMessage = false;
+					performNotify();
+				}
 			}
 		}
 	}
