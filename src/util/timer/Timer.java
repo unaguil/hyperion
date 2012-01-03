@@ -24,7 +24,7 @@ public class Timer extends WaitableThread {
 				// perform timer task
 				timerTask.perform();
 			} catch (final InterruptedException e) {
-				break;
+				interrupt();
 			}
 
 		this.threadFinished();
