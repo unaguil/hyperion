@@ -11,7 +11,6 @@ import peer.peerid.PeerIDSet;
 import util.logger.Logger;
 import util.timer.Timer;
 import util.timer.TimerTask;
-import config.Configuration;
 import detection.NeighborEventsListener;
 import detection.message.BeaconMessage;
 
@@ -45,8 +44,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	
 	private final Random r = new Random();
 
-	private int MAX_TRIES = 3;
-
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
 	public ReliableBroadcast(final Peer peer) {
@@ -56,14 +53,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	}
 
 	public void start() {
-		try {
-			final String maxTries = Configuration.getInstance().getProperty("reliableBroadcast.maxTries");
-			MAX_TRIES = Integer.parseInt(maxTries);
-			logger.info("Peer " + peer.getPeerID() + " set MAX_TRIES to " + MAX_TRIES);
-		} catch (final Exception e) {
-			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
-		}
-
 		peer.getDetector().addNeighborListener(this);
 
 		rebroadcastThread.start();
@@ -178,15 +167,6 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 				// calculate elapsed time since last broadcast
 				long elapsedTime = System.currentTimeMillis() - lastBroadcastTime;
 				if (elapsedTime >= responseWaitTime) {
-					if (tryNumber == MAX_TRIES) {
-						// maximum tries reached. failed broadcast
-						rebroadcast = false;
-						logger.debug("Peer " + peer.getPeerID() + " failed reliable broadcast " + currentMessage.getMessageID());
-						processingMessage = false;
-						performNotify();
-						return;
-					}
-
 					rebroadcast = true;
 				}
 			}
