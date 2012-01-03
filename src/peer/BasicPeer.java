@@ -491,9 +491,10 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		final ACKMessage ackMessage = new ACKMessage(peerID, broadcastMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
 		
-		if (messageProcessor.isSendingMessage())
+		if (messageProcessor.isSendingMessage()) {
+			messageProcessor.includeACKMessage(ackMessage);
 			sendDirectACKMessage(ackMessage);
-		else
+		} else
 			enqueueACKMessage(ackMessage);
 	}
 

@@ -24,7 +24,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		}
 	}
 
-	private BroadcastMessage currentMessage;
+	private BundleMessage currentMessage;
 
 	private final Peer peer;
 
@@ -99,33 +99,33 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		}
 	}
 
-	public void broadcast(final BroadcastMessage broadcastMessage) {
+	public void broadcast(final BundleMessage bundleMessage) {
 		// block while a message is being broadcasting
 		while (isProcessingMessage())
 			this.performWait();
 
 		// bundle messages containing only BeaconMessages or ACKMessages are directly broadcasted
-		if (broadcastMessage instanceof BundleMessage && (containsOnlyBeaconMessages((BundleMessage) broadcastMessage) || containsOnlyACKMessages((BundleMessage) broadcastMessage))) {
-			peer.broadcast(broadcastMessage);
+		if (containsOnlyBeaconMessages(bundleMessage) || containsOnlyACKMessages(bundleMessage)) {
+			peer.broadcast(bundleMessage);
 			return;
 		}
 
 		// messages with empty destinations are not reliable broadcasted
-		if (broadcastMessage.getExpectedDestinations().isEmpty())
+		if (bundleMessage.getExpectedDestinations().isEmpty())
 			return;
 
 		synchronized (mutex) {
-			currentMessage = broadcastMessage;
+			currentMessage = bundleMessage;
 			broadcastStartTime = lastBroadcastTime = System.currentTimeMillis();
 			tryNumber = 1;
 			responseWaitTime = getResponseWaitTime(currentMessage.getExpectedDestinations().size());
-			logger.debug("Peer " + peer.getPeerID() + " reliable broadcasting message " + broadcastMessage.getMessageID() + " " + broadcastMessage.getExpectedDestinations() + " responseWaitTime: " + responseWaitTime);
+			logger.debug("Peer " + peer.getPeerID() + " reliable broadcasting message " + bundleMessage.getMessageID() + " " + bundleMessage.getExpectedDestinations() + " responseWaitTime: " + responseWaitTime);
 			rebroadcast = false;
 			processingMessage = true;
 		}
 
 		reliableBroadcastCounter.addBroadcastedMessage();
-		peer.broadcast(broadcastMessage);
+		peer.broadcast(bundleMessage);
 	}
 
 	public static boolean containsOnlyBeaconMessages(final BundleMessage bundleMessage) {
@@ -142,7 +142,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		return true;
 	}
 
-	public void addACKResponse(final ACKMessage ackMessage) {
+	public void receivedACKResponse(final ACKMessage ackMessage) {
 		// check if message is responded by the current ACK message
 		synchronized (mutex) {
 			if (processingMessage)
@@ -241,5 +241,11 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	@Override
 	public void dissapearedNeighbors(final PeerIDSet neighbors) {
 		removeNeighbors(neighbors);
+	}
+	
+	public void includeACKResponse(final ACKMessage ackMessage) {
+		synchronized (mutex) {
+			currentMessage.addACKMessage(ackMessage);
+		}
 	}
 }

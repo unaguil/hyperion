@@ -35,6 +35,10 @@ public class BundleMessage extends BroadcastMessage {
 	public List<BroadcastMessage> getMessages() {
 		return messages;
 	}
+	
+	public void addACKMessage(ACKMessage ackMessage) {
+		messages.add(ackMessage);		
+	}
 
 	@Override
 	public boolean removeExpectedDestination(PeerID peerID) {

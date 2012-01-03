@@ -181,10 +181,14 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	public void addACKResponse(final ACKMessage ackMessage) {
-		reliableBroadcast.addACKResponse(ackMessage);
+		reliableBroadcast.receivedACKResponse(ackMessage);
 	}
 
 	public boolean isSendingMessage() {
 		return reliableBroadcast.isProcessingMessage();
+	}
+
+	public void includeACKMessage(ACKMessage ackMessage) {
+		reliableBroadcast.includeACKResponse(ackMessage);
 	}
 }
