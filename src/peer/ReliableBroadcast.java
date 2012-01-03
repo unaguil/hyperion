@@ -225,7 +225,9 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 	
 	public void includeACKResponse(final ACKMessage ackMessage) {
 		synchronized (mutex) {
-			currentMessage.addACKMessage(ackMessage);
+			if (isProcessingMessage())
+				currentMessage.addACKMessage(ackMessage);
 		}
+		logger.trace("Peer " + peer.getPeerID() + " ACK message " + ackMessage + " included in current broadcasting message");
 	}
 }
