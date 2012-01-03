@@ -454,50 +454,13 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 				messageReceived(broadcastMessage);
 	}
 	
-	
-	private class DelayACK extends Thread {
-		
-		private final ACKMessage ackMessage;
-		
-		private final int ACK_DELAY = 10;
-		
-		public DelayACK(final ACKMessage ackMessage) {
-			this.ackMessage = ackMessage;
-		}
-		
-		@Override
-		public void run() {
-			final int sleepTime = r.nextInt(ACK_DELAY);
-			if (sleepTime > 0) {
-				try {
-					Thread.sleep(sleepTime);
-				} catch (InterruptedException e) {
-				}		
-			}
-			
-			msgCounter.addSent(ackMessage.getClass());
-			broadcast(ackMessage);
-		}
-	}
-
-	private void sendDirectACKMessage(final ACKMessage ackMessage) {
-		DelayACK delayACK = new DelayACK(ackMessage);
-		delayACK.start();
-	}
-
-	private void enqueueACKMessage(final ACKMessage ackMessage) {
-		enqueueBroadcast(ackMessage, null);
-		msgCounter.addSent(ackMessage.getClass());
-	}
-	
 	private void sendACKMessage(final BroadcastMessage broadcastMessage) {
 		final ACKMessage ackMessage = new ACKMessage(peerID, broadcastMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
 		
-		if (messageProcessor.isSendingMessage())
-			sendDirectACKMessage(ackMessage);
-		else
-			enqueueACKMessage(ackMessage);
+		messageProcessor.includeACKMessage(ackMessage);
+		enqueueBroadcast(ackMessage, null);
+		msgCounter.addSent(ackMessage.getClass());
 	}
 
 	// Used by the message processor to process each dequeued message
