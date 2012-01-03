@@ -185,7 +185,7 @@ final class ReliableBroadcast implements TimerTask, NeighborEventsListener {
 		if (mustRebroadcast()) {
 			synchronized (mutex) {
 				if (tryNumber == 1) {
-					logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations());
+					logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " adding " + delayTime + " ms");
 					reliableBroadcastCounter.addRebroadcastedMessage();
 				}
 				
