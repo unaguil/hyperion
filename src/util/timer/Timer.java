@@ -19,7 +19,12 @@ public class Timer extends WaitableThread {
 				if (period > 0)
 					Thread.sleep(period);
 				else
-					Thread.yield();
+					try {
+						Thread.sleep(1);
+					} catch (InterruptedException e) {
+						interrupt();
+						break;
+					}
 
 				// perform timer task
 				timerTask.perform();
