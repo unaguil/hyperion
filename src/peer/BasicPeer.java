@@ -189,7 +189,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message, CommunicationLayer layer) {
-		if (messageProcessor.enqueueResponse(message, layer)) {
+		if (messageProcessor.addResponse(message, layer)) {
 			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
 			msgCounter.addSent(message.getClass());
 		}
@@ -433,6 +433,9 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		if (ReliableBroadcast.containsOnlyACKMessages(bundleMessage))
 			return;
 		
+		if (bundleMessage.getMessages().isEmpty())
+			return;
+		
 		//messages which does not have this node as destination are discarded
 		if (!bundleMessage.getExpectedDestinations().contains(peerID))
 			return;
@@ -491,10 +494,9 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		final ACKMessage ackMessage = new ACKMessage(peerID, broadcastMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
 		
-		if (messageProcessor.isSendingMessage()) {
-			messageProcessor.includeACKMessage(ackMessage);
+		if (messageProcessor.isSendingMessage())
 			sendDirectACKMessage(ackMessage);
-		} else
+		else
 			enqueueACKMessage(ackMessage);
 	}
 
