@@ -11,7 +11,6 @@ import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.MessageCounter;
-import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
 
@@ -38,11 +37,14 @@ final class MessageProcessor extends WaitableThread {
 
 	// stores the unprocessed messages when the thread is stopped
 	private int unprocessedMessages = 0;
-
-	private final ReliableBroadcast reliableBroadcast;
 	
 	// the queue used for storing received messages
-	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>(); 
+	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
+	
+	private ReliableBroadcast reliableBroadcast = null;
+	private final Object mutex = new Object();
+	
+	private final DelayAdjuster delayAdjuster;
 
 	/**
 	 * Constructor of the message processor
@@ -50,16 +52,14 @@ final class MessageProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public MessageProcessor(final BasicPeer peer, MessageCounter msgCounter) {
+	public MessageProcessor(final BasicPeer peer, final MessageCounter msgCounter, final DelayAdjuster delayAdjuster) {
 		this.peer = peer;
-		this.reliableBroadcast = new ReliableBroadcast(peer);
 		this.msgCounter = msgCounter;
+		this.delayAdjuster = delayAdjuster;
 	}
 
 	public void init() {
 		start();
-
-		reliableBroadcast.start();
 	}
 
 	/**
@@ -75,53 +75,64 @@ final class MessageProcessor extends WaitableThread {
 	} 
 
 	@Override
-	public void run() {
-		// Processor loop
-		while (!Thread.interrupted()) {						
-			randomSleep();
+	public void run() {		
+		while (!Thread.interrupted()) {			
+			randomSleep(); 
 			
-			processAllReceivedMessages();
+			if (!Thread.interrupted()) {			
+				processAllReceivedMessages();
 			
-			processResponses();
+				BundleMessage bundleMessage = processResponses();
+				if (!bundleMessage.getMessages().isEmpty())
+					sendResponses(bundleMessage);
+				
+			} else
+				interrupt();
 		}
 
-		finishThread();
+		logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
+		threadFinished();
 	}
 
 	private void randomSleep() { 
-		final long randomWait = r.nextInt(BasicPeer.RANDOM_DELAY) + 1;				
+		final long randomWait = r.nextInt(delayAdjuster.getCurrentMaxDelay());				
 		try {
-			Thread.sleep(randomWait);
+			WaitableThread.mySleep(randomWait);
 		} catch (InterruptedException e) {
-			finishThread();
+			interrupt();
 		}
 	}
 
-	private void processResponses() {
+	public BundleMessage processResponses() {
 		final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
-		final PeerIDSet destinations = new PeerIDSet();
 		
 		synchronized (waitingMessages) {
 			if (!waitingMessages.isEmpty())	 {								
-				for (final BroadcastMessage broadcastMessage : waitingMessages) {
-					destinations.addPeers(broadcastMessage.getExpectedDestinations());
-					
+				for (final BroadcastMessage broadcastMessage : waitingMessages)					
 					bundleMessages.add(broadcastMessage);
-				}
 				
 				waitingMessages.clear();					
 			}
 		}
 
-		if (!bundleMessages.isEmpty()) {	
-			final BundleMessage bundleMessage = new BundleMessage(peer.getPeerID(), destinations.getPeerSet(), bundleMessages);
-			msgCounter.addSent(bundleMessage.getClass());
+		return new BundleMessage(peer.getPeerID(), bundleMessages);
+	}
+
+	private void sendResponses(final BundleMessage bundleMessage) {
+		msgCounter.addSent(bundleMessage.getClass());
+
+		synchronized (mutex) {
+			reliableBroadcast = new ReliableBroadcast(peer, this, delayAdjuster);
+		}
 		
-			reliableBroadcast.broadcast(bundleMessage);
+		reliableBroadcast.broadcast(bundleMessage);
+		
+		synchronized (mutex) {
+			reliableBroadcast = null;
 		}
 	}
 
-	private void processAllReceivedMessages() {
+	public void processAllReceivedMessages() {
 		final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();						
 		synchronized (messageDeque) {					
 			while (!messageDeque.isEmpty()) {
@@ -134,20 +145,13 @@ final class MessageProcessor extends WaitableThread {
 			peer.processMessage(message);
 	}
 
-	private void finishThread() {
-		logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
-		this.threadFinished();
-	}
-
 	/**
 	 * Cancels the execution of the message processor thread
 	 * 
 	 * @return the number of unprocessed messages
 	 */
 	@Override
-	public void stopAndWait() {
-		reliableBroadcast.stopAndWait();
-		
+	public void stopAndWait() {		
 		super.stopAndWait();
 	}
 
@@ -173,15 +177,10 @@ final class MessageProcessor extends WaitableThread {
 		}
 	}
 
-	public void addACKResponse(final ACKMessage ackMessage) {
-		reliableBroadcast.receivedACKResponse(ackMessage);
+	public void addReceivedACKResponse(final ACKMessage ackMessage) {
+		synchronized (mutex) {
+			if (reliableBroadcast != null)
+				reliableBroadcast.addReceivedACKResponse(ackMessage);
+		}
 	}
-
-	public void includeACKMessage(ACKMessage ackMessage) {
-		reliableBroadcast.includeACKResponse(ackMessage);
-	}
-
-	public boolean isSendingMessage() {
-		return reliableBroadcast.isProcessingMessage();
-	} 
 }

@@ -48,4 +48,19 @@ public class ACKMessage extends BroadcastMessage {
 		
 		out.writeObject(respondingTo);
 	}
+	
+	@Override
+	public boolean equals(final Object o) {
+		if (!(o instanceof ACKMessage))
+			return false;
+		
+		final ACKMessage ackMessage = (ACKMessage)o;
+		
+		return ackMessage.respondingTo.equals(this.respondingTo);
+	}
+	
+	@Override
+	public int hashCode() {
+		return respondingTo.hashCode();
+	}
 }

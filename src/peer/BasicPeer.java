@@ -25,6 +25,7 @@ import peer.messagecounter.ReliableBroadcastTotalCounter;
 import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import util.WaitableThread;
 import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
@@ -34,15 +35,17 @@ import detection.message.BeaconMessage;
 
 public final class BasicPeer implements Peer, NeighborEventsListener {
 
-	public static final int CLEAN_REC_MSGS = 5000;
+	public static final int CLEAN_REC_MSGS = 60000;
 
 	// List of registered communication layers
 	private final List<CommunicationLayer> communicationLayers = new CopyOnWriteArrayList<CommunicationLayer>();
 	
 	// The instance of the message counter to be used.
 	private final MessageCounter msgCounter = new MessageCounter();
+	
+	private final DelayAdjuster delayAdjuster = new DelayAdjuster();
 
-	private final MessageProcessor messageProcessor = new MessageProcessor(this, msgCounter);
+	private final MessageProcessor messageProcessor = new MessageProcessor(this, msgCounter, delayAdjuster);
 
 	private final Random r = new Random();
 
@@ -56,6 +59,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	// A list containing the listeners which will be notified when the
 	// DatagramSocket sent() method is sent.
 	private final List<MessageSentListener> messageSentListeners = new CopyOnWriteArrayList<MessageSentListener>();
+	
+	private final DelayedACK delayedACK = new DelayedACK(this);
 
 	// the communication peer
 	private final CommProvider commProvider;
@@ -79,7 +84,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
-	public static final int TRANSMISSION_TIME = 15;
+	public static final int TRANSMISSION_TIME = 8;
 	
 	public static final int RANDOM_DELAY = 10;
 
@@ -210,7 +215,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 				logger.info("Peer " + peer.getPeerID() + " initialization has been delayed " + initDelay + " ms");
 
 				try {
-					Thread.sleep(initDelay);
+					WaitableThread.mySleep(initDelay);
 				} catch (final InterruptedException e) {
 					return;
 				}
@@ -244,6 +249,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
+		
+		delayAdjuster.start();
 	}
 	
 	private byte[] compress(byte[] data) {
@@ -354,18 +361,17 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		logger.trace("Peer " + peerID + " communication layers stopped");
 	}
 	
-	private void processACKMessages(final BundleMessage bundleMessage) {
+	private void processReceivedACKMessages(final BundleMessage bundleMessage) {
 		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages()) {
-			if (broadcastMessage instanceof ACKMessage)
-				processACKMessage((ACKMessage) broadcastMessage);
+			if (broadcastMessage instanceof ACKMessage) {
+				final ACKMessage ackMessage = (ACKMessage) broadcastMessage;
+				msgCounter.addReceived(ackMessage.getClass());
+				messageProcessor.addReceivedACKResponse(ackMessage);
+			}
 		}
 	}
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
-		msgCounter.addReceived(broadcastMessage.getClass());
-		
-		logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
-
 		if (broadcastMessage instanceof BeaconMessage)
 			return;
 
@@ -373,6 +379,10 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		if (!receivedMessages.contains(broadcastMessage.getMessageID())) {
 			// save new messages
 			receivedMessages.addEntry(broadcastMessage.getMessageID());
+			
+			msgCounter.addReceived(broadcastMessage.getClass());
+			
+			logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
 			// Put the message into the blocking queue for processing
 			messageProcessor.receive(broadcastMessage);
@@ -387,55 +397,22 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 		logger.info("Simulation finished");
 	}
+	
+	private boolean containsOnlyACKMessages(final BundleMessage bundleMessage) {
+		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
+			if (!(broadcastMessage instanceof ACKMessage))
+				return false;
+		return true;
+	}
 
-	private void processSimpleMessage(final BroadcastMessage broadcastMessage) {
-		//beacon messages are not further processed
-		if (broadcastMessage instanceof BeaconMessage)
-			return;
-		
-		// received ACK messages are processed
-		if (broadcastMessage instanceof ACKMessage) {
-			processACKMessage((ACKMessage) broadcastMessage);
+	private void processBundleMessage(final BundleMessage bundleMessage) {		
+		// bundle messages containing only ACK messages are not further processed
+		if (containsOnlyACKMessages(bundleMessage)) {
+			logger.trace("Peer " + peerID + " received " + bundleMessage.getMessages().size() + " ACK messages");
+			processReceivedACKMessages(bundleMessage);
 			return;
 		}
-
-		//messages which does not have this node as destination are discarded
-		if (!broadcastMessage.getExpectedDestinations().contains(peerID))
-			return;
-		
-		//all received messages are responded with ACK
-		sendACKMessage(broadcastMessage);
-		
-		// previously received messages are not processed again
-		if (receivedMessages.contains(broadcastMessage.getMessageID()))
-			return;
-
-		receivedMessages.addEntry(broadcastMessage.getMessageID());
-
-		messageReceived(broadcastMessage);
-	}
-
-	private void processACKMessage(final ACKMessage ackMessage) {
-		msgCounter.addReceived(ackMessage.getClass());
-		messageProcessor.addACKResponse(ackMessage);
-	}
-
-	private void processBundleMessage(final BundleMessage bundleMessage) {
-		msgCounter.addReceived(bundleMessage.getClass());
-		
-		// bundle messages containing only beacons are not further processed
-		if (ReliableBroadcast.containsOnlyBeaconMessages(bundleMessage))
-			return;
-		
-		processACKMessages(bundleMessage);
-		
-		// bundle messages containing only ACK messages are not further processed
-		if (ReliableBroadcast.containsOnlyACKMessages(bundleMessage))
-			return;
-		
-		if (bundleMessage.getMessages().isEmpty())
-			return;
-		
+				
 		//messages which does not have this node as destination are discarded
 		if (!bundleMessage.getExpectedDestinations().contains(peerID))
 			return;
@@ -443,23 +420,15 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		//all received messages are responded with ACK
 		sendACKMessage(bundleMessage);
 		
-		// previously received messages are not processed again
-		if (receivedMessages.contains(bundleMessage.getMessageID()))
-			return;
-
-		receivedMessages.addEntry(bundleMessage.getMessageID());
-
 		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
 			if (!(broadcastMessage instanceof ACKMessage))
 				messageReceived(broadcastMessage);
 	}
 	
-	private void sendACKMessage(final BroadcastMessage broadcastMessage) {
-		final ACKMessage ackMessage = new ACKMessage(peerID, broadcastMessage.getMessageID());
+	private void sendACKMessage(final BundleMessage receivedBundleMessage) {
+		final ACKMessage ackMessage = new ACKMessage(peerID, receivedBundleMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
-		
-		messageProcessor.includeACKMessage(ackMessage);
-		enqueueBroadcast(ackMessage, null);
+		delayedACK.enqueueACKMessage(ackMessage);
 		msgCounter.addSent(ackMessage.getClass());
 	}
 
@@ -489,19 +458,20 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		}
 	}
 
-	public void processReceivedPacket(final BroadcastMessage message) {
+	public void processReceivedMessage(final BroadcastMessage message) {
 		// messages are only processed if node is initialized
 		logger.debug("Peer " + peerID + " received packet " + message + " from node " + message.getSender());
 		msgCounter.addReceivedPacket(message.getClass());
 
 		// Notify hear listeners indicating that a message was received
 		notifyHearListener(message, System.currentTimeMillis());
+		
+		msgCounter.addReceived(message.getClass());
 
-		// Notify message reception to listeners
-		if (message instanceof BundleMessage)
+		if (message instanceof BundleMessage) {
+			delayAdjuster.addReceivedMessage();
 			processBundleMessage((BundleMessage) message);
-		else
-			processSimpleMessage(message);
+		}
 	}
 
 	private void notifyHearListener(final BroadcastMessage message, final long receptionTime) {

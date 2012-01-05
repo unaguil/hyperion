@@ -43,8 +43,10 @@ final class ReceivingThread extends WaitableThread {
 				if (data != null) {					
 					final byte[] uncompressed = uncompress(data);
 					final BroadcastMessage message = (BroadcastMessage) getObject(uncompressed);
-					if (peer.getCommProvider().isValid(message))
-						peer.processReceivedPacket(message);
+					if (peer.getCommProvider().isValid(message)) {
+						peer.processReceivedMessage(message);
+						logger.trace("Peer " + peer.getPeerID() + " message processed");
+					}
 				}
 			} catch (final IOException e) {
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());

@@ -16,22 +16,18 @@ public class Timer extends WaitableThread {
 	public void run() {
 		while (!Thread.interrupted())
 			try {
-				if (period > 0)
-					Thread.sleep(period);
-				else
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						interrupt();
-						break;
-					}
-
 				// perform timer task
 				timerTask.perform();
+	
+				if (period > 0)
+					WaitableThread.mySleep(period);
+				else
+					WaitableThread.mySleep(1);
+				
 			} catch (final InterruptedException e) {
 				interrupt();
 			}
 
-		this.threadFinished();
+		threadFinished();
 	}
 }
