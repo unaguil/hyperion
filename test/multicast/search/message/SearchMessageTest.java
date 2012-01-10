@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import multicast.SearchedParameter;
 import multicast.search.message.SearchMessage.SearchType;
 
 import org.junit.Test;
@@ -27,10 +28,10 @@ public class SearchMessageTest {
 
 	@Test
 	public void testDecTTL() throws InvalidParameterIDException {
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-A"));
-		parameters.add(ParameterFactory.createParameter("I-B"));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, parameters, null, 3, 3, SearchType.Exact);
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-A"), 3));
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-B"), 3));
+		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, searchedParameters, null, 3, SearchType.Exact);
 
 		assertTrue(searchMessage.hasTTL());
 
@@ -54,49 +55,17 @@ public class SearchMessageTest {
 	}
 
 	@Test
-	public void testRestoreTTL() throws InvalidParameterIDException {
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-A"));
-		parameters.add(ParameterFactory.createParameter("I-B"));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, parameters, null, 3, 3, SearchType.Exact);
-
-		searchMessage.decTTL(ParameterFactory.createParameter("I-A"));
-		searchMessage.decTTL(ParameterFactory.createParameter("I-A"));
-
-		searchMessage.decTTL(ParameterFactory.createParameter("I-B"));
-		searchMessage.decTTL(ParameterFactory.createParameter("I-B"));
-		searchMessage.decTTL(ParameterFactory.createParameter("I-B"));
-
-		searchMessage.restoreTTL(ParameterFactory.createParameter("I-A"), 3);
-
-		assertEquals(3, searchMessage.getTTL(ParameterFactory.createParameter("I-A")));
-		assertEquals(0, searchMessage.getTTL(ParameterFactory.createParameter("I-B")));
-
-		assertTrue(searchMessage.hasTTL());
-	}
-
-	@Test
-	public void testPreviousDistance() throws InvalidParameterIDException {
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-A"));
-		parameters.add(ParameterFactory.createParameter("I-B"));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, parameters, null, 3, 3, SearchType.Exact);
-
-		assertEquals(0, searchMessage.getPreviousDistance(ParameterFactory.createParameter("I-A")));
-
-		searchMessage.setCurrentDistance(ParameterFactory.createParameter("I-A"), 3);
-
-		assertEquals(3, searchMessage.getPreviousDistance(ParameterFactory.createParameter("I-A")));
-	}
-
-	@Test
 	public void testRemoveParameters() throws InvalidParameterIDException {
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-A"));
-		parameters.add(ParameterFactory.createParameter("I-B"));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, parameters, null, 3, 3, SearchType.Exact);
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-A"), 3));
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-B"), 3));
+		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, searchedParameters, null, 3, SearchType.Exact);
 
 		assertTrue(searchMessage.hasTTL());
+		
+		final Set<Parameter> parameters = new HashSet<Parameter>();
+		for (final SearchedParameter searchedParameter : searchedParameters)
+			parameters.add(searchedParameter.getParameter());
 
 		searchMessage.removeParameters(parameters);
 
@@ -111,10 +80,10 @@ public class SearchMessageTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-B"));
-		parameters.add(ParameterFactory.createParameter("I-C"));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, parameters, null, 3, 3, SearchType.Generic);
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-B"), 3));
+		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-C"), 3));
+		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, searchedParameters, null, 3, SearchType.Generic);
 
 		assertEquals(2, searchMessage.getSearchedParameters().size());
 		assertTrue(searchMessage.getSearchedParameters().contains(ParameterFactory.createParameter("I-B")));

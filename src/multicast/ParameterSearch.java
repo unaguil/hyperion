@@ -78,8 +78,10 @@ public interface ParameterSearch extends XMLSerializable {
 	 */
 	public void sendUnicastMessage(PeerID destination, PayloadMessage payload);
 
-	// Sends a message which searches for specified parameters
-	public void sendSearchMessage(Set<Parameter> parameters, PayloadMessage payload, SearchType searchType);
+	// Sends a message which searches for specified parameters with default TTLs
+	public void sendSearchMessageDefaultTTL(Set<Parameter> parameters, PayloadMessage payload, SearchType searchType);
+	
+	public void sendSearchMessage(Set<SearchedParameter> searchedParameters, PayloadMessage payload, SearchType searchType);
 
 	public Route getRoute(PeerID destination);
 

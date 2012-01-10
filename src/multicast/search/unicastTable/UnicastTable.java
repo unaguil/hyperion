@@ -22,6 +22,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import multicast.SearchedParameter;
 import multicast.Util;
 import multicast.search.Route;
 import multicast.search.message.SearchMessage;
@@ -365,18 +366,18 @@ public class UnicastTable implements XMLSerializable {
 			
 			final NodeList parameterList = searchElement.getElementsByTagName(PARAMETER_TAG);
 			
-			final Set<Parameter> searchedParameters = new HashSet<Parameter>();
+			final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
 			for (int j = 0; j < parameterList.getLength(); j++) {
 				final Element parameterElement = (Element) parameterList.item(j);
 				final String parameter = parameterElement.getAttribute(PARAMETER_VALUE_ATTRIB);
 				try {
-					searchedParameters.add(ParameterFactory.createParameter(parameter));
+					searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter(parameter), 0));
 				} catch (final InvalidParameterIDException ipe) {
 					throw new IOException(ipe);
 				}
-			}
+			} 
 
-			SearchMessage activeSearch = new SearchMessage(new PeerID(peer), Collections.<PeerID> emptySet(), searchedParameters, null, 0, 0, SearchType.Exact);
+			SearchMessage activeSearch = new SearchMessage(new PeerID(peer), Collections.<PeerID> emptySet(), searchedParameters, null, 0, SearchType.Exact);
 			activeSearches.add(activeSearch);
 		}
 

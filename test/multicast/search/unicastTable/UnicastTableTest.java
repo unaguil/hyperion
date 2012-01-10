@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import multicast.SearchedParameter;
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
@@ -131,7 +132,11 @@ public class UnicastTableTest {
 	}
 
 	private SearchMessage createSearchMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender) {
-		final SearchMessage searchMessage = new SearchMessage(source, Collections.<PeerID> emptySet(), parameters, null, 0, 0, SearchType.Exact);
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		for (final Parameter p : parameters) 
+			searchedParameters.add(new SearchedParameter(p, 0));
+		
+		final SearchMessage searchMessage = new SearchMessage(source, Collections.<PeerID> emptySet(), searchedParameters, null, 0, SearchType.Exact);
 
 		return new SearchMessage(searchMessage, sender, Collections.<PeerID> emptySet(), 0);
 	}

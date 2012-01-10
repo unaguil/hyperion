@@ -2,7 +2,6 @@ package graphcreation.collisionbased;
 
 import graphcreation.GraphCreationListener;
 import graphcreation.GraphCreator;
-import graphcreation.collisionbased.message.CollisionMessage;
 import graphcreation.collisionbased.message.CollisionResponseMessage;
 import graphcreation.collisionbased.message.ConnectServicesMessage;
 import graphcreation.collisionbased.message.DisconnectServicesMessage;
@@ -427,27 +426,22 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	@Override
 	public PayloadMessage searchMessageReceived(final SearchMessage message) {
 		// only messages containing a collision message as payload are valid
-		if (message.getPayload() instanceof CollisionMessage) {
-			logger.trace("Peer " + peer.getPeerID() + " received collision message " + message.getPayload());
 
-			Set<Service> services;
-			synchronized (sdg) {
-				// obtain those services which provide the searched parameters
-				services = sdg.findLocalCompatibleServices(message.getSearchedParameters());
-			}
-
-			// initial distance is zero because all services are local
-			final Map<Service, Integer> serviceDistanceTable = new HashMap<Service, Integer>();
-			for (final Service service : services)
-				serviceDistanceTable.put(service, Integer.valueOf(0));
-
-			final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
-
-			logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + message.getSource());
-			return collisionResponseMessage;
+		Set<Service> services;
+		synchronized (sdg) {
+			// obtain those services which provide the searched parameters
+			services = sdg.findLocalCompatibleServices(message.getSearchedParameters());
 		}
 
-		return null;
+		// initial distance is zero because all services are local
+		final Map<Service, Integer> serviceDistanceTable = new HashMap<Service, Integer>();
+		for (final Service service : services)
+			serviceDistanceTable.put(service, Integer.valueOf(0));
+
+		final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
+
+		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + message.getSource());
+		return collisionResponseMessage;
 	}
 	
 	@Override

@@ -15,6 +15,7 @@ import java.util.Set;
 
 import multicast.ParameterSearch;
 import multicast.ParameterSearchListener;
+import multicast.SearchedParameter;
 import multicast.search.message.GeneralizeSearchMessage;
 import multicast.search.message.RemoteMessage;
 import multicast.search.message.RemoteMulticastMessage;
@@ -730,13 +731,31 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 * multicast.search.message.SearchMessage.SearchType)
 	 */
 	@Override
-	public void sendSearchMessage(final Set<Parameter> parameters, final PayloadMessage payload, final SearchType searchType) {
+	public void sendSearchMessageDefaultTTL(final Set<Parameter> parameters, final PayloadMessage payload, final SearchType searchType) {
 		if (!enabled)
 			return;
 		
-		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), parameters, payload, MAX_TTL, 0, searchType);
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		for (final Parameter p : parameters)
+			searchedParameters.add(new SearchedParameter(p, MAX_TTL));
+		
+		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), searchedParameters, payload, 0, searchType);
 		final String payloadType = (payload == null)?"null":payload.getType();
 		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
+
+		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
+		
+		messageReceived(searchMessage, System.currentTimeMillis());
+	}
+	
+	@Override
+	public void sendSearchMessage(Set<SearchedParameter> searchedParameters, PayloadMessage payload, SearchType searchType) {
+		if (!enabled)
+			return; 
+		
+		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), searchedParameters, payload, 0, searchType);
+		final String payloadType = (payload == null)?"null":payload.getType();
+		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + searchMessage.getSearchedParameters() + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
 		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
 		
@@ -800,27 +819,17 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			// as the new sender. This message responds to the received one
 			final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), currentNeighbors, getNewDistance(searchMessage));
 			
-			for (final Parameter p : searchMessage.getSearchedParameters()) {
-				final int tableDistance = pDisseminator.getEstimatedDistance(p);
-				final int previousDistance = searchMessage.getPreviousDistance(p);
-	
-				if (previousDistance <= tableDistance && !(previousDistance == 0 && tableDistance == 0)) {
-					// The message is getting closer to a parameter. TTL is restored
-					newSearchMessage.restoreTTL(p, MAX_TTL);
-	
-					logger.trace("Peer " + peer.getPeerID() + " restored message " + newSearchMessage + " TTL. Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
-				} else // The message is getting farer (or there is no information)
-				// from the parameter and the message was not received from the
-				// current node
+			for (final Parameter p : searchMessage.getSearchedParameters()) {	
 				if (!searchMessage.getSource().equals(peer.getPeerID())) {
 					newSearchMessage.decTTL(p);
-	
-					logger.trace("Peer " + peer.getPeerID() + " decremented TTL of message " + newSearchMessage + " to " + newSearchMessage.getTTL(p) + ". Parameter " + p + " going from " + previousDistance + " to " + tableDistance);
+					logger.trace("Peer " + peer.getPeerID() + " decremented TTL of parameter " + p + " to " + newSearchMessage.getTTL(p) + " on message " + newSearchMessage);
 				}
-	
-				// Set the message parameter distance as known by the current node
-				// table.
-				newSearchMessage.setCurrentDistance(p, tableDistance);
+				
+				final int ttl = newSearchMessage.getTTL(p);
+				if (ttl < pDisseminator.getDistanceTo(p)) {
+					newSearchMessage.removeParameter(p);
+					logger.trace("Peer " + peer.getPeerID() + " removed parameter " + p + " from search message " + newSearchMessage + " due to TTL " + ttl + " < " + pDisseminator.getDistanceTo(p));
+				}
 			}
 	
 			// If the message TTL is greater than zero message is sent, else it is
@@ -830,7 +839,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				peer.enqueueBroadcast(newSearchMessage, this);
 				logger.trace("Peer " + peer.getPeerID() + " enqueued search message " + newSearchMessage);
 			} else 
-				logger.trace("Peer " + peer.getPeerID() + " has thrown message " + newSearchMessage + " due TTL");
+				logger.trace("Peer " + peer.getPeerID() + " has discarded search message " + newSearchMessage + " due TTL");
 		}
 	}
 

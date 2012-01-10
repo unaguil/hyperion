@@ -269,11 +269,17 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	 * dissemination.newProtocol.ParameterDisseminator#getDistance(taxonomy.
 	 * parameter.Parameter, peer.PeerID)
 	 */
+	//TODO This methods should be renamed. It is not the distance but the dissemination value
 	@Override
 	public int getDistance(final Parameter p, final PeerID neighbor) {
 		synchronized (mutex) {
 			return pTable.getDistance(p, neighbor);
 		}
+	}
+	
+	@Override
+	public int getDistanceTo(final Parameter p) {
+		return MAX_DISTANCE - getEstimatedDistance(p);
 	}
 
 	/*
@@ -512,5 +518,10 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public int getMaxDistance() {
+		return MAX_DISTANCE;
 	}
 }

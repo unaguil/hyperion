@@ -7,7 +7,6 @@ import graphcreation.collisionbased.collisiondetector.Collision;
 import graphcreation.collisionbased.collisiondetector.CollisionDetector;
 import graphcreation.collisionbased.connectionManager.Connection;
 import graphcreation.collisionbased.connectionManager.ConnectionsManager;
-import graphcreation.collisionbased.message.CollisionMessage;
 import graphcreation.collisionbased.message.CollisionResponseMessage;
 import graphcreation.collisionbased.message.ConnectServicesMessage;
 import graphcreation.collisionbased.message.DisconnectServicesMessage;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import multicast.SearchedParameter;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import peer.Peer;
@@ -131,20 +131,13 @@ class CollisionNode {
 			logger.trace("Peer " + peer.getPeerID() + " detected collisions " + collisions);
 
 			// Update the collisions detected by the current node
-			final Set<Parameter> parameters = new HashSet<Parameter>();
 			synchronized (cManager) {
-				for (final Collision collision : collisions) {
+				for (final Collision collision : collisions)
 					cManager.addConnection(collision);
-	
-					// Get the parameters which participate in each detected
-					// collision
-					parameters.add(collision.getInput());
-					parameters.add(collision.getOutput());
-				}
 			}
 
 			// send a message to search for the colliding parameters
-			sendCollisionSearchMessage(parameters);
+			sendCollisionSearchMessage(collisions);
 		}
 
 		// if collisions were detected return them as payload for parameter
@@ -156,11 +149,30 @@ class CollisionNode {
 
 		return null;
 	}
+	
+	private int getTTL(final Collision collision) {
+		final int iDistance = gCreator.getPSearch().getDisseminationLayer().getDistanceTo(collision.getInput());
+		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getInput() + ": " + iDistance);
+		final int oDistance = gCreator.getPSearch().getDisseminationLayer().getDistanceTo(collision.getOutput());
+		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getOutput() + ": " + oDistance);
+		final int max = oDistance > iDistance?oDistance:iDistance;
+		logger.trace("Peer " + peer.getPeerID() + " max distance " + max);
+		final int maxTTL = 2 * gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - 2;
+		logger.trace("Peer " + peer.getPeerID() + " max TTL " + maxTTL);
+		return  maxTTL - max;
+	}
 
-	private void sendCollisionSearchMessage(final Set<Parameter> parameters) {		
-		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + parameters);
-		final CollisionMessage collisionMessage = new CollisionMessage(peer.getPeerID());
-		gCreator.getPSearch().sendSearchMessage(parameters, collisionMessage, SearchType.Generic);
+	private void sendCollisionSearchMessage(final Set<Collision> collisions) {
+		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
+		for (final Collision collision : collisions) {
+			final int ttl = getTTL(collision);
+			logger.trace("Peer " + peer.getPeerID() + " searching for collision parameters" + collision + " with TTL " + ttl);
+			searchedParameters.add(new SearchedParameter(collision.getInput(), ttl));
+			searchedParameters.add(new SearchedParameter(collision.getOutput(), ttl));
+		}
+		
+		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + searchedParameters);
+		gCreator.getPSearch().sendSearchMessage(searchedParameters, null, SearchType.Generic);
 	}	
 
 	private void processCollisions(final PeerID sender, final Set<Inhibition> inhibitions, final Set<Collision> collisions) {

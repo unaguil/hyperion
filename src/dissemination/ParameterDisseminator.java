@@ -100,4 +100,8 @@ public interface ParameterDisseminator extends XMLSerializable {
 	 */
 	public Set<Parameter> getLocalParameters();
 
+	public int getDistanceTo(Parameter p);
+
+	public int getMaxDistance();
+
 }

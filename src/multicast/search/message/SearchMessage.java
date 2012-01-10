@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import multicast.SearchedParameter;
 import peer.message.EnvelopeMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
@@ -42,23 +43,17 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 
 		// the TTL of the search for this parameter
 		private final int ttl;
-
-		// the distance to this parameter as specified by the last consulted
-		// table
-		private final int previousDistance;
 		
 		@SuppressWarnings("unused")
 		public ParameterEntry() {
 			parameter = null;
 			ttl = 0;
-			previousDistance = 0;
 		}
 
 		// constructs a entry for a parameter search
-		public ParameterEntry(final Parameter p, final int ttl, final int previousDistance) {
+		public ParameterEntry(final Parameter p, final int ttl) {
 			this.parameter = p;
 			this.ttl = ttl;
-			this.previousDistance = previousDistance;
 		}
 
 		// gets the searched parameter
@@ -69,11 +64,6 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		// gets the TTL for this parameter
 		public int getTTL() {
 			return ttl;
-		}
-
-		// gets the previous distance for this parameter
-		public int getPreviousDistance() {
-			return previousDistance;
 		}
 
 		@Override
@@ -94,14 +84,12 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 			UnserializationUtils.setFinalField(ParameterEntry.class, this, "parameter", in.readObject());
 			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readInt());
-			UnserializationUtils.setFinalField(ParameterEntry.class, this, "previousDistance", in.readInt());
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			out.writeObject(parameter);
 			out.writeInt(ttl);
-			out.writeInt(previousDistance);
 		}
 	}
 
@@ -131,31 +119,15 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		searchType = null;
 		previousSender = null;
 	}
-
-	/**
-	 * Constructor of the search message.
-	 * 
-	 * @param parameters
-	 *            the searched parameters
-	 * @param payload
-	 *            the contained payload
-	 * @param source
-	 *            the peer which sends the message
-	 * @param maxTTL
-	 *            the maximum TTL of the message
-	 * @param distance
-	 *            the distance previously traversed by the message
-	 * @param searchType
-	 *            the type of the search (exact, generic)
-	 */
-	public SearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<Parameter> parameters, final PayloadMessage payload, final int maxTTL, final int distance, final SearchType searchType) {
+	
+	public SearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<SearchedParameter> searchedParameters, final PayloadMessage payload, final int distance, final SearchType searchType) {
 		super(source, expectedDestinations, distance);
 		this.payload = payload;
 		this.searchType = searchType;
 		this.previousSender = PeerID.VOID_PEERID;
 
-		for (final Parameter p : parameters)
-			parameterEntries.put(p, new ParameterEntry(p, maxTTL, 0));
+		for (final SearchedParameter searchedParameter : searchedParameters)
+			parameterEntries.put(searchedParameter.getParameter(), new ParameterEntry(searchedParameter.getParameter(), searchedParameter.getMaxTTL()));
 	}
 
 	/**
@@ -174,7 +146,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		this.previousSender = searchMessage.getSender();
 
 		for (final ParameterEntry pEntry : searchMessage.parameterEntries.values())
-			this.parameterEntries.put(pEntry.getParameter(), new ParameterEntry(pEntry.getParameter(), pEntry.getTTL(), pEntry.getPreviousDistance()));
+			this.parameterEntries.put(pEntry.getParameter(), new ParameterEntry(pEntry.getParameter(), pEntry.getTTL()));
 	}
 
 	/**
@@ -228,56 +200,10 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		if (pEntry != null) {
 			final int newTTL = pEntry.getTTL() - 1;
 			if (newTTL > 0)
-				parameterEntries.put(parameter, new ParameterEntry(parameter, newTTL, pEntry.getPreviousDistance()));
+				parameterEntries.put(parameter, new ParameterEntry(parameter, newTTL));
 			else
 				parameterEntries.remove(parameter);
 		}
-	}
-
-	/**
-	 * Restores the parameter TTL to the passed value
-	 * 
-	 * @param parameter
-	 *            the parameter whose TTL value is restored
-	 * @param ttl
-	 *            the value used to restore the TTL of the parameter
-	 */
-	public void restoreTTL(final Parameter parameter, final int ttl) {
-		final ParameterEntry pEntry = parameterEntries.get(parameter);
-		if (pEntry != null)
-			parameterEntries.put(parameter, new ParameterEntry(parameter, ttl, pEntry.getPreviousDistance()));
-	}
-
-	/**
-	 * Gets the previous distance for the passed parameter. It is the value of
-	 * the distance as seen in the previous visited table.
-	 * 
-	 * @param parameter
-	 *            the parameter whose previous distance is obtained
-	 * @return the previous distance for the parameter, 0 if the parameter is
-	 *         not searched by this message
-	 */
-	public int getPreviousDistance(final Parameter parameter) {
-		final ParameterEntry pEntry = parameterEntries.get(parameter);
-		if (pEntry != null)
-			return pEntry.getPreviousDistance();
-
-		return 0;
-	}
-
-	/**
-	 * Sets the parameter new distance. If the parameter does not exist in the
-	 * search message the value is ignored
-	 * 
-	 * @param parameter
-	 *            the parameter whose distance is set
-	 * @param newDistance
-	 *            the new distance for the parameter
-	 */
-	public void setCurrentDistance(final Parameter parameter, final int newDistance) {
-		final ParameterEntry pEntry = parameterEntries.get(parameter);
-		if (pEntry != null)
-			parameterEntries.put(parameter, new ParameterEntry(parameter, pEntry.getTTL(), newDistance));
 	}
 
 	/**
@@ -367,5 +293,9 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		out.writeUTF(searchType.toString());
 		out.writeObject(previousSender);
 		out.writeObject(payload);
+	}
+
+	public void removeParameter(Parameter p) {
+		parameterEntries.remove(p);
 	}
 }
