@@ -1,7 +1,5 @@
 package graphcreation.collisionbased.message;
 
-import graphcreation.services.Service;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -24,13 +22,13 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 	private static final long serialVersionUID = 1L;
 
 	private final PayloadMessage payload;
-	private final Set<Service> destinations = new HashSet<Service>();
+	private final Set<PeerID> destinations = new HashSet<PeerID>();
 	
 	public ForwardMessage() {
 		payload = null;
 	}
 
-	public ForwardMessage(final PeerID source, final PayloadMessage payload, final Set<Service> destinations) {
+	public ForwardMessage(final PeerID source, final PayloadMessage payload, final Set<PeerID> destinations) {
 		super(source, Collections.<PeerID> emptySet());
 		this.payload = payload;
 		this.destinations.addAll(destinations);
@@ -41,7 +39,7 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 		return payload;
 	}
 
-	public Set<Service> getDestinations() {
+	public Set<PeerID> getDestinations() {
 		return destinations;
 	}
 
@@ -60,7 +58,7 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 		super.readExternal(in);
 		
 		UnserializationUtils.setFinalField(ForwardMessage.class, this, "payload", in.readObject());
-		destinations.addAll(Arrays.asList((Service[])in.readObject()));
+		destinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 
 	@Override
@@ -68,6 +66,6 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 		super.writeExternal(out);
 		
 		out.writeObject(payload);
-		out.writeObject(destinations.toArray(new Service[0]));
+		out.writeObject(destinations.toArray(new PeerID[0]));
 	}
 }

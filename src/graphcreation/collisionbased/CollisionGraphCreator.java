@@ -121,42 +121,33 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	@Override
 	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {		
 		logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType() + " to " + destinations);
-		final Map<IndirectRoute, Set<Service>> forwardTable = new HashMap<IndirectRoute, Set<Service>>();
-		final Map<Route, Set<Service>> directMulticast = new HashMap<Route, Set<Service>>();
+		final Map<PeerID, Set<PeerID>> forwardTable = new HashMap<PeerID, Set<PeerID>>();
+		final Set<PeerID> directMulticast = new HashSet<PeerID>();
 		
 		synchronized (sdg) {
 			for (final Service service : destinations) {
-				if (service.getPeerID().equals(peer.getPeerID()))
-					pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(peer.getPeerID())), payload);
-				else {
-					//find the shortest path to reach each destination			
-					final Route route = sdg.getRoute(service.getPeerID());
-					if (route != null) {
-						if (route instanceof IndirectRoute) {
-							if (!forwardTable.containsKey(route))
-								forwardTable.put((IndirectRoute)route, new HashSet<Service>());
-							forwardTable.get(route).add(service);
-						} else {						
-							if (!directMulticast.containsKey(route))
-								directMulticast.put(route, new HashSet<Service>());
-							directMulticast.get(route).add(service);
-						}
-					}
+				//find the shortest path to reach each destination			
+				final Route route = sdg.getRoute(service.getPeerID());
+				if (route != null) {
+					if (route instanceof IndirectRoute) {
+						if (!forwardTable.containsKey(route.getThrough()))
+							forwardTable.put(route.getThrough(), new HashSet<PeerID>());
+						forwardTable.get(route.getThrough()).add(service.getPeerID());
+					} else
+						directMulticast.add(route.getDest());
 				}
 			}
 		}
 
-		//perform forwarding
-		for (final Entry<IndirectRoute, Set<Service>> entry : forwardTable.entrySet()) {
-			logger.trace("Peer " + peer.getPeerID() + " forwarding message to " + entry.getValue() + " through " + entry.getKey().getThrough());
-			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey().getThrough())), new ForwardMessage(peer.getPeerID(), payload, entry.getValue()));
+		//perform forwarding through different intermediate nodes
+		for (final Entry<PeerID, Set<PeerID>> forwardEntry : forwardTable.entrySet()) {
+			logger.trace("Peer " + peer.getPeerID() + " forwarding message to " + forwardEntry.getValue() + " through " + forwardEntry.getKey());
+			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(forwardEntry.getKey())), new ForwardMessage(peer.getPeerID(), payload, forwardEntry.getValue()));
 		}
 		
 		//perform direct multicast
-		for (final Entry<Route, Set<Service>> entry : directMulticast.entrySet()) {
-			logger.trace("Peer " + peer.getPeerID() + " multicasting to " + entry.getKey().getDest());
-			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(entry.getKey().getDest())), payload);
-		}
+		logger.trace("Peer " + peer.getPeerID() + " multicasting to " + directMulticast);
+		pSearch.sendMulticastMessage(new PeerIDSet(directMulticast), payload);
 	}
 
 	/*
@@ -377,7 +368,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		logger.trace("Peer " + peer.getPeerID() + " accepted a forward message from " + forwardMessage.getSource() + " to " + forwardMessage.getDestinations());
 
 		// get destinations from services
-		pSearch.sendMulticastMessage(getDestinations(forwardMessage.getDestinations()), forwardMessage.getPayload(), distance);
+		pSearch.sendMulticastMessage(new PeerIDSet(forwardMessage.getDestinations()), forwardMessage.getPayload(), distance);
 	}
 
 	@Override
@@ -397,13 +388,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			// the message must be processed by the upper layers
 			mMessageListener.multicastMessageAccepted(source, payload, distance);
 		}
-	}
-
-	private PeerIDSet getDestinations(final Set<Service> services) {
-		final PeerIDSet destinations = new PeerIDSet();
-		for (final Service service : services)
-			destinations.addPeer(service.getPeerID());
-		return destinations;
 	}
 
 	@Override
