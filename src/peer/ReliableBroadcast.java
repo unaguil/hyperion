@@ -1,6 +1,7 @@
 package peer;
 
 import java.util.Random;
+import java.util.Set;
 
 import peer.message.ACKMessage;
 import peer.message.BundleMessage;
@@ -31,19 +32,27 @@ final class ReliableBroadcast implements NeighborEventsListener {
 
 	public ReliableBroadcast(final Peer peer, final MessageProcessor messageProccessor, final DelayAdjuster delayAdjuster) {
 		this.peer = peer;
-		peer.getDetector().addNeighborListener(this);
 		this.messageProcessor = messageProccessor;
 		this.delayAdjuster = delayAdjuster;
 	}
 
 	public void broadcast(final BundleMessage bundleMessage) {
+		peer.getDetector().addNeighborListener(this);
+		
+		//wait for real neighbors only
+		final Set<PeerID> currentNeighbors = peer.getDetector().getCurrentNeighbors().getPeerSet();
+		
+		synchronized (mutex) {
+			currentMessage = bundleMessage;
+			//remove invalid ones
+			for (final PeerID expectedDestination : currentMessage.getExpectedDestinations())
+				if (!currentNeighbors.contains(expectedDestination))
+					currentMessage.removeDestination(expectedDestination);
+		}
+		
 		// messages with empty destinations are not reliable broadcasted
 		if (bundleMessage.getExpectedDestinations().isEmpty())
 			return;
-
-		synchronized (mutex) {
-			currentMessage = bundleMessage;
-		}
 		
 		int tryNumber = 1;
 		
@@ -88,13 +97,16 @@ final class ReliableBroadcast implements NeighborEventsListener {
 			tryNumber++;
 		}
 		
-		if (delivered()) {
-			final long deliveringTime = System.currentTimeMillis() - reliableBroadcastStartTime;
-			reliableBroadcastCounter.addDeliveredMessage(deliveringTime);
-			logger.debug("Peer " + peer.getPeerID() + " delivered message " + currentMessage.getMessageID());
-		} else {
+		if (delivered())
+			messageDelivered(reliableBroadcastStartTime);
+		else
 			messageProcessor.interrupt();
-		}
+	}
+
+	private void messageDelivered(final long reliableBroadcastStartTime) {
+		final long deliveringTime = System.currentTimeMillis() - reliableBroadcastStartTime;
+		reliableBroadcastCounter.addDeliveredMessage(deliveringTime);
+		logger.debug("Peer " + peer.getPeerID() + " delivered message " + currentMessage.getMessageID());
 	}
 
 	private void sleepSomeTime(final long delayTime) {	
