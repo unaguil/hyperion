@@ -28,7 +28,7 @@ public abstract class WaitableThread extends Thread {
 		waitThread();
 	}
 	
-	private static final long MINIMUM_SLEEP = 3;
+	private static final long MINIMUM_SLEEP = 1;
 	
 	//TODO Maybe there is a bug in AgentJ. Thread.sleep() is not interrupted. Using the following workaround. 
 	public static void mySleep(long millis) throws InterruptedException {
