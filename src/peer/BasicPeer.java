@@ -25,7 +25,6 @@ import peer.messagecounter.ReliableBroadcastTotalCounter;
 import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
-import util.WaitableThread;
 import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
@@ -219,7 +218,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 				logger.info("Peer " + peer.getPeerID() + " initialization has been delayed " + initDelay + " ms");
 
 				try {
-					WaitableThread.mySleep(initDelay);
+					Thread.sleep(initDelay);
 				} catch (final InterruptedException e) {
 					return;
 				}

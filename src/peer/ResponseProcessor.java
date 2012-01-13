@@ -70,7 +70,7 @@ final class ResponseProcessor extends WaitableThread {
 	private void randomSleep() { 
 		final long randomWait = r.nextInt(MAX_JITTER) + peer.getFixedWaitTime();				
 		try {
-			WaitableThread.mySleep(randomWait);
+			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {
 			interrupt();
 		}

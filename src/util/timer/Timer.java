@@ -20,9 +20,9 @@ public class Timer extends WaitableThread {
 				timerTask.perform();
 	
 				if (period > 0)
-					WaitableThread.mySleep(period);
+					Thread.sleep(period);
 				else
-					WaitableThread.mySleep(1);
+					Thread.sleep(1);
 				
 			} catch (final InterruptedException e) {
 				interrupt();

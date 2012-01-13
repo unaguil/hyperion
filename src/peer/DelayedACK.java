@@ -40,7 +40,7 @@ class DelayedACK implements TimerTask {
 		public void run() {
 			if (delayTime > 0) {
 				try {
-					WaitableThread.mySleep(delayTime);
+					Thread.sleep(delayTime);
 				} catch (InterruptedException e) {
 					interrupt();
 				}
