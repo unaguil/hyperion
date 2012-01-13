@@ -24,16 +24,16 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	
 	private final Random r = new Random();
 	
-	private final MessageProcessor messageProcessor;
+	private final ResponseProcessor messageProcessor;
 	
-	private final DelayAdjuster delayAdjuster;
+	private final int waitTime;
 
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
-	public ReliableBroadcast(final Peer peer, final MessageProcessor messageProccessor, final DelayAdjuster delayAdjuster) {
+	public ReliableBroadcast(final Peer peer, final ResponseProcessor messageProccessor, final int waitTime) {
 		this.peer = peer;
 		this.messageProcessor = messageProccessor;
-		this.delayAdjuster = delayAdjuster;
+		this.waitTime = waitTime;
 	}
 
 	public void broadcast(final BundleMessage bundleMessage) {
@@ -66,25 +66,15 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long backoffTime = r.nextInt(delayAdjuster.getCurrentMaxDelay());
-				final long randomDelay = r.nextInt(BasicPeer.RANDOM_DELAY);
-				final long delayTime = randomDelay + backoffTime;
+				final long delayTime = r.nextInt(ResponseProcessor.MAX_JITTER) + waitTime;
 				
 				sleepSomeTime(delayTime);
 				
 				if (Thread.interrupted() || delivered())
 					break;
 					
-				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " adding " + backoffTime + " + " + delayTime + " ms try " + tryNumber);
-				reliableBroadcastCounter.addRebroadcastedMessage();
-				
-				messageProcessor.processAllReceivedMessages();
-				final BundleMessage newResponses = messageProcessor.processResponses();
-				if (!newResponses.getMessages().isEmpty()) {
-					currentMessage.merge(newResponses);
-					logger.trace("Peer " + peer.getPeerID() + " adding processed responses to currently broadcasted message");
-					tryNumber = 0;
-				}
+				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " adding " + delayTime + " ms try " + tryNumber);
+				reliableBroadcastCounter.addRebroadcastedMessage();				
 			}
 			
 			peer.broadcast(bundleMessage);
@@ -147,7 +137,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return (BasicPeer.TRANSMISSION_TIME * (destinations + 1) + delayAdjuster.getCurrentMaxDelay()) * 2;
+		return BasicPeer.TRANSMISSION_TIME * (destinations + 1) + BasicPeer.JITTER;
 	}
 
 	@Override

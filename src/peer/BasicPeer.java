@@ -42,10 +42,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	
 	// The instance of the message counter to be used.
 	private final MessageCounter msgCounter = new MessageCounter();
-	
-	private final DelayAdjuster delayAdjuster = new DelayAdjuster();
-
-	private final MessageProcessor messageProcessor = new MessageProcessor(this, msgCounter, delayAdjuster);
 
 	private final Random r = new Random();
 
@@ -73,6 +69,12 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	// Default neighbor detector
 	private NeighborDetector detector;
+	
+	//Response processor
+	private ResponseProcessor responseProcessor = null;
+	
+	//Received messages processor
+	private ReceivedProcessor receivedProcessor = null;
 
 	// the peer id
 	private PeerID peerID;
@@ -80,13 +82,15 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private boolean initialized = false;
 
 	private int DELAYED_INIT = 0;
+	
+	private int WAIT_TIME = 50;
 
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
 	public static final int TRANSMISSION_TIME = 8;
 	
-	public static final int RANDOM_DELAY = 10;
+	public static final int JITTER = 10;
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures
@@ -194,7 +198,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message, CommunicationLayer layer) {
-		if (messageProcessor.addResponse(message, layer)) {
+		if (responseProcessor.addResponse(message, layer)) {
 			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
 			msgCounter.addSent(message.getClass());
 		}
@@ -223,8 +227,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 			receivedMessages.start();
 
-			// Starts message processing thread
-			messageProcessor.init();
+			responseProcessor.start();
+			receivedProcessor.start();
 
 			initialize();
 		}
@@ -233,11 +237,27 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private void init() {
 		try {
 			final String delayedInitStr = Configuration.getInstance().getProperty("basicPeer.delayedInit");
-			if (delayedInitStr != null)
+			if (delayedInitStr != null) {
 				DELAYED_INIT = Integer.parseInt(delayedInitStr);
+				logger.info("Peer " + peerID + " set DELAYED_INIT to " + DELAYED_INIT);
+			}
 		} catch (final Exception e) {
 			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
+		
+		try {
+			final String transmissionWait = Configuration.getInstance().getProperty("basicPeer.transmissionWait");
+			if (transmissionWait != null) {
+				WAIT_TIME = Integer.parseInt(transmissionWait);
+				logger.info("Peer " + peerID + " set WAIT_TIME to " + WAIT_TIME);
+			}
+		} catch (final Exception e) {
+			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
+		}
+		
+		responseProcessor = new ResponseProcessor(this, WAIT_TIME, msgCounter);
+		
+		receivedProcessor = new ReceivedProcessor(this);
 
 		detector = new BeaconDetector(this, msgCounter);
 		
@@ -249,8 +269,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
-		
-		delayAdjuster.start();
 	}
 	
 	private byte[] compress(byte[] data) {
@@ -337,9 +355,12 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		logger.trace("Peer " + peerID + " stopping received messages thread");
 		receivedMessages.stopAndWait();
 		
+		logger.trace("Peer " + peerID + " stopping received processor thread");
+		receivedProcessor.stopAndWait();
+		
 		// Stop message processor
 		logger.trace("Peer " + peerID + " stopping message processor thread");
-		messageProcessor.stopAndWait();
+		responseProcessor.stopAndWait();
 		
 		logger.trace("Peer " + peerID + " all threads stopped");
 
@@ -366,7 +387,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 			if (broadcastMessage instanceof ACKMessage) {
 				final ACKMessage ackMessage = (ACKMessage) broadcastMessage;
 				msgCounter.addReceived(ackMessage.getClass());
-				messageProcessor.addReceivedACKResponse(ackMessage);
+				responseProcessor.addReceivedACKResponse(ackMessage);
 			}
 		}
 	}
@@ -385,7 +406,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 			logger.debug("Peer " + peerID + " received " + broadcastMessage.getType() + " " + broadcastMessage.getMessageID() + " from node " + broadcastMessage.getSender());
 
 			// Put the message into the blocking queue for processing
-			messageProcessor.receive(broadcastMessage);
+			receivedProcessor.enqueuReceivedMessage(broadcastMessage);
 		} else
 			logger.trace("Peer " + peerID + " discarded " + broadcastMessage + " because it was already received.");
 	}
@@ -468,10 +489,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		
 		msgCounter.addReceived(message.getClass());
 
-		if (message instanceof BundleMessage) {
-			delayAdjuster.addReceivedMessage();
+		if (message instanceof BundleMessage)
 			processBundleMessage((BundleMessage) message);
-		}
 	}
 
 	private void notifyHearListener(final BroadcastMessage message, final long receptionTime) {

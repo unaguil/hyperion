@@ -1,9 +1,7 @@
 package peer;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 
@@ -22,29 +20,24 @@ import util.logger.Logger;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-final class MessageProcessor extends WaitableThread {
+final class ResponseProcessor extends WaitableThread {
 
 	// the communication peer
 	private final BasicPeer peer;
 	
-	private final Logger logger = Logger.getLogger(MessageProcessor.class);
+	private final Logger logger = Logger.getLogger(ResponseProcessor.class);
 
-	private final List<BroadcastMessage> waitingMessages = new ArrayList<BroadcastMessage>();
+	private final List<BroadcastMessage> waitingResponses = new ArrayList<BroadcastMessage>();
 
 	private final Random r = new Random();
 	
 	private final MessageCounter msgCounter;
-
-	// stores the unprocessed messages when the thread is stopped
-	private int unprocessedMessages = 0;
-	
-	// the queue used for storing received messages
-	private final Deque<BroadcastMessage> messageDeque = new ArrayDeque<BroadcastMessage>();
-	
+		
 	private ReliableBroadcast reliableBroadcast = null;
 	private final Object mutex = new Object();
 	
-	private final DelayAdjuster delayAdjuster;
+	private final int waitTime;
+	static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the message processor
@@ -52,36 +45,18 @@ final class MessageProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public MessageProcessor(final BasicPeer peer, final MessageCounter msgCounter, final DelayAdjuster delayAdjuster) {
+	public ResponseProcessor(final BasicPeer peer, final int waitTime, final MessageCounter msgCounter) {
 		this.peer = peer;
 		this.msgCounter = msgCounter;
-		this.delayAdjuster = delayAdjuster;
+		this.waitTime = waitTime;
 	}
-
-	public void init() {
-		start();
-	}
-
-	/**
-	 * Enqueues a new message for future processing
-	 * 
-	 * @param message
-	 *            the message to enqueue
-	 */
-	public void receive(final BroadcastMessage message) {
-		synchronized (messageDeque) {
-			messageDeque.add(message);
-		}
-	} 
 
 	@Override
 	public void run() {		
 		while (!Thread.interrupted()) {			
 			randomSleep(); 
 			
-			if (!Thread.interrupted()) {			
-				processAllReceivedMessages();
-			
+			if (!Thread.interrupted()) {						
 				BundleMessage bundleMessage = processResponses();
 				if (!bundleMessage.getMessages().isEmpty())
 					sendResponses(bundleMessage);
@@ -95,7 +70,7 @@ final class MessageProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = r.nextInt(delayAdjuster.getCurrentMaxDelay());				
+		final long randomWait = r.nextInt(MAX_JITTER) + waitTime;				
 		try {
 			WaitableThread.mySleep(randomWait);
 		} catch (InterruptedException e) {
@@ -106,12 +81,12 @@ final class MessageProcessor extends WaitableThread {
 	public BundleMessage processResponses() {
 		final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
 		
-		synchronized (waitingMessages) {
-			if (!waitingMessages.isEmpty())	 {								
-				for (final BroadcastMessage broadcastMessage : waitingMessages)					
+		synchronized (waitingResponses) {
+			if (!waitingResponses.isEmpty())	 {								
+				for (final BroadcastMessage broadcastMessage : waitingResponses)					
 					bundleMessages.add(broadcastMessage);
 				
-				waitingMessages.clear();					
+				waitingResponses.clear();					
 			}
 		}
 
@@ -122,7 +97,7 @@ final class MessageProcessor extends WaitableThread {
 		msgCounter.addSent(bundleMessage.getClass());
 
 		synchronized (mutex) {
-			reliableBroadcast = new ReliableBroadcast(peer, this, delayAdjuster);
+			reliableBroadcast = new ReliableBroadcast(peer, this, waitTime);
 		}
 		
 		reliableBroadcast.broadcast(bundleMessage);
@@ -132,39 +107,12 @@ final class MessageProcessor extends WaitableThread {
 		}
 	}
 
-	public void processAllReceivedMessages() {
-		final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();						
-		synchronized (messageDeque) {					
-			while (!messageDeque.isEmpty()) {
-				final BroadcastMessage message = messageDeque.poll();
-				messages.add(message);
-			}
-		}
-		
-		for (final BroadcastMessage message : messages)
-			peer.processMessage(message);
-	}
-
-	/**
-	 * Cancels the execution of the message processor thread
-	 * 
-	 * @return the number of unprocessed messages
-	 */
-	@Override
-	public void stopAndWait() {		
-		super.stopAndWait();
-	}
-
-	public int getUnprocessedMessages() {
-		return unprocessedMessages;
-	}
-
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
-		synchronized (waitingMessages) {
+		synchronized (waitingResponses) {
 			if (layer != null) {
-				final BroadcastMessage duplicatedMessage = layer.isDuplicatedMessage(Collections.unmodifiableList(waitingMessages), message);
+				final BroadcastMessage duplicatedMessage = layer.isDuplicatedMessage(Collections.unmodifiableList(waitingResponses), message);
 				if (duplicatedMessage == null) {
-					waitingMessages.add(message);				
+					waitingResponses.add(message);				
 					return true;
 				}
 				
@@ -172,7 +120,7 @@ final class MessageProcessor extends WaitableThread {
 				return false;
 			}
 			
-			waitingMessages.add(message);				
+			waitingResponses.add(message);				
 			return true;
 		}
 	}
