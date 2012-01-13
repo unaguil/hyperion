@@ -62,10 +62,10 @@ class DelayedACK implements TimerTask {
 		this.peer = peer;
 	}
 	
-	public void enqueueACKMessage(final ACKMessage ackMessage) {
+	public void enqueueACKMessage(final ACKMessage ackMessage, final int maxJitter) {
 		synchronized (ackMessages) {			
 			if (!running) {
-				final long delayTime = r.nextInt(BasicPeer.MAX_JITTER);
+				final long delayTime = r.nextInt(maxJitter);
 				running = true;
 				delayer = new Delayer(delayTime, this);
 				delayer.start();

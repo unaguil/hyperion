@@ -36,8 +36,7 @@ final class ResponseProcessor extends WaitableThread {
 	private ReliableBroadcast reliableBroadcast = null;
 	private final Object mutex = new Object();
 	
-	private final int waitTime;
-	static final int MAX_MAX_JITTER = 10;
+	static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the message processor
@@ -45,10 +44,9 @@ final class ResponseProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public ResponseProcessor(final BasicPeer peer, final int waitTime, final MessageCounter msgCounter) {
+	public ResponseProcessor(final BasicPeer peer, final MessageCounter msgCounter) {
 		this.peer = peer;
 		this.msgCounter = msgCounter;
-		this.waitTime = waitTime;
 	}
 
 	@Override
@@ -70,7 +68,7 @@ final class ResponseProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = r.nextInt(MAX_MAX_JITTER) + waitTime;				
+		final long randomWait = r.nextInt(MAX_JITTER) + peer.getFixedWaitTime();				
 		try {
 			WaitableThread.mySleep(randomWait);
 		} catch (InterruptedException e) {
@@ -97,7 +95,7 @@ final class ResponseProcessor extends WaitableThread {
 		msgCounter.addSent(bundleMessage.getClass());
 
 		synchronized (mutex) {
-			reliableBroadcast = new ReliableBroadcast(peer, this, waitTime);
+			reliableBroadcast = new ReliableBroadcast(peer, this);
 		}
 		
 		reliableBroadcast.broadcast(bundleMessage);

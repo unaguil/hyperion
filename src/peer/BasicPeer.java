@@ -83,14 +83,14 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	private int DELAYED_INIT = 0;
 	
-	private int WAIT_TIME = 50;
+	private int WAIT_PER_NEIGHBOR = 10;
 
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
-	public static final int TRANSMISSION_TIME = 8;
+	private static final int TRANSMISSION_TIME = 8;
 	
-	public static final int MAX_JITTER = 10;
+	private static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures
@@ -245,17 +245,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
 		}
 		
-		try {
-			final String transmissionWait = Configuration.getInstance().getProperty("basicPeer.transmissionWait");
-			if (transmissionWait != null) {
-				WAIT_TIME = Integer.parseInt(transmissionWait);
-				logger.info("Peer " + peerID + " set WAIT_TIME to " + WAIT_TIME);
-			}
-		} catch (final Exception e) {
-			logger.error("Peer " + peerID + " had problem loading configuration: " + e.getMessage());
-		}
-		
-		responseProcessor = new ResponseProcessor(this, WAIT_TIME, msgCounter);
+		responseProcessor = new ResponseProcessor(this, msgCounter);
 		
 		receivedProcessor = new ReceivedProcessor(this);
 
@@ -269,6 +259,18 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 		final DelayedRandomInit delayedRandomInit = new DelayedRandomInit(this);
 		delayedRandomInit.start();
+	}
+	
+	public long getFixedWaitTime() {
+		return getDetector().getCurrentNeighbors().size() * WAIT_PER_NEIGHBOR;
+	}
+	
+	public long getMaxJitter() {
+		return MAX_JITTER;
+	}
+	
+	public long getTransmissionTime() {
+		return TRANSMISSION_TIME;
 	}
 	
 	private byte[] compress(byte[] data) {
@@ -449,7 +451,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private void sendACKMessage(final BundleMessage receivedBundleMessage) {
 		final ACKMessage ackMessage = new ACKMessage(peerID, receivedBundleMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
-		delayedACK.enqueueACKMessage(ackMessage);
+		delayedACK.enqueueACKMessage(ackMessage, MAX_JITTER);
 		msgCounter.addSent(ackMessage.getClass());
 	}
 

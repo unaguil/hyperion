@@ -16,7 +16,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 
 	private BundleMessage currentMessage;
 
-	private final Peer peer;
+	private final BasicPeer peer;
 
 	private final ReliableBroadcastCounter reliableBroadcastCounter = new ReliableBroadcastCounter();
 
@@ -25,15 +25,12 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	private final Random r = new Random();
 	
 	private final ResponseProcessor messageProcessor;
-	
-	private final int waitTime;
 
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
-	public ReliableBroadcast(final Peer peer, final ResponseProcessor messageProccessor, final int waitTime) {
+	public ReliableBroadcast(final BasicPeer peer, final ResponseProcessor messageProccessor) {
 		this.peer = peer;
 		this.messageProcessor = messageProccessor;
-		this.waitTime = waitTime;
 	}
 
 	public void broadcast(final BundleMessage bundleMessage) {
@@ -66,7 +63,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long delayTime = r.nextInt(ResponseProcessor.MAX_MAX_JITTER) + waitTime;
+				final long delayTime = r.nextInt(ResponseProcessor.MAX_JITTER) + peer.getFixedWaitTime();
 				
 				sleepSomeTime(delayTime);
 				
@@ -137,7 +134,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME * (destinations + 1) + BasicPeer.MAX_JITTER;
+		return peer.getTransmissionTime() * (destinations + 1) + peer.getMaxJitter();
 	}
 
 	@Override
