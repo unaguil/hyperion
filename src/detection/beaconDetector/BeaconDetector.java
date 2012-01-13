@@ -61,7 +61,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 				// period of time
 
 				final long sleepTime;
-				final int jitter = r.nextInt(MAX_JITTER);
+				final int jitter = r.nextInt(MAX_MAX_JITTER);
 				final int beaconTime = BEACON_TIME - jitter;
 				
 				if (elapsedTime >= beaconTime) {
@@ -119,7 +119,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	private BeaconMessage beaconMessage;
 	
-	private static final int MAX_JITTER = 25;
+	private static final int MAX_MAX_JITTER = 25;
 
 	private long LOST_TIME;
 
@@ -172,7 +172,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = (BEACON_TIME + MAX_JITTER) * 2;
+		LOST_TIME = (BEACON_TIME + MAX_MAX_JITTER) * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 

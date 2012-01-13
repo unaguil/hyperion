@@ -90,7 +90,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	// Default reception buffer length
 	public static final int TRANSMISSION_TIME = 8;
 	
-	public static final int JITTER = 10;
+	public static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures

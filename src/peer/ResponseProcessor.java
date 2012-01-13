@@ -37,7 +37,7 @@ final class ResponseProcessor extends WaitableThread {
 	private final Object mutex = new Object();
 	
 	private final int waitTime;
-	static final int MAX_JITTER = 10;
+	static final int MAX_MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the message processor
@@ -70,7 +70,7 @@ final class ResponseProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = r.nextInt(MAX_JITTER) + waitTime;				
+		final long randomWait = r.nextInt(MAX_MAX_JITTER) + waitTime;				
 		try {
 			WaitableThread.mySleep(randomWait);
 		} catch (InterruptedException e) {

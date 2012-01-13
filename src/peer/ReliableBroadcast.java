@@ -66,7 +66,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long delayTime = r.nextInt(ResponseProcessor.MAX_JITTER) + waitTime;
+				final long delayTime = r.nextInt(ResponseProcessor.MAX_MAX_JITTER) + waitTime;
 				
 				sleepSomeTime(delayTime);
 				
@@ -137,7 +137,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return BasicPeer.TRANSMISSION_TIME * (destinations + 1) + BasicPeer.JITTER;
+		return BasicPeer.TRANSMISSION_TIME * (destinations + 1) + BasicPeer.MAX_JITTER;
 	}
 
 	@Override
