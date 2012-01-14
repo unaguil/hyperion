@@ -261,7 +261,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	}
 	
 	public long getFixedWaitTime() {
-		return getDetector().getCurrentNeighbors().size() * WAIT_PER_NEIGHBOR;
+		return 100;
 	}
 	
 	public long getMaxJitter() {
