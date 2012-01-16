@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 
 public class MessageTree {
@@ -87,7 +88,7 @@ public class MessageTree {
 
 	private final Node root;
 
-	public static final MessageTree EMPTY_TREE = new MessageTree(new MessageID(PeerID.VOID_PEERID));
+	public static final MessageTree EMPTY_TREE = new MessageTree(new MessageID(PeerID.VOID_PEERID, MessageIDGenerator.getNewID()));
 
 	public MessageTree(final MessageID rootID) {
 		this.root = new Node(rootID);

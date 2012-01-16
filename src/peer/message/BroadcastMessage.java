@@ -34,7 +34,7 @@ public abstract class BroadcastMessage implements Externalizable {
 	}
 	
 	public BroadcastMessage(final PeerID sender, final Set<PeerID> expectedDestinations) {
-		this.messageID = new MessageID(sender);
+		this.messageID = new MessageID(sender, MessageIDGenerator.getNewID());
 		this.expectedDestinations.addAll(expectedDestinations);
 	}
 	

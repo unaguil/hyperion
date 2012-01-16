@@ -7,6 +7,7 @@ import java.util.Set;
 
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
 
@@ -44,7 +45,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 */
 	public RemoteMessage(final PeerID source, final Set<PeerID> expectedDestinations) {
 		super(source, expectedDestinations);
-		this.remoteMessageID = new MessageID(source);
+		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
 		this.distance = 0;
 	}
 
@@ -58,7 +59,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 */
 	public RemoteMessage(final PeerID source, final Set<PeerID> expectedDestinations, final int distance) {
 		super(source, expectedDestinations);
-		this.remoteMessageID = new MessageID(source);
+		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
 		this.distance = distance;
 	}
 
@@ -74,7 +75,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 */
 	public RemoteMessage(final RemoteMessage remoteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final int newDistance) {
 		super(sender, expectedDestinations);
-		this.remoteMessageID = new MessageID(remoteMessage.getSource());
+		this.remoteMessageID = new MessageID(remoteMessage.getSource(), remoteMessage.getRemoteMessageID().getID());
 		this.distance = newDistance;
 	}
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
 
@@ -105,7 +106,7 @@ public class MessagePart implements Externalizable {
 	}
 
 	public MessagePart(final PeerID peerID) {
-		this.rootID = new MessageID(peerID);
+		this.rootID = new MessageID(peerID, MessageIDGenerator.getNewID());
 	}
 
 	private MessagePart(final List<Part> parts, final Part part, final MessageID rootID) {
@@ -120,7 +121,7 @@ public class MessagePart implements Externalizable {
 
 	public Set<MessagePart> split(final int number, final PeerID peerID) {
 		final Set<MessagePart> messageParts = new HashSet<MessagePart>();
-		final MessageID messageID = new MessageID(peerID);
+		final MessageID messageID = new MessageID(peerID, MessageIDGenerator.getNewID());
 		for (int i = 0; i < number; i++)
 			messageParts.add(new MessagePart(this.parts, new Part(number, i, messageID), this.rootID));
 		return messageParts;
