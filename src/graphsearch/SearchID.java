@@ -6,7 +6,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import peer.message.MessageID;
-import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
 
@@ -24,7 +23,7 @@ public class SearchID implements Externalizable {
 	}
 
 	public SearchID(final PeerID startPeer) {
-		messageID = new MessageID(startPeer, MessageIDGenerator.getNewID());
+		messageID = new MessageID(startPeer);
 	}
 
 	@Override

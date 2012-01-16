@@ -35,7 +35,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import peer.message.MessageID;
-import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
@@ -91,7 +90,7 @@ public class UnicastTable implements XMLSerializable {
 	public UnicastTable(final PeerID peerID, final NeighborDetector nDetector) {
 		this.peerID = peerID;
 		this.nDetector = nDetector;
-		this.defaultRouteID = new MessageID(peerID, MessageIDGenerator.getNewID());
+		this.defaultRouteID = new MessageID(peerID);
 	}
 	
 	private Map<PeerID, Set<Parameter>> createActiveSearchesMap(final List<SearchMessage> activeSearchList) {
@@ -386,7 +385,7 @@ public class UnicastTable implements XMLSerializable {
 			final Element e = (Element) routeList.item(i);
 			final String dest = e.getAttribute(ROUTE_DEST_ATTRIB);
 			final String through = e.getAttribute(ROUTE_NEIGHBOR_ATTRIB);
-			addRoute(new MessageID(new PeerID(dest), 0), new PeerID(dest), new PeerID(through), 0);
+			addRoute(new MessageID(new PeerID(dest)), new PeerID(dest), new PeerID(through), 0);
 		}
 	}
 

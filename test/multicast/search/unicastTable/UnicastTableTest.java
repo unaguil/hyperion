@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
-import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.parameter.InvalidParameterIDException;
@@ -231,7 +230,7 @@ public class UnicastTableTest {
 		assertTrue(table1.isRoute(searchResponseMessage3.getRemoteMessageID()));
 		assertTrue(table1.isRoute(searchResponseMessage4.getRemoteMessageID()));
 
-		assertFalse(table1.isRoute(new MessageID(new PeerID("10"), MessageIDGenerator.getNewID())));
+		assertFalse(table1.isRoute(new MessageID(new PeerID("10"))));
 	}
 
 	@Test

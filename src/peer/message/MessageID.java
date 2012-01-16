@@ -24,9 +24,9 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 		id = 0;
 	}
 
-	public MessageID(final PeerID peer, final long id) {
+	public MessageID(final PeerID peer) {
 		this.peer = peer;
-		this.id = id;
+		this.id = MessageIDGenerator.getNewID();
 	}
 
 	public PeerID getPeer() {
