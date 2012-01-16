@@ -7,6 +7,7 @@ import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import peer.peerid.PeerID;
@@ -168,6 +169,10 @@ public class UpdateTable implements Externalizable {
 			additions.remove(p);
 		
 		deletions.putAll(updateTable.deletions);
-		additions.putAll(updateTable.additions);
+		
+		for (final Entry<Parameter, EstimatedDistance> postAddition : updateTable.additions.entrySet())
+			if (additions.containsKey(postAddition.getKey()) 
+					&& postAddition.getValue().getDistance() > additions.get(postAddition.getKey()).getDistance())
+				additions.put(postAddition.getKey(), postAddition.getValue());
 	}
 }
