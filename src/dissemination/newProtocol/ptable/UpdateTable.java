@@ -171,8 +171,8 @@ public class UpdateTable implements Externalizable {
 		deletions.putAll(updateTable.deletions);
 		
 		for (final Entry<Parameter, EstimatedDistance> postAddition : updateTable.additions.entrySet())
-			if (additions.containsKey(postAddition.getKey()) 
-					&& postAddition.getValue().getDistance() > additions.get(postAddition.getKey()).getDistance())
+			if ((additions.containsKey(postAddition.getKey()) 
+					&& postAddition.getValue().getDistance() > additions.get(postAddition.getKey()).getDistance()) || !additions.containsKey(postAddition.getKey()))
 				additions.put(postAddition.getKey(), postAddition.getValue());
 	}
 }
