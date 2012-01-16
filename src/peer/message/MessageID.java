@@ -17,7 +17,7 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 
 	private final PeerID peer;
 
-	private final long id;
+	private final int id;
 	
 	public MessageID() {
 		peer = null;
@@ -33,7 +33,7 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 		return peer;
 	}
 
-	public long getID() {
+	public int getID() {
 		return id;
 	}
 
@@ -50,7 +50,7 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 	public int hashCode() {
 		int result = 17;
 
-		result = 37 * result + (int) (id ^ (id >>> 32));
+		result = 37 * result + (id ^ (id >>> 32));
 		result = 37 * result + peer.hashCode();
 		return result;
 	}
@@ -77,12 +77,12 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		UnserializationUtils.setFinalField(MessageID.class, this, "peer", in.readObject());
-		UnserializationUtils.setFinalField(MessageID.class, this, "id", in.readLong());
+		UnserializationUtils.setFinalField(MessageID.class, this, "id", in.readInt());
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeObject(peer);
-		out.writeLong(id);
+		out.writeInt(id);
 	}
 }
