@@ -170,6 +170,12 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		synchronized (neighborsTable) {
 			currentNeighbors.addPeers(neighborsTable.keySet());
 		}
+		
+		synchronized (newNeighbors) {
+			currentNeighbors.addPeers(newNeighbors);
+			currentNeighbors.remove(lostNeighbors);
+		}
+		
 		return currentNeighbors;
 	}
 

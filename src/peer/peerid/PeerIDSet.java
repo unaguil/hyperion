@@ -236,6 +236,10 @@ public final class PeerIDSet implements Serializable, Iterable<PeerID>, XMLSeria
 		for (final PeerID peerID : peers)
 			remove(peerID);
 	}
+	
+	public void remove(final Set<PeerID> peers) {
+		peerSet.removeAll(peers);
+	}
 
 	public Set<PeerID> getPeerSet() {
 		return new HashSet<PeerID>(peerSet);
