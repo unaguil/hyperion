@@ -18,21 +18,27 @@ public final class PeerID implements Externalizable, Comparable<PeerID> {
 
 	private static final long serialVersionUID = 1L;
 	
-	private final String id;
+	private static final int DEFAULT_VALUE = Integer.MIN_VALUE;
+	
+	private final int id;
 
-	public static final PeerID VOID_PEERID = new PeerID("VOID");
+	public static final PeerID VOID_PEERID = new PeerID(Integer.MIN_VALUE);
 	
 	public PeerID() {
-		id = null;
+		id = DEFAULT_VALUE;
 	}
 
-	public PeerID(final String id) {
+	public PeerID(final int id) {
 		this.id = id;
+	}
+	
+	public PeerID(final String id) {
+		this.id = Integer.parseInt(id);
 	}
 
 	@Override
 	public String toString() {
-		return id;
+		return Integer.toString(id);	
 	}
 
 	@Override
@@ -40,26 +46,26 @@ public final class PeerID implements Externalizable, Comparable<PeerID> {
 		if (!(o instanceof PeerID))
 			return false;
 		final PeerID peerID = (PeerID) o;
-		return peerID.id.equals(this.id);
+		return peerID.id == this.id;
 	}
 
 	@Override
 	public int hashCode() {
-		return id.hashCode();
+		return id;
 	}
 
 	@Override
 	public int compareTo(final PeerID peerID) {
-		return this.id.compareTo(peerID.id);
+		return this.id - peerID.id;
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(PeerID.class, this, "id", in.readUTF());
+		UnserializationUtils.setFinalField(PeerID.class, this, "id", in.readInt());
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeUTF(id);
+		out.writeInt(id);
 	}
 }
