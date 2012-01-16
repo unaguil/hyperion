@@ -107,7 +107,7 @@ public class UpdateTable implements Externalizable {
 	 * @param the
 	 *            update table to merge
 	 */
-	public void merge(final UpdateTable updateTable) {
+	public void add(final UpdateTable updateTable) {
 		deletions.putAll(updateTable.deletions);
 		additions.putAll(updateTable.additions);
 	}
@@ -161,5 +161,13 @@ public class UpdateTable implements Externalizable {
 		
 		out.writeObject(deletions.keySet().toArray(new Parameter[0]));
 		out.writeObject(deletions.values().toArray(new EstimatedDistance[0]));
+	}
+
+	public void merge(UpdateTable updateTable) {
+		for (final Parameter p : updateTable.deletions.keySet())
+			additions.remove(p);
+		
+		deletions.putAll(updateTable.deletions);
+		additions.putAll(updateTable.additions);
 	}
 }

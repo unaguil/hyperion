@@ -1,6 +1,8 @@
 package detection;
 
-import peer.peerid.PeerIDSet;
+import java.util.Set;
+
+import peer.peerid.PeerID;
 
 /**
  * This interface defines those methods which are used to notify neighbor
@@ -10,20 +12,6 @@ import peer.peerid.PeerIDSet;
  * 
  */
 public interface NeighborEventsListener {
-
-	/**
-	 * Called when new neighbors have appeared
-	 * 
-	 * @param neighbors
-	 *            the new appeared neighbors
-	 */
-	public void appearedNeighbors(PeerIDSet neighbors);
-
-	/**
-	 * Called when some neighbors have disappeared
-	 * 
-	 * @param neighbors
-	 *            the disappeared neighbors
-	 */
-	public void dissapearedNeighbors(PeerIDSet neighbors);
+	
+	public void neighborsChanged(Set<PeerID> newNeighbors, Set<PeerID> lostNeighbors);
 }

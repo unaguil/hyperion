@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -169,12 +170,12 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			
 			if (!addLocalParameters.isEmpty()) {
 				final UpdateTable updateTable = pTable.addLocalParameters(addLocalParameters);
-				finalUpdateTable.merge(updateTable);
+				finalUpdateTable.add(updateTable);
 			}
 	
 			if (!removeLocalParameters.isEmpty()) {
 				final UpdateTable updateTable = pTable.removeLocalParameters(removeLocalParameters);
-				finalUpdateTable.merge(updateTable);
+				finalUpdateTable.add(updateTable);
 			}
 	
 			// obtain distance changes
@@ -198,7 +199,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		logger.trace("Peer " + peer.getPeerID() + " removed parameters " + removedLocalParameters + " from local table");
 
 		// Notify added and removed parameters
-		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), addedLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, null);
+		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), addedLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, Collections.<PayloadMessage> emptyList());
 
 		// Send the tables using a table message only if neighbors exist
 		final PeerIDSet currentNeighbors = peer.getDetector().getCurrentNeighbors();
@@ -307,53 +308,53 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	}
 
 	@Override
-	public void appearedNeighbors(final PeerIDSet neighbors) {
-		logger.trace("Peer " + peer.getPeerID() + " detected appearance of neighbors: " + neighbors);
-		
-		boolean sendUpdate = false;
-		final UpdateTable newNeighborTable;
-		
-		synchronized (mutex) {
-			// Enqueue action only if table is not empty
-			newNeighborTable = pTable.getNewNeighborTable();
-			if (!newNeighborTable.isEmpty())
-				sendUpdate = true;
+	public void neighborsChanged(final Set<PeerID> newNeighbors, Set<PeerID> lostNeighbors) {
+		if (!newNeighbors.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " detected appearance of neighbors: " + newNeighbors);
+			
+			boolean sendUpdate = false;
+			final UpdateTable newNeighborTable;
+			
+			synchronized (mutex) {
+				// Enqueue action only if table is not empty
+				newNeighborTable = pTable.getNewNeighborTable();
+				if (!newNeighborTable.isEmpty())
+					sendUpdate = true;
+			}
+			
+			if (sendUpdate)
+				sendUpdateTableMessage(newNeighborTable, new PeerIDSet(newNeighbors), null);
+	
 		}
 		
-		if (sendUpdate)
-			sendUpdateTableMessage(newNeighborTable, neighbors, null);
-
-		neighborListener.appearedNeighbors(neighbors);
-	}
-
-	@Override
-	public void dissapearedNeighbors(final PeerIDSet neighbors) {
-		logger.trace("Peer " + peer.getPeerID() + " detected dissapearance of neighbors: " + neighbors);
-		// Remove entries in pTable which were obtained from disappeared
-		// neighbors and send message to neighbors
-		final UpdateTable finalUpdateTable = new UpdateTable();
-		
-		synchronized (mutex) {
-			for (final PeerID neighbor : neighbors) {
-				for (final Parameter p : pTable.getParameters(neighbor)) {
-					final UpdateTable removalTable = new UpdateTable();
-					removalTable.setDelete(p, neighbor);
-					final UpdateTable updateTable = pTable.updateTable(removalTable, neighbor);
-					finalUpdateTable.merge(updateTable);
+		if (!lostNeighbors.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " detected dissapearance of neighbors: " + lostNeighbors);
+			// Remove entries in pTable which were obtained from disappeared
+			// neighbors and send message to neighbors
+			final UpdateTable finalUpdateTable = new UpdateTable();
+			
+			synchronized (mutex) {
+				for (final PeerID neighbor : lostNeighbors) {
+					for (final Parameter p : pTable.getParameters(neighbor)) {
+						final UpdateTable removalTable = new UpdateTable();
+						removalTable.setDelete(p, neighbor);
+						final UpdateTable updateTable = pTable.updateTable(removalTable, neighbor);
+						finalUpdateTable.add(updateTable);
+					}
 				}
 			}
+
+			logger.trace("Peer " + peer.getPeerID() + " table after removal: " + pTable);
+
+			logger.trace("Peer " + peer.getPeerID() + " update table: " + finalUpdateTable);
+
+			if (!finalUpdateTable.isEmpty())
+				sendUpdateTableMessage(finalUpdateTable, peer.getDetector().getCurrentNeighbors(), null);
 		}
-
-		logger.trace("Peer " + peer.getPeerID() + " table after removal: " + pTable);
-
-		logger.trace("Peer " + peer.getPeerID() + " update table: " + finalUpdateTable);
-
-		if (!finalUpdateTable.isEmpty())
-			sendUpdateTableMessage(finalUpdateTable, peer.getDetector().getCurrentNeighbors(), null);
-
-		neighborListener.dissapearedNeighbors(neighbors);
+		
+		neighborListener.neighborsChanged(newNeighbors, lostNeighbors);
 	}
-
+	
 	@Override
 	public void init() {
 		try {
@@ -472,7 +473,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			logger.trace("Peer " + peer.getPeerID() + " local table after update " + pTableStatus);
 
 			// Notify table changes to listeners
-			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), addedParameters, removedParameters, new HashSet<Parameter>(), changedParameters, tableMessage.getPayload());
+			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), addedParameters, removedParameters, new HashSet<Parameter>(), changedParameters, tableMessage.getPayloadMessages());
 
 			logger.trace("Peer " + peer.getPeerID() + " addedParameters: " + addedParameters + " removedParameters: " + removedParameters);
 			logger.trace("Peer " + peer.getPeerID() + " adding payload " + payload + " to table message");
@@ -500,24 +501,24 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	}
 
 	// Notifies the table changed listener
-	private PayloadMessage notifyTableChangedListener(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
+	private PayloadMessage notifyTableChangedListener(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
 		if (tableChangedListener != null)
-			return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payload);
+			return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payloadMessages);
 
 		return null;
 	}
 
 	@Override
-	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		for (final BroadcastMessage waitingMessage : waitingMessages) {
-			if (waitingMessage instanceof TableMessage) {
+			if (waitingMessage instanceof TableMessage) { 
 				TableMessage waitingTableMessage = (TableMessage) waitingMessage;
 				TableMessage sendingTableMessage = (TableMessage) sendingMessage;
-				if (sendingTableMessage.getUpdateTable().equals(waitingTableMessage.getUpdateTable()))
-					return waitingTableMessage;
+				waitingTableMessage.merge(sendingTableMessage);
+				return true;
 			}
 		}
-		return null;
+		return false;
 	}
 
 	@Override

@@ -3,11 +3,13 @@ package dissemination.newProtocol.message;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
+import peer.message.BigEnvelopeMessage;
 import peer.message.BroadcastMessage;
-import peer.message.EnvelopeMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
@@ -23,7 +25,7 @@ import dissemination.newProtocol.ptable.UpdateTable;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
+public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage {
 
 	/**
 	 * 
@@ -33,11 +35,10 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	private final UpdateTable updateTable;
 
 	// the message contained as payload
-	private final PayloadMessage payload;
+	private final List<PayloadMessage> payloadMessages = new ArrayList<PayloadMessage>();
 	
 	public TableMessage() {
 		updateTable = null;
-		payload = null;
 	}
 
 	/**
@@ -55,7 +56,8 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	public TableMessage(final PeerID sender, final Set<PeerID> expectedDestinations, final UpdateTable updateTable, final PayloadMessage payload) {
 		super(sender, expectedDestinations);
 		this.updateTable = updateTable;
-		this.payload = payload;
+		if (payload != null)
+			this.payloadMessages.add(payload);
 	}
 
 	/**
@@ -68,13 +70,13 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 	}
 
 	@Override
-	public PayloadMessage getPayload() {
-		return payload;
+	public List<PayloadMessage> getPayloadMessages() {
+		return payloadMessages;
 	}
 
 	@Override
 	public boolean hasPayload() {
-		return payload != null;
+		return !payloadMessages.isEmpty();
 	}
 
 	@Override
@@ -89,7 +91,7 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 		
 		UnserializationUtils.setFinalField(TableMessage.class, this, "updateTable", in.readObject());
-		UnserializationUtils.setFinalField(TableMessage.class, this, "payload", in.readObject());
+		payloadMessages.addAll(Arrays.asList((PayloadMessage[])in.readObject()));
 	}
 
 	@Override
@@ -99,6 +101,16 @@ public class TableMessage extends BroadcastMessage implements EnvelopeMessage {
 		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 		
 		out.writeObject(updateTable);
-		out.writeObject(payload);
+		out.writeObject(payloadMessages.toArray(new PayloadMessage[0]));
+	}
+
+	@Override
+	public void merge(final BroadcastMessage broadcastMessage) {
+		super.merge(broadcastMessage);
+		
+		final TableMessage tableMessage = (TableMessage) broadcastMessage;
+		updateTable.merge(tableMessage.updateTable);
+		
+		payloadMessages.addAll(tableMessage.payloadMessages);
 	}
 }

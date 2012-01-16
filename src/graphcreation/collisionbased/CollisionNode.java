@@ -20,6 +20,7 @@ import graphcreation.services.Service;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -56,7 +57,7 @@ class CollisionNode {
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
 
-	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
+	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
@@ -111,7 +112,7 @@ class CollisionNode {
 
 		// include those inhibitions received with the message which added the
 		// new parameters
-		if (payload != null) {
+		for (final PayloadMessage payload : payloadMessages) {
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
 			logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
 

@@ -26,5 +26,5 @@ public interface CommunicationLayer extends MessageReceivedListener {
 	 */
 	public void stop();
 
-	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage);
+	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage);
 }

@@ -1,13 +1,15 @@
 package peer;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
 import peer.message.ACKMessage;
+import peer.message.BroadcastMessage;
 import peer.message.BundleMessage;
 import peer.messagecounter.ReliableBroadcastCounter;
 import peer.peerid.PeerID;
-import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
 import detection.NeighborEventsListener;
@@ -24,13 +26,13 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	
 	private final Random r = new Random();
 	
-	private final ResponseProcessor messageProcessor;
+	private final ResponseProcessor responseProcessor;
 
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
 	public ReliableBroadcast(final BasicPeer peer, final ResponseProcessor messageProccessor) {
 		this.peer = peer;
-		this.messageProcessor = messageProccessor;
+		this.responseProcessor = messageProccessor;
 	}
 
 	public void broadcast(final BundleMessage bundleMessage) {
@@ -63,7 +65,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long delayTime = peer.getFixedWaitTime() - r.nextInt(ResponseProcessor.MAX_JITTER) ;
+				final long delayTime = BasicPeer.WAIT_TIME - r.nextInt(BasicPeer.MAX_JITTER) ;
 				
 				sleepSomeTime(delayTime);
 				
@@ -71,10 +73,22 @@ final class ReliableBroadcast implements NeighborEventsListener {
 					break;
 					
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " adding " + delayTime + " ms try " + tryNumber);
-				reliableBroadcastCounter.addRebroadcastedMessage();				
+				reliableBroadcastCounter.addRebroadcastedMessage();
+				
+			}
+			
+			synchronized (currentMessage) {
+				bundleMessage.addMessages(new ArrayList<BroadcastMessage>(responseProcessor.getWaitingACKMessages()));
 			}
 			
 			peer.broadcast(bundleMessage);
+			
+			final Set<BroadcastMessage> sentACKMessages = new HashSet<BroadcastMessage>();
+			synchronized (currentMessage) {
+				sentACKMessages.addAll(bundleMessage.removeACKMessages());
+			}
+			
+			responseProcessor.sentACKMessages(sentACKMessages);
 			
 			sleepSomeTime(responseWaitTime);
 			
@@ -87,7 +101,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 		if (delivered())
 			messageDelivered(reliableBroadcastStartTime);
 		else
-			messageProcessor.interrupt();
+			responseProcessor.interrupt();
 	}
 
 	private void messageDelivered(final long reliableBroadcastStartTime) {
@@ -101,7 +115,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 			WaitableThread.mySleep(delayTime);
 		} catch (InterruptedException e) {
 			if (!delivered())
-				messageProcessor.interrupt();
+				responseProcessor.interrupt();
 		}
 	}
 	
@@ -128,23 +142,19 @@ final class ReliableBroadcast implements NeighborEventsListener {
 			logger.trace("Peer " + peer.getPeerID() + " added response from " + ackMessage.getSender() + " for " + currentMessage.getMessageID() + " missing responses: " + currentMessage.getExpectedDestinations());
 			
 			if (delivered()) {
-				messageProcessor.interrupt();
+				responseProcessor.interrupt();
 			}
 		}
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return peer.getTransmissionTime() * (destinations + 1) + peer.getMaxJitter() + peer.getFixedWaitTime();
+		return peer.getTransmissionTime() * (destinations + 1) + BasicPeer.WAIT_TIME + BasicPeer.MAX_JITTER;
 	}
 
 	@Override
-	public void appearedNeighbors(final PeerIDSet neighbors) {
-	}
-
-	@Override
-	public void dissapearedNeighbors(final PeerIDSet disappearedNeighbors) {
+	public void neighborsChanged(final Set<PeerID> newNeighbors, final Set<PeerID> lostNeighbors) {
 		synchronized (mutex) {
-			for (final PeerID dissappearedNeighbor : disappearedNeighbors.getPeerSet())
+			for (final PeerID dissappearedNeighbor : lostNeighbors)
 				currentMessage.removeDestination(dissappearedNeighbor);
 		}
 	}

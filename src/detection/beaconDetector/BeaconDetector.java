@@ -1,10 +1,12 @@
 package detection.beaconDetector;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,6 +20,8 @@ import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
+import util.timer.Timer;
+import util.timer.TimerTask;
 import config.Configuration;
 import detection.NeighborDetector;
 import detection.NeighborEventsListener;
@@ -31,7 +35,7 @@ import detection.message.BeaconMessage;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public final class BeaconDetector implements NeighborDetector, MessageSentListener {
+public final class BeaconDetector implements NeighborDetector, MessageSentListener, TimerTask {
 
 	// This class is the thread which sends the beacons periodically
 	private class BeaconSendThread extends WaitableThread {
@@ -109,6 +113,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Map which contains current neighbors
 	private final Map<PeerID, Long> neighborsTable = new ConcurrentHashMap<PeerID, Long>();
+	
+	private final Set<PeerID> newNeighbors = new HashSet<PeerID>();
+	private final Set<PeerID> lostNeighbors = new HashSet<PeerID>();
 
 	// Reference to the peer
 	private final Peer peer;
@@ -124,6 +131,10 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	private long LOST_TIME;
 
 	private boolean init = false;
+	
+	private static final long DELAY_NOTIFICATION = 50;
+	
+	private Timer notificationTimer = new Timer(DELAY_NOTIFICATION, this);
 
 	/**
 	 * Constructor of the class. Configures internal properties using global
@@ -172,7 +183,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 
-		LOST_TIME = (BEACON_TIME + MAX_JITTER) * 2;
+		LOST_TIME = BEACON_TIME * 2;
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
@@ -181,6 +192,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		// Send initial beacon and schedule next
 		beaconThread = new BeaconSendThread(this);
 		beaconThread.start();
+		
+		notificationTimer.start();
 
 		init = true;
 	}
@@ -195,11 +208,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 			neighborsTable.put(message.getSender(), Long.valueOf(System.currentTimeMillis()));
 			logger.trace("Peer " + peer.getPeerID() + " has updated neighbor " + message.getSender());
 			
-			if (newNeighbor) {
-				PeerIDSet newNeighbors = new PeerIDSet();
-				newNeighbors.addPeer(message.getSender());
-				notifyAppearance(newNeighbors);
-			}
+			if (newNeighbor)
+				addNewNeighbor(message.getSender());
 		}
 	}
 
@@ -212,13 +222,14 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	@Override
 	public void stop() {
+		notificationTimer.stopAndWait();
 		beaconThread.stopAndWait();
 	}
 
 	// Cleans those neighbor not heard in a period of time specified by
 	// LOST_TIME
 	private void cleanOldNeighbors() {
-		final PeerIDSet removedPeers = new PeerIDSet();
+		final Set<PeerID> removedPeers = new HashSet<PeerID>();
 
 		synchronized (neighborsTable) {
 			// Remove those neighbors old enough
@@ -229,7 +240,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 				if (elapsedTime >= LOST_TIME) {
 
 					logger.trace("Peer " + peer.getPeerID() + " removing neighbor " + neighbor + " elapsed time " + elapsedTime + " [" + System.currentTimeMillis() + " - " + timestamp + "]");
-					removedPeers.addPeer(neighbor);
+					removedPeers.add(neighbor);
 					it.remove();
 				}
 			}
@@ -237,25 +248,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		// Notify neighbor removal to registered listeners
 		if (!removedPeers.isEmpty())
-			notifyDissappearance(removedPeers);
-	}
-
-	// Notify appearance of neighbors to listeners
-	private void notifyAppearance(final PeerIDSet neighbors) {
-		logger.debug("Peer " + peer.getPeerID() + " has new neighbors: " + neighbors);
-
-		logger.trace("Peer " + peer.getPeerID() + " current neighbors: " + getCurrentNeighbors());
-		for (final NeighborEventsListener listener : neighborNotificationListeners)
-			listener.appearedNeighbors(neighbors);
-	}
-
-	// Notify disappearance of neighbors to listeners
-	private void notifyDissappearance(final PeerIDSet neighbors) {
-		logger.debug("Peer " + peer.getPeerID() + " has lost neighbors: " + neighbors);
-
-		logger.trace("Peer " + peer.getPeerID() + " current neighbors: " + getCurrentNeighbors());
-		for (final NeighborEventsListener listener : neighborNotificationListeners)
-			listener.dissapearedNeighbors(neighbors);
+			removeLostNeighbors(removedPeers);
 	}
 
 	// Send a beacon using broadcast provided by communication peer
@@ -265,7 +258,43 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	}
 
 	@Override
-	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
-		return null;
+	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+		return false;
+	}
+	
+	private void addNewNeighbor(final PeerID newNeighbor) {
+		synchronized (newNeighbors) {
+			lostNeighbors.remove(newNeighbor);
+			newNeighbors.add(newNeighbor);
+		}
+	}
+	
+	private void removeLostNeighbors(final Set<PeerID> expiredNeighbors) {
+		synchronized (newNeighbors) {
+			newNeighbors.removeAll(expiredNeighbors);
+			lostNeighbors.addAll(expiredNeighbors);
+		}
+	}
+
+	@Override
+	public void perform() throws InterruptedException {
+		final Set<PeerID> addedNeighbors = new HashSet<PeerID>();
+		final Set<PeerID> removedNeighbors = new HashSet<PeerID>();
+		synchronized (newNeighbors) {
+			addedNeighbors.addAll(newNeighbors);
+			removedNeighbors.addAll(lostNeighbors);
+			
+			newNeighbors.clear();
+			lostNeighbors.clear();
+		}
+		
+		if (!addedNeighbors.isEmpty())
+			logger.debug("Peer " + peer.getPeerID() + " has new neighbors: " + addedNeighbors);
+		
+		if (!removedNeighbors.isEmpty())
+			logger.debug("Peer " + peer.getPeerID() + " has lost neighbors: " + removedNeighbors);
+		
+		for (final NeighborEventsListener listener : neighborNotificationListeners)
+			listener.neighborsChanged(Collections.unmodifiableSet(addedNeighbors), Collections.unmodifiableSet(removedNeighbors));
 	}
 }

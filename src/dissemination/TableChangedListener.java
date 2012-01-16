@@ -1,5 +1,6 @@
 package dissemination;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,5 +33,5 @@ public interface TableChangedListener {
 	 * @return the payload will be included in the table message by the
 	 *         dissemination layer
 	 */
-	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> addedParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, PayloadMessage payload);
+	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> addedParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, List<PayloadMessage> payloadMessages);
 }

@@ -24,7 +24,6 @@ import peer.messagecounter.MessageCounter;
 import peer.messagecounter.ReliableBroadcastTotalCounter;
 import peer.messagecounter.TotalMessageCounter;
 import peer.peerid.PeerID;
-import peer.peerid.PeerIDSet;
 import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborDetector;
@@ -54,8 +53,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	// A list containing the listeners which will be notified when the
 	// DatagramSocket sent() method is sent.
 	private final List<MessageSentListener> messageSentListeners = new CopyOnWriteArrayList<MessageSentListener>();
-	
-	private final DelayedACK delayedACK = new DelayedACK(this);
 
 	// the communication peer
 	private final CommProvider commProvider;
@@ -81,15 +78,14 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	private boolean initialized = false;
 
 	private int DELAYED_INIT = 0;
-	
-	private int WAIT_PER_NEIGHBOR = 10;
 
 	private final Logger logger = Logger.getLogger(BasicPeer.class);
 
 	// Default reception buffer length
 	private static final int TRANSMISSION_TIME = 8;
 	
-	private static final int MAX_JITTER = 10;
+	public static final int WAIT_TIME = 25;
+	public static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the class. It is the default constructor which configures
@@ -260,14 +256,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		delayedRandomInit.start();
 	}
 	
-	public long getFixedWaitTime() {
-		return 100;
-	}
-	
-	public long getMaxJitter() {
-		return MAX_JITTER;
-	}
-	
 	public long getTransmissionTime() {
 		return TRANSMISSION_TIME;
 	}
@@ -382,16 +370,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		
 		logger.trace("Peer " + peerID + " communication layers stopped");
 	}
-	
-	private void processReceivedACKMessages(final BundleMessage bundleMessage) {
-		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages()) {
-			if (broadcastMessage instanceof ACKMessage) {
-				final ACKMessage ackMessage = (ACKMessage) broadcastMessage;
-				msgCounter.addReceived(ackMessage.getClass());
-				responseProcessor.addReceivedACKResponse(ackMessage);
-			}
-		}
-	}
 
 	private void messageReceived(final BroadcastMessage broadcastMessage) {
 		if (broadcastMessage instanceof BeaconMessage)
@@ -427,13 +405,13 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		return true;
 	}
 
-	private void processBundleMessage(final BundleMessage bundleMessage) {		
-		// bundle messages containing only ACK messages are not further processed
-		if (containsOnlyACKMessages(bundleMessage)) {
-			logger.trace("Peer " + peerID + " received " + bundleMessage.getMessages().size() + " ACK messages");
-			processReceivedACKMessages(bundleMessage);
+	private void processBundleMessage(final BundleMessage bundleMessage) {				
+		for (final BroadcastMessage broadcastMessage : bundleMessage.getMessages())
+			if (broadcastMessage instanceof ACKMessage)
+				processACKMessage((ACKMessage) broadcastMessage);
+		
+		if (containsOnlyACKMessages(bundleMessage))
 			return;
-		}
 				
 		//messages which does not have this node as destination are discarded
 		if (!bundleMessage.getExpectedDestinations().contains(peerID))
@@ -446,11 +424,16 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 			if (!(broadcastMessage instanceof ACKMessage))
 				messageReceived(broadcastMessage);
 	}
+
+	private void processACKMessage(final ACKMessage ackMessage) {
+		msgCounter.addReceived(ackMessage.getClass());
+		responseProcessor.addReceivedACKResponse(ackMessage);
+	}
 	
 	private void sendACKMessage(final BundleMessage receivedBundleMessage) {
 		final ACKMessage ackMessage = new ACKMessage(peerID, receivedBundleMessage.getMessageID());
 		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
-		delayedACK.enqueueACKMessage(ackMessage, MAX_JITTER);
+		responseProcessor.addACKMessage(ackMessage);
 		msgCounter.addSent(ackMessage.getClass());
 	}
 
@@ -509,12 +492,9 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	}
 
 	@Override
-	public void appearedNeighbors(PeerIDSet neighbors) {}
-
-	@Override
-	public void dissapearedNeighbors(PeerIDSet neighbors) {
+	public void neighborsChanged(final Set<PeerID> newNeighbors, final Set<PeerID> lostNeighbors) {
 		for (MessageID messageID : receivedMessages.getEntries()) {
-			if (neighbors.contains(messageID.getPeer())) {
+			if (lostNeighbors.contains(messageID.getPeer())) {
 				logger.trace("Peer " + peerID + " removing all messages received from neighbor " + messageID.getPeer());
 				receivedMessages.remove(messageID);
 			}

@@ -177,32 +177,32 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	public void commit() {
 		pDisseminator.commit();
 	}
-
-	@Override
-	public void appearedNeighbors(final PeerIDSet neighbors) {
-		repropagateSearches(neighbors);
-	}
 	
 	@Override
-	public void dissapearedNeighbors(final PeerIDSet neighbors) {	
-		for (ReceivedMessageID receivedMessageID : receivedMessages.getEntries()) {
-			if (neighbors.contains(receivedMessageID.getSender())) {
-				logger.trace("Peer " + peer.getPeerID() + " removing all messages received from neighbor " + receivedMessageID.getSender());
-				receivedMessages.remove(receivedMessageID);
+	public void neighborsChanged(final Set<PeerID> newNeighbors, final Set<PeerID> lostNeighbors) {
+		if (!newNeighbors.isEmpty())
+			repropagateSearches(new PeerIDSet(newNeighbors));
+		
+		if (!lostNeighbors.isEmpty()) {
+			for (ReceivedMessageID receivedMessageID : receivedMessages.getEntries()) {
+				if (lostNeighbors.contains(receivedMessageID.getSender())) {
+					logger.trace("Peer " + peer.getPeerID() + " removing all messages received from neighbor " + receivedMessageID.getSender());
+					receivedMessages.remove(receivedMessageID);
+				}
 			}
+			
+			logger.trace("Peer " + peer.getPeerID() + " removing dissapeared neighbors from search message receivers table");
+			receiversTable.removeNeighbors(lostNeighbors);
+			
+			final Set<MessageID> lostRoutes = new HashSet<MessageID>();
+			
+			synchronized (uTable) { 
+				for (final PeerID neighbor : lostNeighbors)
+					lostRoutes.addAll(uTable.getRoutesThrough(neighbor));
+			}
+	
+			sendRemoveRouteMessage(lostRoutes);
 		}
-		
-		logger.trace("Peer " + peer.getPeerID() + " removing dissapeared neighbors from search message receivers table");
-		receiversTable.removeNeighbors(neighbors.getPeerSet());
-		
-		final Set<MessageID> lostRoutes = new HashSet<MessageID>();
-		
-		synchronized (uTable) { 
-			for (final PeerID neighbor : neighbors)
-				lostRoutes.addAll(uTable.getRoutesThrough(neighbor));
-		}
-
-		sendRemoveRouteMessage(lostRoutes);
 	}
 
 	private void repropagateSearches(final PeerIDSet neighbors) {
@@ -216,7 +216,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	@Override
-	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final PayloadMessage payload) {
+	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
 		// Check if the added parameters are local
 
 		final Set<Parameter> localAddedParameters = new HashSet<Parameter>();
@@ -234,7 +234,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!nonLocalAddedParameters.isEmpty())
 			processNonLocalAddedParameters(nonLocalAddedParameters);
 
-		return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payload);
+		return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payloadMessages);
 	}
 
 	/*
@@ -855,11 +855,13 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	@Override
-	public BroadcastMessage isDuplicatedMessage(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
+	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		for (final BroadcastMessage waitingMessage : waitingMessages) {
-			if (waitingMessage.equals(sendingMessage))
-				return waitingMessage;
+			if (waitingMessage.equals(sendingMessage)) {
+				waitingMessage.addExpectedDestinations(sendingMessage.getExpectedDestinations());
+				return true;
+			}
 		}
-		return null;
+		return false;
 	}
 }

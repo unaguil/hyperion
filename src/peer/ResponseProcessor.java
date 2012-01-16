@@ -2,8 +2,10 @@ package peer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import peer.message.ACKMessage;
 import peer.message.BroadcastMessage;
@@ -28,6 +30,8 @@ final class ResponseProcessor extends WaitableThread {
 	private final Logger logger = Logger.getLogger(ResponseProcessor.class);
 
 	private final List<BroadcastMessage> waitingResponses = new ArrayList<BroadcastMessage>();
+	
+	private final Set<ACKMessage> waitingACKMessages = new HashSet<ACKMessage>(); 
 
 	private final Random r = new Random();
 	
@@ -35,8 +39,6 @@ final class ResponseProcessor extends WaitableThread {
 		
 	private ReliableBroadcast reliableBroadcast = null;
 	private final Object mutex = new Object();
-	
-	static final int MAX_JITTER = 10;
 
 	/**
 	 * Constructor of the message processor
@@ -55,12 +57,22 @@ final class ResponseProcessor extends WaitableThread {
 			randomSleep(); 
 			
 			if (!Thread.interrupted()) {						
-				BundleMessage bundleMessage = processResponses();
-				if (!bundleMessage.getMessages().isEmpty())
-					sendResponses(bundleMessage);
+				final BundleMessage bundleMessage = processResponses();
 				
+				if (!bundleMessage.getMessages().isEmpty())
+					sendResponses(bundleMessage);								
 			} else
 				interrupt();
+			
+			//check if there are pending ACK messages
+			final Set<BroadcastMessage> ackMessages = getWaitingACKMessages();
+			
+			if (!ackMessages.isEmpty()) {			
+				logger.trace("Peer " + peer.getPeerID() + " sending bundled message with " + ackMessages.size() + " ACK messages");
+				final BundleMessage bundleACKMessages = new BundleMessage(peer.getPeerID(), new ArrayList<BroadcastMessage>(ackMessages));
+				peer.broadcast(bundleACKMessages);
+				sentACKMessages(ackMessages);
+			}
 		}
 
 		logger.trace("Peer " + peer.getPeerID() + " message processor finalized");
@@ -68,7 +80,7 @@ final class ResponseProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = peer.getFixedWaitTime() - r.nextInt(MAX_JITTER);				
+		final long randomWait = BasicPeer.WAIT_TIME - r.nextInt(BasicPeer.MAX_JITTER);				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {
@@ -77,18 +89,18 @@ final class ResponseProcessor extends WaitableThread {
 	}
 
 	public BundleMessage processResponses() {
-		final List<BroadcastMessage> bundleMessages = new ArrayList<BroadcastMessage>();
+		final List<BroadcastMessage> responses = new ArrayList<BroadcastMessage>();
 		
 		synchronized (waitingResponses) {
 			if (!waitingResponses.isEmpty())	 {								
 				for (final BroadcastMessage broadcastMessage : waitingResponses)					
-					bundleMessages.add(broadcastMessage);
+					responses.add(broadcastMessage);
 				
 				waitingResponses.clear();					
 			}
 		}
 
-		return new BundleMessage(peer.getPeerID(), bundleMessages);
+		return new BundleMessage(peer.getPeerID(), responses);
 	}
 
 	private void sendResponses(final BundleMessage bundleMessage) {
@@ -108,13 +120,11 @@ final class ResponseProcessor extends WaitableThread {
 	public boolean addResponse(final BroadcastMessage message, CommunicationLayer layer) {
 		synchronized (waitingResponses) {
 			if (layer != null) {
-				final BroadcastMessage duplicatedMessage = layer.isDuplicatedMessage(Collections.unmodifiableList(waitingResponses), message);
-				if (duplicatedMessage == null) {
+				final boolean merged = layer.merge(Collections.unmodifiableList(waitingResponses), message);
+				if (!merged) {
 					waitingResponses.add(message);				
 					return true;
 				}
-				
-				duplicatedMessage.addExpectedDestinations(message.getExpectedDestinations());
 				return false;
 			}
 			
@@ -127,6 +137,26 @@ final class ResponseProcessor extends WaitableThread {
 		synchronized (mutex) {
 			if (reliableBroadcast != null)
 				reliableBroadcast.addReceivedACKResponse(ackMessage);
+		}
+	}
+	
+	public void addACKMessage(final ACKMessage ackMessage) {
+		synchronized (waitingACKMessages) {
+			waitingACKMessages.add(ackMessage);
+		}
+	}
+	
+	public Set<BroadcastMessage> getWaitingACKMessages() {
+		final Set<BroadcastMessage> ackMessages = new HashSet<BroadcastMessage>();
+		synchronized (waitingACKMessages) {
+			ackMessages.addAll(waitingACKMessages);
+		}
+		return ackMessages;
+	}
+
+	public void sentACKMessages(Set<BroadcastMessage> sentACKMessages) {
+		synchronized (waitingACKMessages) {
+			waitingACKMessages.removeAll(sentACKMessages);
 		}
 	}
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import peer.message.BroadcastMessage;
+import util.logger.Logger;
 
 /**
  * This class is used for gathering statistical information about sent and
@@ -24,7 +25,7 @@ public final class MessageCounter {
 
 		public void inc() {
 			numMessages++;
-			updateTime = System.currentTimeMillis();
+			updateTime = System.currentTimeMillis() - Logger.getDeltaTime();
 		}
 
 		public long getNumMessages() {

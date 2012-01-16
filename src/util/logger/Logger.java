@@ -29,6 +29,10 @@ public class Logger {
 	public static void setDeltaTime(final long deltaTime) {
 		delta = deltaTime;
 	}
+	
+	public static long getDeltaTime() {
+		return delta;
+	}
 
 	public void debug(final Object message) {
 		logger.debug(message + " " + getTime());

@@ -1,14 +1,14 @@
 package peer;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.ArrayList;
+import java.util.List;
 
 import peer.message.BroadcastMessage;
 import util.WaitableThread;
 
 class ReceivedProcessor {
 
-	private final Deque<BroadcastMessage> receivedMessages = new ArrayDeque<BroadcastMessage>();
+	private final List<BroadcastMessage> receivedMessages = new ArrayList<BroadcastMessage>();
 	
 	private final long SLEEP_TIME = 3;
 	
@@ -27,13 +27,13 @@ class ReceivedProcessor {
 					interrupt();
 				}
 				
-				BroadcastMessage message = null; 
+				final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>(); 
 				synchronized (receivedMessages) {
-					if (!receivedMessages.isEmpty())
-						message = receivedMessages.poll();
+					messages.addAll(receivedMessages);
+					receivedMessages.clear();
 				}
 				
-				if (message != null)
+				for (final BroadcastMessage message : messages)
 					peer.processMessage(message);
 			}
 			

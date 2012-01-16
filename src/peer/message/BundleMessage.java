@@ -85,4 +85,20 @@ public class BundleMessage extends BroadcastMessage {
 		expectedDestinations.addAll(bundleMessage.expectedDestinations);
 		messages.addAll(bundleMessage.messages);
 	}
+
+	public Set<BroadcastMessage> removeACKMessages() {
+		final Set<BroadcastMessage> removedACKMessages = new HashSet<BroadcastMessage>();
+		for (final Iterator<BroadcastMessage> it = messages.iterator(); it.hasNext();) {
+			BroadcastMessage broadcastMessage = it.next();
+			if (broadcastMessage instanceof ACKMessage) {
+				removedACKMessages.add(broadcastMessage);
+				it.remove();			
+			}
+		}
+		return removedACKMessages;
+	}
+	
+	public void addMessages(final List<BroadcastMessage> addedMessages) {
+		messages.addAll(addedMessages);
+	}
 }
