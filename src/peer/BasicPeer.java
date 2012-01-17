@@ -336,10 +336,6 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	}
 
 	private void stopThreads() {
-		//stop receiving thread
-		logger.trace("Peer " + peerID + " stopping receiving thread");
-		receivingThread.stopAndWait();
-
 		// stop received messages table thread
 		logger.trace("Peer " + peerID + " stopping received messages thread");
 		receivedMessages.stopAndWait();
@@ -351,22 +347,28 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		logger.trace("Peer " + peerID + " stopping message processor thread");
 		responseProcessor.stopAndWait();
 		
-		logger.trace("Peer " + peerID + " all threads stopped");
-
 		try {
 			logger.trace("Peer " + peerID + " finalizing communication provider");
 			commProvider.stopComm();
 		} catch (final IOException e) {
 			logger.error("Peer " + peerID + " had problem finalizing communication " + e.getMessage());
 		}
+		
+		//stop receiving thread
+		logger.trace("Peer " + peerID + " stopping receiving thread");
+		receivingThread.stopAndWait();
+		
+		logger.trace("Peer " + peerID + " all threads stopped");
 	}
 
 	private void stopCommunicationLayers() {
 		// Communication layers are stopped in reverse order of initialization
 		logger.trace("Peer " + peerID + " stopping communication layers");
 		Collections.reverse(communicationLayers);
-		for (final CommunicationLayer layer : communicationLayers)
+		for (final CommunicationLayer layer : communicationLayers) {
+			logger.trace("Peer " + peerID + " stopping layer " + layer.getClass().getCanonicalName());
 			layer.stop();
+		}
 		
 		logger.trace("Peer " + peerID + " communication layers stopped");
 	}

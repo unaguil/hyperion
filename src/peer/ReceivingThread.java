@@ -37,6 +37,7 @@ final class ReceivingThread extends WaitableThread {
 			try {
 				data = peer.getCommProvider().receiveData();
 			} catch (final IOException e) {
+				logger.error("Peer " + peer.getPeerID() + " receiving data error. " + e.getMessage());
 			}
 
 			try {
