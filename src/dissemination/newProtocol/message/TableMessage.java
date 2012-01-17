@@ -13,6 +13,7 @@ import peer.message.BroadcastMessage;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
+import taxonomy.Taxonomy;
 import dissemination.newProtocol.ptable.UpdateTable;
 
 /**
@@ -104,12 +105,11 @@ public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage
 		out.writeObject(payloadMessages.toArray(new PayloadMessage[0]));
 	}
 
-	@Override
-	public void merge(final BroadcastMessage broadcastMessage) {
-		super.merge(broadcastMessage);
+	public void merge(final BroadcastMessage broadcastMessage, final Taxonomy taxonomy) {
+		addExpectedDestinations(broadcastMessage.getExpectedDestinations());
 		
 		final TableMessage tableMessage = (TableMessage) broadcastMessage;
-		updateTable.merge(tableMessage.updateTable);
+		updateTable.merge(tableMessage.updateTable, taxonomy);
 		
 		payloadMessages.addAll(tableMessage.payloadMessages);
 	}

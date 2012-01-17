@@ -514,7 +514,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			if (waitingMessage instanceof TableMessage) { 
 				TableMessage waitingTableMessage = (TableMessage) waitingMessage;
 				TableMessage sendingTableMessage = (TableMessage) sendingMessage;
-				waitingTableMessage.merge(sendingTableMessage);
+				waitingTableMessage.merge(sendingTableMessage, getTaxonomy());
 				return true;
 			}
 		}

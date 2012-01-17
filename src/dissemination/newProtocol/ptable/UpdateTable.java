@@ -6,12 +6,14 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
+import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -164,15 +166,44 @@ public class UpdateTable implements Externalizable {
 		out.writeObject(deletions.values().toArray(new EstimatedDistance[0]));
 	}
 
-	public void merge(UpdateTable updateTable) {
+	public void merge(final UpdateTable updateTable, final Taxonomy taxonomy) {
 		for (final Parameter p : updateTable.deletions.keySet())
 			additions.remove(p);
 		
 		deletions.putAll(updateTable.deletions);
 		
-		for (final Entry<Parameter, EstimatedDistance> postAddition : updateTable.additions.entrySet())
-			if ((additions.containsKey(postAddition.getKey()) 
-					&& postAddition.getValue().getDistance() > additions.get(postAddition.getKey()).getDistance()) || !additions.containsKey(postAddition.getKey()))
-				additions.put(postAddition.getKey(), postAddition.getValue());
+		for (final Iterator<Entry<Parameter, EstimatedDistance>> postIterator = updateTable.additions.entrySet().iterator(); postIterator.hasNext(); ) {
+			boolean used = false;
+			final Entry<Parameter, EstimatedDistance> postAddition = postIterator.next();
+			if (additions.containsKey(postAddition.getKey())) {
+				if (postAddition.getValue().getDistance() > additions.get(postAddition.getKey()).getDistance())
+					additions.put(postAddition.getKey(), postAddition.getValue());
+				used = true;
+			} else if (!additions.containsKey(postAddition.getKey())) {
+				for (final Iterator<Entry<Parameter, EstimatedDistance>> it = additions.entrySet().iterator(); it.hasNext(); ) {
+					final Entry<Parameter, EstimatedDistance> entry = it.next();
+					final EstimatedDistance newValue = getNewValue(entry.getValue(), postAddition.getValue());
+					if (taxonomy.areRelated(postAddition.getKey().getID(), entry.getKey().getID())) {
+						if (taxonomy.subsumes(postAddition.getKey().getID(), entry.getKey().getID())) {
+							it.remove();
+							additions.put(postAddition.getKey(), newValue);
+						} else
+							additions.put(entry.getKey(), newValue);
+						used = true;
+					}
+				}
+			}
+			
+			if (used)
+				postIterator.remove();
+		}
+		
+		additions.putAll(updateTable.additions);
+	}
+	
+	private EstimatedDistance getNewValue(final EstimatedDistance currentValue, final EstimatedDistance postValue) {
+		if (postValue.getDistance() > currentValue.getDistance())
+			return postValue;
+		return currentValue;
 	}
 }

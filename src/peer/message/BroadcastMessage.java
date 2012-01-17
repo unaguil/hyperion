@@ -98,8 +98,4 @@ public abstract class BroadcastMessage implements Externalizable {
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeObject(messageID);
 	}
-
-	public void merge(final BroadcastMessage broadcastMessage) {
-		addExpectedDestinations(broadcastMessage.getExpectedDestinations());		
-	}
 }
