@@ -300,7 +300,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		synchronized (uTable) {
 			for (final Parameter localParameter : localAddedParameters) {
 				// Get active searches searching for this parameter
-				final Set<SearchMessage> activeSearches = uTable.getActiveSearches(localParameter);
+				final Set<SearchMessage> activeSearches = uTable.getActiveSearches(localParameter, pDisseminator.getTaxonomy());
 				for (final SearchMessage activeSearch : activeSearches) {
 					if (!parametersTable.containsKey(activeSearch))
 						parametersTable.put(activeSearch, new HashSet<Parameter>());

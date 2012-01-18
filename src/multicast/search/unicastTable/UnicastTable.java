@@ -180,20 +180,14 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.unmodifiableList(activeSearches);
 	}
 
-	/**
-	 * Gets the set of search messages which were searching for the passed
-	 * parameter
-	 * 
-	 * @param the
-	 *            searched parameter
-	 * @return the set of search messages which were searching for the passed
-	 *         parameter
-	 */
-	public Set<SearchMessage> getActiveSearches(final Parameter parameter) {
+	public Set<SearchMessage> getActiveSearches(final Parameter parameter, final Taxonomy taxonomy) {
 		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
-		for (final SearchMessage searchMessage : activeSearches)
-			if (searchMessage.getSearchedParameters().contains(parameter))
-				searchMessages.add(searchMessage);
+		for (final SearchMessage searchMessage : activeSearches) {
+			for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
+				if (parameter.equals(searchedParameter) || taxonomy.subsumes(searchedParameter.getID(), parameter.getID()))
+					searchMessages.add(searchMessage);
+			}
+		}
 		return searchMessages;
 	}
 

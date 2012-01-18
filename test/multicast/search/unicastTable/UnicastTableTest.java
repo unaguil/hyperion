@@ -26,6 +26,8 @@ import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import taxonomy.BasicTaxonomy;
+import taxonomy.Taxonomy;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
@@ -236,13 +238,14 @@ public class UnicastTableTest {
 
 	@Test
 	public void testGetPeersSearching() throws InvalidParameterIDException {
-		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-A")).size());
-		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-A")).contains(searchMessage1));
-		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-H")).size());
-		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-I")).size());
-		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-H")).contains(searchMessage3));
-		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-I")).contains(searchMessage3));
-		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-W")).isEmpty());
+		final Taxonomy taxonomy = new BasicTaxonomy();
+		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-A"), taxonomy).size());
+		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-A"), taxonomy).contains(searchMessage1));
+		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-H"), taxonomy).size());
+		assertEquals(1, table1.getActiveSearches(ParameterFactory.createParameter("I-I"), taxonomy).size());
+		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-H"), taxonomy).contains(searchMessage3));
+		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-I"), taxonomy).contains(searchMessage3));
+		assertTrue(table1.getActiveSearches(ParameterFactory.createParameter("I-W"), taxonomy).isEmpty());
 	}
 
 	@Test
