@@ -4,6 +4,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,7 +29,7 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
+public class SearchMessage extends RemoteMessage implements EnvelopeMessage, PayloadMessage {
 
 	// this class is used to represent a searched parameter
 	private static class ParameterEntry implements Externalizable {
@@ -103,6 +104,8 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 
 	// searched parameters
 	private final Map<Parameter, ParameterEntry> parameterEntries = new HashMap<Parameter, ParameterEntry>();
+	
+	private final Set<PeerID> directDestinations = new HashSet<PeerID>(); 
 
 	// the type of this search
 	private final SearchType searchType;
@@ -144,6 +147,8 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		this.payload = searchMessage.payload;
 		this.searchType = searchMessage.searchType;
 		this.previousSender = searchMessage.getSender();
+		
+		this.directDestinations.addAll(searchMessage.getDirectDestinations());
 
 		for (final ParameterEntry pEntry : searchMessage.parameterEntries.values())
 			this.parameterEntries.put(pEntry.getParameter(), new ParameterEntry(pEntry.getParameter(), pEntry.getTTL()));
@@ -281,6 +286,10 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "previousSender", in.readObject());
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "payload", in.readObject());
+		
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
+		
+		directDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 
 	@Override
@@ -293,9 +302,34 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage {
 		out.writeUTF(searchType.toString());
 		out.writeObject(previousSender);
 		out.writeObject(payload);
+		
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
+		
+		out.writeObject(directDestinations.toArray(new PeerID[0]));
 	}
 
 	public void removeParameter(Parameter p) {
 		parameterEntries.remove(p);
+	}
+
+	@Override
+	public PayloadMessage copy() {
+		return new SearchMessage(this, getSender(), getExpectedDestinations(), getDistance());
+	}
+
+	public void setDirectDestinations(final Set<PeerID> destinations) {
+		directDestinations.addAll(destinations);		
+	}
+	
+	public boolean isDirectSearch() {
+		return !directDestinations.isEmpty();
+	}
+	
+	public Set<PeerID> getDirectDestinations() {
+		return directDestinations;
+	}
+	
+	public void disableDirectSearch() {
+		directDestinations.clear();
 	}
 }
