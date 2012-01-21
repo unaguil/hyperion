@@ -14,6 +14,8 @@ import java.util.Set;
 import peer.peerid.PeerID;
 import serialization.binary.UnserializationUtils;
 import taxonomy.Taxonomy;
+import taxonomy.parameter.InputParameter;
+import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -165,6 +167,10 @@ public class UpdateTable implements Externalizable {
 		out.writeObject(deletions.keySet().toArray(new Parameter[0]));
 		out.writeObject(deletions.values().toArray(new EstimatedDistance[0]));
 	}
+	
+	private boolean areRelated(final Parameter parameterA, final Parameter parameterB, final Taxonomy taxonomy) {
+		return taxonomy.areRelated(parameterA.getID(), parameterB.getID()) && ((parameterA instanceof InputParameter && parameterB instanceof InputParameter) || (parameterA instanceof OutputParameter && parameterB instanceof OutputParameter)); 
+	}
 
 	public void merge(final UpdateTable updateTable, final Taxonomy taxonomy) {
 		for (final Parameter p : updateTable.deletions.keySet())
@@ -184,7 +190,7 @@ public class UpdateTable implements Externalizable {
 				for (final Iterator<Entry<Parameter, EstimatedDistance>> additionsIterator = additions.entrySet().iterator(); additionsIterator.hasNext(); ) {
 					final Entry<Parameter, EstimatedDistance> entry = additionsIterator.next();
 					final EstimatedDistance newValue = getNewValue(entry.getValue(), postAddition.getValue());
-					if (taxonomy.areRelated(postAddition.getKey().getID(), entry.getKey().getID())) {
+					if (areRelated(postAddition.getKey(), entry.getKey(), taxonomy)) {
 						if (taxonomy.subsumes(postAddition.getKey().getID(), entry.getKey().getID())) {
 							additionsIterator.remove();
 							newEntries.put(postAddition.getKey(), newValue);
