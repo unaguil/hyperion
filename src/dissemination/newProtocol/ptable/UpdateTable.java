@@ -180,18 +180,20 @@ public class UpdateTable implements Externalizable {
 					additions.put(postAddition.getKey(), postAddition.getValue());
 				used = true;
 			} else if (!additions.containsKey(postAddition.getKey())) {
-				for (final Iterator<Entry<Parameter, EstimatedDistance>> it = additions.entrySet().iterator(); it.hasNext(); ) {
-					final Entry<Parameter, EstimatedDistance> entry = it.next();
+				final Map<Parameter, EstimatedDistance> newEntries = new HashMap<Parameter, EstimatedDistance>();
+				for (final Iterator<Entry<Parameter, EstimatedDistance>> additionsIterator = additions.entrySet().iterator(); additionsIterator.hasNext(); ) {
+					final Entry<Parameter, EstimatedDistance> entry = additionsIterator.next();
 					final EstimatedDistance newValue = getNewValue(entry.getValue(), postAddition.getValue());
 					if (taxonomy.areRelated(postAddition.getKey().getID(), entry.getKey().getID())) {
 						if (taxonomy.subsumes(postAddition.getKey().getID(), entry.getKey().getID())) {
-							it.remove();
-							additions.put(postAddition.getKey(), newValue);
+							additionsIterator.remove();
+							newEntries.put(postAddition.getKey(), newValue);
 						} else
-							additions.put(entry.getKey(), newValue);
+							newEntries.put(entry.getKey(), newValue);
 						used = true;
 					}
 				}
+				additions.putAll(newEntries);
 			}
 			
 			if (used)
