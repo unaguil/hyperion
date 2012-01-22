@@ -33,11 +33,11 @@
 
 	<target depends="init" name="build">
 		<echo message="${ant.project.name}: ${ant.file}" />
-		<javac destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+		<javac debug="on" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="src" />
 			<classpath refid="Hyperion.classpath" />
 		</javac>
-		<javac destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
+		<javac debug="on" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="test" />
 			<classpath refid="Hyperion.classpath" />
 		</javac>
