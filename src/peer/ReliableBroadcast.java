@@ -44,7 +44,8 @@ final class ReliableBroadcast implements NeighborEventsListener {
 		synchronized (mutex) {
 			currentMessage = bundleMessage;
 			//remove invalid ones
-			for (final PeerID expectedDestination : currentMessage.getExpectedDestinations())
+			final Set<PeerID> expectedDestinations = new HashSet<PeerID>(currentMessage.getExpectedDestinations());
+			for (final PeerID expectedDestination : expectedDestinations)
 				if (!currentNeighbors.contains(expectedDestination))
 					currentMessage.removeDestination(expectedDestination);
 		}
@@ -73,18 +74,17 @@ final class ReliableBroadcast implements NeighborEventsListener {
 					break;
 					
 				logger.debug("Peer " + peer.getPeerID() + " rebroadcasted message " + currentMessage.getMessageID() + " " + currentMessage.getExpectedDestinations() + " adding " + delayTime + " ms try " + tryNumber);
-				reliableBroadcastCounter.addRebroadcastedMessage();
-				
+				reliableBroadcastCounter.addRebroadcastedMessage();	
 			}
 			
-			synchronized (currentMessage) {
+			synchronized (mutex) {
 				bundleMessage.addMessages(new ArrayList<BroadcastMessage>(responseProcessor.getWaitingACKMessages()));
 			}
 			
 			peer.broadcast(bundleMessage);
 			
 			final Set<BroadcastMessage> sentACKMessages = new HashSet<BroadcastMessage>();
-			synchronized (currentMessage) {
+			synchronized (mutex) {
 				sentACKMessages.addAll(bundleMessage.removeACKMessages());
 			}
 			
