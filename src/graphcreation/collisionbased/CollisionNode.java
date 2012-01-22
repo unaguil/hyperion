@@ -157,9 +157,8 @@ class CollisionNode {
 		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getInput() + ": " + iDistance);
 		final int oDistance = gCreator.getPSearch().getDisseminationLayer().getDistanceTo(collision.getOutput());
 		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getOutput() + ": " + oDistance);
-		final int maxTTL = 2 * gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - 2;
-		ttls[0] = maxTTL - oDistance;
-		ttls[1] = maxTTL - iDistance;
+		ttls[0] = gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - oDistance;
+		ttls[1] = gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - iDistance;
 		return ttls; 
 	}
 
