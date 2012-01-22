@@ -493,11 +493,13 @@ public class UnicastTable implements XMLSerializable {
 
 	public enum UpdateResult { NotUpdated, ActiveSearch, AssociatedSearch }
 	
-	public UpdateResult updateUnicastTable(final SearchMessage searchMessage, final Taxonomy taxonomy) {
+	public UpdateResult updateUnicastTable(final SearchMessage searchMessage, @SuppressWarnings("unused") final Taxonomy taxonomy) {
 		// Check if the received search message was not previously received (it
 		// is contained in the active searches)
 		
-		final Set<SearchMessage> coveringActiveSearches = alreadyCoveredSearch(searchMessage, taxonomy);
+		//final Set<SearchMessage> coveringActiveSearches = alreadyCoveredSearch(searchMessage, taxonomy);
+		//All searches are active searches now.
+		final Set<SearchMessage> coveringActiveSearches = Collections.emptySet();
 		if (!coveringActiveSearches.isEmpty()) {
 			addAssociatedSearch(searchMessage, coveringActiveSearches);
 			return UpdateResult.AssociatedSearch;
