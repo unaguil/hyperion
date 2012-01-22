@@ -167,7 +167,7 @@ class CollisionNode {
 		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
 		for (final Collision collision : collisions) {
 			final int[] ttls = getTTL(collision);
-			logger.trace("Peer " + peer.getPeerID() + " searching for collision parameters" + collision + " with TTLs " + ttls);
+			logger.trace("Peer " + peer.getPeerID() + " searching for collision parameters " + collision + " with TTLs " + ttls[0] + ", " + ttls[1]);
 			searchedParameters.add(new SearchedParameter(collision.getInput(), ttls[0]));
 			searchedParameters.add(new SearchedParameter(collision.getOutput(), ttls[1]));
 		}
