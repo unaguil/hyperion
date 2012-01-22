@@ -916,8 +916,10 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			if (searchMessage.isDirectSearch()) {
 				final Set<PeerID> throughNeighbors = new HashSet<PeerID>();
 				synchronized (uTable) {
-					for (final PeerID destination : searchMessage.getDirectDestinations())
-						throughNeighbors.add(uTable.getRoute(destination).getThrough());
+					for (final PeerID destination : searchMessage.getDirectDestinations()) {
+						if (uTable.knowsRouteTo(destination))
+							throughNeighbors.add(uTable.getRoute(destination).getThrough());
+					}
 				}
 				
 				final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), throughNeighbors, getNewDistance(searchMessage));
