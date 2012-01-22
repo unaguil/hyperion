@@ -300,38 +300,12 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		sendGeneralizeSearchMessage(generalizedParameters, routeIDs);
 	}
 
-	private void processLocalAddedParameters(final Set<Parameter> localAddedParameters) {		
-		checkActiveSearchesWithLocalParameters(localAddedParameters);
-		checkAssociatedSearchesWithLocalParameters(localAddedParameters);
-	}
-
-	private void checkActiveSearchesWithLocalParameters(final Set<Parameter> localAddedParameters) {
+	private void processLocalAddedParameters(final Set<Parameter> localAddedParameters) {
 		final Map<SearchMessage, Set<Parameter>> parametersTable = new HashMap<SearchMessage, Set<Parameter>>();
 		synchronized (uTable) {
 			for (final Parameter localParameter : localAddedParameters) {
 				// Get active searches searching for this parameter
 				final Set<SearchMessage> activeSearches = uTable.getSearches(localParameter, pDisseminator.getTaxonomy());
-				for (final SearchMessage activeSearch : activeSearches) {
-					if (!parametersTable.containsKey(activeSearch))
-						parametersTable.put(activeSearch, new HashSet<Parameter>());
-					parametersTable.get(activeSearch).add(localParameter);
-				}
-			}
-		}
-		
-		// Notify peers with search response messages
-		for (final Entry<SearchMessage, Set<Parameter>> entry : parametersTable.entrySet()) {
-			final SearchMessage searchMessage = entry.getKey();
-			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), null, searchMessage.getRemoteMessageID());
-		}
-	}
-	
-	private void checkAssociatedSearchesWithLocalParameters(final Set<Parameter> localAddedParameters) {
-		final Map<SearchMessage, Set<Parameter>> parametersTable = new HashMap<SearchMessage, Set<Parameter>>();
-		synchronized (uTable) {
-			for (final Parameter localParameter : localAddedParameters) {
-				// Get active searches searching for this parameter
-				final Set<SearchMessage> activeSearches = uTable.getAssociatedSearches(localParameter);
 				for (final SearchMessage activeSearch : activeSearches) {
 					if (!parametersTable.containsKey(activeSearch))
 						parametersTable.put(activeSearch, new HashSet<Parameter>());
@@ -361,13 +335,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			sendDirectSearchMessage(associatedSearch);
 	}
 
-	private void sendDirectSearchMessage(final SearchMessage searchMessage) {
+	private boolean sendDirectSearchMessage(final SearchMessage searchMessage) {
 		final Set<PeerID> sourcePeers = checkParameterRoutes(searchMessage);
 		if (!sourcePeers.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " sending direct search message " + searchMessage + " to " + sourcePeers);
 			searchMessage.setDirectDestinations(sourcePeers);
 			propagateSearchMessage(searchMessage, false);
+			return true;
 		}
+		return false;
 	}
 
 	private void processNonLocalAddedParameters(final Set<Parameter> nonLocalAddedParameters) {
@@ -773,8 +749,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		if (searchMessage.isDirectSearch() || updateResult.equals(UpdateResult.ActiveSearch))
 			propagateSearchMessage(searchMessage, false);
-		else if (updateResult.equals(UpdateResult.AssociatedSearch))
-			sendDirectSearchMessage(searchMessage);
+		else if (updateResult.equals(UpdateResult.AssociatedSearch)) {
+			final boolean directSent = sendDirectSearchMessage(searchMessage);
+			if (!directSent)
+				propagateSearchMessage(searchMessage, false);
+		}
 	}
 	
 	private Set<PeerID> checkParameterRoutes(final SearchMessage searchMessage) {
