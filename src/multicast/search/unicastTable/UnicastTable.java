@@ -76,6 +76,7 @@ public class UnicastTable implements XMLSerializable {
 	
 	private final Map<SearchMessage, Set<SearchMessage>> associatedSearches = new HashMap<SearchMessage, Set<SearchMessage>>();
 	
+	//TODO remove foundParameters table
 	private final Map<PeerID, Set<Parameter>> foundParameters = new HashMap<PeerID, Set<Parameter>>();
 
 	// the identification of the peer which hosts the unicast table
