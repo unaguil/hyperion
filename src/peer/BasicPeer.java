@@ -429,12 +429,13 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 	private void processACKMessage(final ACKMessage ackMessage) {
 		msgCounter.addReceived(ackMessage.getClass());
+		logger.debug("Peer " + peerID + " received " + ackMessage.getType() + " " + ackMessage.getMessageID() + " from node " + ackMessage.getSender());
 		responseProcessor.addReceivedACKResponse(ackMessage);
 	}
 	
 	private void sendACKMessage(final BundleMessage receivedBundleMessage) {
 		final ACKMessage ackMessage = new ACKMessage(peerID, receivedBundleMessage.getMessageID());
-		logger.debug("Peer " + peerID + " sending ACK message " + ackMessage);
+		logger.debug("Peer " + peerID + " sending " + ackMessage.getType() + " " + ackMessage.getMessageID());
 		responseProcessor.addACKMessage(ackMessage);
 		msgCounter.addSent(ackMessage.getClass());
 	}
