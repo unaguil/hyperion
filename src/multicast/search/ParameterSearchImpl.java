@@ -500,7 +500,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void acceptMulticastMessage(final RemoteMulticastMessage multicastMessage) {
-		logger.trace("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
+		logger.debug("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
 		final PayloadMessage payload = multicastMessage.getPayload();
 		
 		searchListener.multicastMessageAccepted(multicastMessage.getSource(), payload.copy(), multicastMessage.getDistance());
@@ -956,5 +956,13 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public Set<PeerID> getKnownDestinations() {
+		final Set<PeerID> availableDestinations = new HashSet<PeerID>();
+		for (final Route route : getAllRoutes())
+			availableDestinations.add(route.getDest());
+		return Collections.unmodifiableSet(availableDestinations);
 	}
 }

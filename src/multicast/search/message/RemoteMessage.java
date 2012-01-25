@@ -75,7 +75,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	 */
 	public RemoteMessage(final RemoteMessage remoteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final int newDistance) {
 		super(sender, expectedDestinations);
-		this.remoteMessageID = new MessageID(remoteMessage.getSource(), remoteMessage.getRemoteMessageID().getID());
+		this.remoteMessageID = remoteMessage.getRemoteMessageID();
 		this.distance = newDistance;
 	}
 

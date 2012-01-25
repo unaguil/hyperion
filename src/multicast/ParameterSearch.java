@@ -88,4 +88,6 @@ public interface ParameterSearch extends XMLSerializable {
 	boolean knowsRouteTo(PeerID dest);
 
 	public List<? extends Route> getAllRoutes();
+
+	public Set<? extends PeerID> getKnownDestinations();
 }
