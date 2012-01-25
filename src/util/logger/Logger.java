@@ -15,7 +15,7 @@ public class Logger {
 	}
 
 	private String getTime() {
-		final double time = (System.currentTimeMillis() - delta) / 1000.0;
+		final double time = getCurrentTimeSeconds();
 		final DecimalFormat df = new DecimalFormat("00.000");
 		final String str = df.format(time);
 		return str.replace('.', ',');
@@ -48,5 +48,9 @@ public class Logger {
 
 	public void info(final Object message) {
 		logger.info(message + " " + getTime());
+	}
+	
+	public double getCurrentTimeSeconds() {
+		return (System.currentTimeMillis() - delta) / 1000.0;
 	}
 }
