@@ -518,7 +518,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void acceptSearchResponseMessage(final SearchResponseMessage searchResponseMessage) {
-		logger.debug("Peer " + peer.getPeerID() + " found parameters " + searchResponseMessage.getParameters() + " in node " + searchResponseMessage.getSource() + " searchID " + searchResponseMessage.getRespondedRouteID());
+		logger.debug("Peer " + peer.getPeerID() + " found parameters " + searchResponseMessage.getParameters() + " in node " + searchResponseMessage.getSource() + " searchID " + searchResponseMessage.getRespondedRouteID() + " distance " + searchResponseMessage.getDistance());
 		searchListener.parametersFound(searchResponseMessage);
 	}
 
