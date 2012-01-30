@@ -3,9 +3,9 @@ package taxonomy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,7 +32,7 @@ public class BasicTaxonomy implements Taxonomy {
 
 	private TaxonomyElement root = null;
 
-	private final Set<TaxonomyElement> allTElements = new HashSet<TaxonomyElement>();
+	private final Map<String, TaxonomyElement> allTElements = new HashMap<String, TaxonomyElement>();
 
 	public static final String NONE = "NONE";
 	private static final TaxonomyElement NONE_ELEMENT = new TaxonomyElement(NONE, null);
@@ -43,7 +43,7 @@ public class BasicTaxonomy implements Taxonomy {
 	@Override
 	public void setRoot(final String rootID) {
 		this.root = new TaxonomyElement(rootID, NONE_ELEMENT);
-		allTElements.add(root);
+		allTElements.put(root.getID(),root);
 	}
 
 	@Override
@@ -52,27 +52,16 @@ public class BasicTaxonomy implements Taxonomy {
 	}
 
 	@Override
-	public boolean addChild(final String parentID, final String childID) throws TaxonomyException {
+	public void addChild(final String parentID, final String childID) throws TaxonomyException {
 		final TaxonomyElement parent = getTElement(parentID);
-		if (parent != null) {
-			final TaxonomyElement child = parent.addChild(childID);
-			if (child != null) {
-				allTElements.add(child);
-				return true;
-			}
-
-			return false;
-		}
-		throw new TaxonomyException("Parent " + parentID + " not found. It should be previously added");
+		final TaxonomyElement child = parent.addChild(childID);
+		allTElements.put(child.getID(), child);
 	}
 
 	@Override
-	public String getParent(final String id) {
-		final TaxonomyElement child = new TaxonomyElement(id, null);
-		for (final TaxonomyElement tElement : allTElements)
-			if (tElement.equals(child))
-				return tElement.getParent().getID();
-		return null;
+	public String getParent(final String id) throws TaxonomyException {
+		final TaxonomyElement tElement = getTElement(id);
+		return tElement.getParent().getID();
 	}
 
 	@Override
@@ -81,11 +70,15 @@ public class BasicTaxonomy implements Taxonomy {
 			return true;
 
 		String parent = idB;
-		do
-			parent = getParent(parent);
-		while (parent != null && !parent.equals(idA));
-
-		return parent != null;
+		try {
+			do
+				parent = getParent(parent);
+			while (parent != null && !parent.equals(idA));
+	
+			return parent != null;
+		} catch (TaxonomyException e) {
+			return false;
+		}
 	}
 
 	@Override
@@ -200,12 +193,11 @@ public class BasicTaxonomy implements Taxonomy {
 			printRecursive(child, strBuilder);
 	}
 
-	private TaxonomyElement getTElement(final String id) {
-		final TaxonomyElement searchedElement = new TaxonomyElement(id, null);
-		for (final TaxonomyElement tElement : allTElements)
-			if (tElement.equals(searchedElement))
-				return tElement;
-		return null;
+	private TaxonomyElement getTElement(final String id) throws TaxonomyException {
+		final TaxonomyElement tElement = allTElements.get(id);
+		if (tElement == null)
+			throw new TaxonomyException("Element with id " + id + " not found. It should be previously added");
+		return tElement;
 	}
 
 	@Override
@@ -218,8 +210,8 @@ public class BasicTaxonomy implements Taxonomy {
 			return false;
 
 		// Compare all elements
-		final Iterator<TaxonomyElement> otherIt = taxonomy.allTElements.iterator();
-		for (final TaxonomyElement aElement : this.allTElements) {
+		final Iterator<TaxonomyElement> otherIt = taxonomy.allTElements.values().iterator();
+		for (final TaxonomyElement aElement : this.allTElements.values()) {
 			final TaxonomyElement otherElement = otherIt.next();
 			if (!aElement.equals(otherElement))
 				return false;

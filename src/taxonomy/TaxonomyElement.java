@@ -26,9 +26,8 @@ class TaxonomyElement {
 
 	public TaxonomyElement addChild(final String childID) {
 		final TaxonomyElement tElement = new TaxonomyElement(childID, this);
-		if (childs.add(tElement))
-			return tElement;
-		return null;
+		childs.add(tElement);
+		return tElement;
 	}
 
 	public boolean removeChild(final String childID) {

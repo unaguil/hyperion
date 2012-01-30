@@ -33,12 +33,12 @@ public class UnmodifiableTaxonomy implements Taxonomy {
 	}
 
 	@Override
-	public boolean addChild(final String parentID, final String childID) throws TaxonomyException {
+	public void addChild(final String parentID, final String childID) throws TaxonomyException {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getParent(final String id) {
+	public String getParent(final String id) throws TaxonomyException{
 		return taxonomy.getParent(id);
 	}
 

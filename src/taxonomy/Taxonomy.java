@@ -8,9 +8,9 @@ public interface Taxonomy extends XMLSerializable {
 
 	public String getRoot();
 
-	public boolean addChild(String parentID, String childID) throws TaxonomyException;
+	public void addChild(String parentID, String childID) throws TaxonomyException;
 
-	public String getParent(String id);
+	public String getParent(String id) throws TaxonomyException;
 
 	public boolean subsumes(String idA, String idB);
 
