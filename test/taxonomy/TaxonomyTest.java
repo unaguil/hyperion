@@ -77,8 +77,8 @@ public class TaxonomyTest {
 		assertFalse(taxonomy.areRelated("F", "B"));
 	}
 
-	@Test
-	public void testGetParent() {
+	@Test(expected=TaxonomyException.class)
+	public void testGetParent() throws TaxonomyException {
 		assertEquals("NONE", taxonomy.getParent("A"));
 		assertEquals("A", taxonomy.getParent("B"));
 		assertEquals("A", taxonomy.getParent("C"));
