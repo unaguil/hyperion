@@ -385,18 +385,37 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 	@Override
 	public void init() {
+		boolean sameTTLSet = false;
 		try {
 			// Configure internal properties
-			final String maxTTL = Configuration.getInstance().getProperty("parameterSearch.searchMessageTTL");
-			MAX_TTL = Integer.parseInt(maxTTL);
-			logger.info("Peer " + peer.getPeerID() + " set MAX_TTL " + MAX_TTL);
+			final String sameTTLStr = Configuration.getInstance().getProperty("parameterSearch.sameTTL");
+			final int sameTTL = Integer.parseInt(sameTTLStr);
+			logger.info("Peer " + peer.getPeerID() + " set SAME_TTL " + sameTTL);
+			pDisseminator.setDisseminationTTL(sameTTL);
+			setSearchTTL(sameTTL);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
+		}
+		
+		if (!sameTTLSet) {
+			try {
+				// Configure internal properties
+				final String maxTTL = Configuration.getInstance().getProperty("parameterSearch.searchMessageTTL");
+				final int searchTTL = Integer.parseInt(maxTTL);
+				setSearchTTL(searchTTL);
+			} catch (final Exception e) {
+				logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
+			}
 		}
 
 		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector());
 
 		receivedMessages.start();
+	}
+	
+	private void setSearchTTL(final int searchTTL) {
+		MAX_TTL = searchTTL;
+		logger.info("Peer " + peer.getPeerID() + " set MAX_TTL " + MAX_TTL);
 	}
 
 	@Override

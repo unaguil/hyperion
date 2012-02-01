@@ -359,8 +359,8 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	public void init() {
 		try {
 			final String maxDistanceStr = Configuration.getInstance().getProperty("dissemination.maxDistance");
-			MAX_DISTANCE = Integer.parseInt(maxDistanceStr);
-			logger.info("Peer " + peer.getPeerID() + " set MAX_DISTANCE to " + MAX_DISTANCE);
+			final int maxDistance = Integer.parseInt(maxDistanceStr);
+			setDisseminationTTL(maxDistance);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
@@ -524,5 +524,11 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	@Override
 	public int getMaxDistance() {
 		return MAX_DISTANCE;
+	}
+
+	@Override
+	public void setDisseminationTTL(final int disseminationTTL) {
+		MAX_DISTANCE = disseminationTTL;
+		logger.info("Peer " + peer.getPeerID() + " set MAX_DISTANCE to " + MAX_DISTANCE);
 	}
 }

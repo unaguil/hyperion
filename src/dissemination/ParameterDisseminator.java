@@ -104,4 +104,6 @@ public interface ParameterDisseminator extends XMLSerializable {
 
 	public int getMaxDistance();
 
+	public void setDisseminationTTL(int sameTTL);
+
 }
