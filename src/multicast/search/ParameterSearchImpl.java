@@ -24,8 +24,6 @@ import multicast.search.message.RemoveRouteMessage;
 import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
-import multicast.search.unicastTable.ParametersRemovalResult;
-import multicast.search.unicastTable.SearchRemovalResult;
 import multicast.search.unicastTable.UnicastTable;
 import multicast.search.unicastTable.UnicastTable.UpdateResult;
 import peer.BasicPeer;
@@ -243,7 +241,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			processLocalAddedParameters(localAddedParameters);
 
 		if (!nonLocalAddedParameters.isEmpty())
-			processNonLocalAddedParameters(nonLocalAddedParameters);
+			checkActiveSearchesWithNonLocalParameters(nonLocalAddedParameters);
 
 		return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payloadMessages);
 	}
@@ -320,20 +318,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), null, searchMessage.getRemoteMessageID());
 		}
 	}
-	
-	private void checkAssociatedSearchesWithNonLocalParameters(final Set<Parameter> nonLocalAddedParameters) {
-		final Set<SearchMessage> associatedSearches = new HashSet<SearchMessage>();
-		
-		synchronized (uTable) {
-			for (final Parameter nonLocalParameter : nonLocalAddedParameters) {
-				// Get active searches searching for this parameter
-				associatedSearches.addAll(uTable.getAssociatedSearches(nonLocalParameter));
-			}
-		}
-		
-		for (final SearchMessage associatedSearch : associatedSearches)
-			sendDirectSearchMessage(associatedSearch);
-	}
 
 	private boolean sendDirectSearchMessage(final SearchMessage searchMessage) {
 		final Set<PeerID> sourcePeers = checkParameterRoutes(searchMessage);
@@ -344,11 +328,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			return true;
 		}
 		return false;
-	}
-
-	private void processNonLocalAddedParameters(final Set<Parameter> nonLocalAddedParameters) {
-		checkActiveSearchesWithNonLocalParameters(nonLocalAddedParameters);
-		checkAssociatedSearchesWithNonLocalParameters(nonLocalAddedParameters);
 	}
 
 	private void checkActiveSearchesWithNonLocalParameters(final Set<Parameter> nonLocalAddedParameters) {
@@ -632,15 +611,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			for (final Iterator<MessageID> it = removedParameters.keySet().iterator(); it.hasNext(); ) {
 				final MessageID routeID = it.next();
 				if (uTable.isSearchRoute(routeID)) {
-					final ParametersRemovalResult parametersRemovalResult = uTable.removeParameters(removedParameters.get(routeID), routeID, pDisseminator.getTaxonomy());
-					logger.trace("Peer " + peer.getPeerID() + " removed parameters " + parametersRemovalResult.getRemovedParameters() + " from search route " + routeID);
+					final Set<Parameter> partialRemovedParameters = uTable.removeParameters(removedParameters.get(routeID), routeID);
+					logger.trace("Peer " + peer.getPeerID() + " removed parameters " + partialRemovedParameters + " from search route " + routeID);
 					// If parameters were removed notify neighbors
-					if (!parametersRemovalResult.getRemovedParameters().isEmpty()) {
+					if (!partialRemovedParameters.isEmpty())
 						broadcastMessage = true;
-						
-						//repropagate new active searches
-						repropagateSearches(peer.getDetector().getCurrentNeighbors(), parametersRemovalResult.getNewActiveSearches());
-					}
 				}
 			}
 		}
@@ -708,17 +683,15 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		boolean notify = false;
 		boolean repropagateSearches = false;
-		final Set<SearchMessage> newActiveSearches = new HashSet<SearchMessage>();
 		
 		synchronized (uTable) {
 			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
 				if (uTable.isSearchRoute(routeID)) {
-					final SearchRemovalResult removalResult = uTable.cancelSearch(routeID, removeRouteMessage.getSender(), pDisseminator.getTaxonomy());
-					if (removalResult.wasRemoved()) {
+					final boolean removedRoute = uTable.cancelSearch(routeID, removeRouteMessage.getSender());
+					if (removedRoute) {
 						removedRoutes.add(routeID);
 						notify = true;
 						repropagateSearches = true;
-						newActiveSearches.addAll(removalResult.getNewActiveSearches());
 					}
 				}
 			
@@ -733,8 +706,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		if (removeRouteMessage.mustRepropagateSearches())
 			repropagateCurrentActiveSearches(peer.getDetector().getCurrentNeighbors());
-		else if (!newActiveSearches.isEmpty())
-			repropagateSearches(peer.getDetector().getCurrentNeighbors(), newActiveSearches);
 
 		if (notify) {
 			searchListener.lostDestinations(lostDestinations);

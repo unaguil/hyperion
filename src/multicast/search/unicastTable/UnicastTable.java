@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -73,8 +72,6 @@ public class UnicastTable implements XMLSerializable {
 	// the list contains the active searches for the current node. It is related
 	// with a search route
 	private final List<SearchMessage> activeSearches = new ArrayList<SearchMessage>();
-	
-	private final Map<SearchMessage, Set<SearchMessage>> associatedSearches = new HashMap<SearchMessage, Set<SearchMessage>>();
 	
 	//TODO remove foundParameters table
 	private final Map<PeerID, Set<Parameter>> foundParameters = new HashMap<PeerID, Set<Parameter>>();
@@ -179,17 +176,6 @@ public class UnicastTable implements XMLSerializable {
 	public Set<SearchMessage> getSearches(final Parameter parameter, final Taxonomy taxonomy) {
 		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
 		for (final SearchMessage searchMessage : getSearches()) {
-			for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
-				if (parameter.equals(searchedParameter) || taxonomy.subsumes(searchedParameter.getID(), parameter.getID()))
-					searchMessages.add(searchMessage);
-			}
-		}
-		return searchMessages;
-	}
-	
-	private Set<SearchMessage> getActiveSearches(final Parameter parameter, final Taxonomy taxonomy) {
-		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
-		for (final SearchMessage searchMessage : getActiveSearches()) {
 			for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
 				if (parameter.equals(searchedParameter) || taxonomy.subsumes(searchedParameter.getID(), parameter.getID()))
 					searchMessages.add(searchMessage);
@@ -379,21 +365,20 @@ public class UnicastTable implements XMLSerializable {
 		}
 	}
 
-	public ParametersRemovalResult removeParameters(final Set<Parameter> parameters, final MessageID routeID, final Taxonomy taxonomy) {	
+	public Set<Parameter> removeParameters(final Set<Parameter> parameters, final MessageID routeID) {	
 		final SearchMessage search = getSearch(routeID);
 		
 		if (isSearchRoute(routeID)) {
 			final Set<Parameter> removedParameters = search.removeParameters(parameters);
-			if (search.getSearchedParameters().isEmpty()) {
-				//get new active search
-				final SearchRemovalResult searchRemovalResult = removeSearch(routeID, taxonomy);
-				return new ParametersRemovalResult(removedParameters, searchRemovalResult.getNewActiveSearches());
-			}
+			if (search.getSearchedParameters().isEmpty())
+				removeSearch(routeID);
+			
 			logUTable();
-			return new ParametersRemovalResult(removedParameters, Collections.<SearchMessage> emptySet());
+			
+			return removedParameters;
 		}
 		
-		return new ParametersRemovalResult(Collections.<Parameter> emptySet(), Collections.<SearchMessage> emptySet());
+		return Collections.emptySet();
 	}
 
 	public PeerID removeRoute(final MessageID routeID) {
@@ -415,22 +400,19 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.unmodifiableMap(foundParameters);
 	}
 	
-	public SearchRemovalResult cancelSearch(final MessageID routeID, final PeerID neighbor, final Taxonomy taxonomy) {
+	public boolean cancelSearch(final MessageID routeID, final PeerID neighbor) {
 		SearchMessage activeSearch = getSearch(routeID);
 		if (activeSearch.getSender().equals(neighbor) || neighbor.equals(peerID))
-			return removeSearch(routeID, taxonomy); 
-		return NOT_REMOVED;
+			return removeSearch(routeID);
+		return false;
 	}
 
 	private void logUTable() {
 		logger.trace("Peer " + peerID + " utable " + this);
 	}
 	
-	public Set<SearchMessage> getSearches() {
-		final Set<SearchMessage> allSearches = new HashSet<SearchMessage>(activeSearches);
-		for (final Set<SearchMessage> searches : associatedSearches.values())
-			allSearches.addAll(searches);
-		return allSearches;
+	public List<SearchMessage> getSearches() {
+		return Collections.unmodifiableList(activeSearches);
 	}
 
 	@Override
@@ -499,57 +481,19 @@ public class UnicastTable implements XMLSerializable {
 		// Check if the received search message was not previously received (it
 		// is contained in the active searches)
 		
-		//final Set<SearchMessage> coveringActiveSearches = alreadyCoveredSearch(searchMessage, taxonomy);
 		//All searches are active searches now.
-		final Set<SearchMessage> coveringActiveSearches = Collections.emptySet();
-		if (!coveringActiveSearches.isEmpty()) {
-			addAssociatedSearch(searchMessage, coveringActiveSearches);
-			return UpdateResult.AssociatedSearch;
-		} else  if (!isActiveSearch(searchMessage)) {
-			// Add the search to the current active ones
-			activeSearches.add(searchMessage);
-			updateTable(searchMessage);
-			
-			logUTable();
-			return UpdateResult.ActiveSearch;
-		} else {
-			logger.trace("Peer " + peerID + " discarded search message " + searchMessage + " because it was an active search");
-			return UpdateResult.NotUpdated;
-		}
+		
+		// Add the search to the current active ones
+		activeSearches.add(searchMessage);
+		updateTable(searchMessage);
+		
+		logUTable();
+		return UpdateResult.ActiveSearch;
 	}
 
 	private void updateTable(final SearchMessage searchMessage) {
 		if (!searchMessage.getSource().equals(peerID))
 			addRoute(searchMessage.getRemoteMessageID(), searchMessage.getSource(), searchMessage.getSender(), searchMessage.getDistance());
-	}
-	
-	private Set<SearchMessage> alreadyCoveredSearch(final SearchMessage searchMessage, final Taxonomy taxonomy) {
-		final Set<Parameter> coveredParameters = new HashSet<Parameter>();
-		final Set<SearchMessage> actives = new HashSet<SearchMessage>();
-		for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
-			for (final SearchMessage activeSearch : getActiveSearches(searchedParameter, taxonomy)) {
-				if (activeSearch.getTTL(searchedParameter) >= searchMessage.getTTL(searchedParameter)) {
-					coveredParameters.add(searchedParameter);
-					actives.add(activeSearch);
-				}
-			}
-		}
-		
-		if (coveredParameters.containsAll(searchMessage.getSearchedParameters()))
-			return actives;
-		return Collections.emptySet();
-	}
-	
-	private void addAssociatedSearch(final SearchMessage associatedSearch, final Set<SearchMessage> actives) {				
-		for (final SearchMessage activeSearch : actives) {
-			if (!associatedSearches.containsKey(activeSearch))
-				associatedSearches.put(activeSearch, new HashSet<SearchMessage>());
-			associatedSearches.get(activeSearch).add(associatedSearch);
-		}
-		
-		updateTable(associatedSearch);
-		
-		logUTable();
 	}
 
 	/**
@@ -582,71 +526,21 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.unmodifiableList(routes);
 	}
 
-	// checks if the message search message is contained in the active searches
-	// list
-	private boolean isActiveSearch(final SearchMessage searchMessage) {
-		return activeSearches.contains(searchMessage);
-	}
-	
-	public static final SearchRemovalResult NOT_REMOVED = new SearchRemovalResult(false, Collections.<SearchMessage> emptySet());
-
-	private SearchRemovalResult removeSearch(final MessageID routeID, final Taxonomy taxonomy) {		
+	private boolean removeSearch(final MessageID routeID) {		
 		//check active searches
 		final Set<SearchMessage> newActiveSearches = new HashSet<SearchMessage>();
 		for (final Iterator<SearchMessage> activeSearchesIterator = activeSearches.iterator(); activeSearchesIterator.hasNext(); ) {
 			final SearchMessage activeSearch = activeSearchesIterator.next();
-			if (activeSearch.getRemoteMessageID().equals(routeID)) {		
-				if (associatedSearches.containsKey(activeSearch)) {
-					for (final Iterator<SearchMessage> associatedIterator = associatedSearches.get(activeSearch).iterator(); associatedIterator.hasNext(); ) {
-						final SearchMessage associatedSearch = associatedIterator.next();
-						final Set<SearchMessage> coveringSearches = alreadyCoveredSearch(associatedSearch, taxonomy);
-						coveringSearches.remove(activeSearch);
-						if (!coveringSearches.isEmpty())
-							addAssociatedSearch(associatedSearch, coveringSearches);
-						else {
-							associatedSearch.disableDirectSearch();
-							newActiveSearches.add(associatedSearch);
-						}
-					}
-					associatedSearches.remove(activeSearch);
-				}
-				
+			if (activeSearch.getRemoteMessageID().equals(routeID)) {						
 				activeSearchesIterator.remove();
-				
-				//remove new active searches from other associations
-				for (final SearchMessage newActiveSearch : newActiveSearches)
-					removeAssociatedSearch(newActiveSearch.getRemoteMessageID());
 				
 				activeSearches.addAll(newActiveSearches);
 				
 				logUTable();
-				return new SearchRemovalResult(true, newActiveSearches);
+				return true;
 			}
 		}
-		
-		//check associated searches
-		boolean removed = removeAssociatedSearch(routeID);
-				
-		logUTable();
-		return new SearchRemovalResult(removed, Collections.<SearchMessage> emptySet());
-	}
-
-	private boolean removeAssociatedSearch(final MessageID routeID) {
-		boolean removed = false;
-		for (final Iterator<Entry<SearchMessage, Set<SearchMessage>>> associatedSearchesIterator = associatedSearches.entrySet().iterator(); associatedSearchesIterator.hasNext(); ) {
-			final Entry<SearchMessage, Set<SearchMessage>> entry = associatedSearchesIterator.next();
-			for (final Iterator<SearchMessage> associatedIterator = entry.getValue().iterator(); associatedIterator.hasNext(); ) {
-				final SearchMessage associatedMessage = associatedIterator.next();
-				if (associatedMessage.getRemoteMessageID().equals(routeID)) {
-					removed = true;
-					associatedIterator.remove();
-				}
-			}
-			
-			if (entry.getValue().isEmpty())
-				associatedSearchesIterator.remove();
-		}
-		return removed;
+		return false;
 	}
 	
 	public boolean isSearchRoute(final MessageID routeID) {
@@ -656,26 +550,5 @@ public class UnicastTable implements XMLSerializable {
 				return true;
 		}
 		return false;
-	}
-	
-	private Set<SearchMessage> getAssociatedSearches() {
-		final Set<SearchMessage> allAssociatedSearches = new HashSet<SearchMessage>();
-		for (final Set<SearchMessage> searches : associatedSearches.values())
-			allAssociatedSearches.addAll(searches);
-		return allAssociatedSearches;
-	}
-
-	public Set<SearchMessage> getAssociatedSearches(final Parameter parameter) {
-		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
-		for (final SearchMessage searchMessage : getAssociatedSearches())
-			if (searchMessage.getSearchedParameters().contains(parameter))
-				searchMessages.add(searchMessage);
-		return searchMessages;
-	}
-	
-	public Set<SearchMessage> getAssociatedSearches(final SearchMessage searchMessage) {
-		if (associatedSearches.containsKey(searchMessage))
-			return Collections.unmodifiableSet(associatedSearches.get(searchMessage));
-		return Collections.emptySet();
 	}
 }
