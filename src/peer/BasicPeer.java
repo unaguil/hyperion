@@ -127,7 +127,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	public void initPeer(final PeerID id) throws IOException {
 		this.peerID = id;
 
-		logger.trace("Peer " + peerID + " initializing");
+		logger.info("Peer " + peerID + " initializing");
 
 		init();
 
