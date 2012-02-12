@@ -66,7 +66,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long delayTime = BasicPeer.WAIT_TIME - r.nextInt(BasicPeer.MAX_JITTER) ;
+				final long delayTime = BasicPeer.WAIT_TIME * (tryNumber * tryNumber) - r.nextInt(BasicPeer.MAX_JITTER);
 				
 				sleepSomeTime(delayTime);
 				
