@@ -194,9 +194,19 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	@Override
 	public void enqueueBroadcast(final BroadcastMessage message, CommunicationLayer layer) {
 		if (responseProcessor.addResponse(message, layer)) {
-			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID());
-			msgCounter.addSent(message.getClass());
+			try {
+				final int messageSize = getSize(message);
+				logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID() + " " + messageSize + " bytes");
+				msgCounter.addSent(message.getClass());
+			} catch (IOException e) {
+				logger.error("Peer " + peerID + " unable to obtain message size");
+			}
 		}
+	}
+	
+	private int getSize(final BroadcastMessage message) throws IOException {
+		final byte[] data = toByteArray(message);
+		return data.length;
 	}
 
 	private class DelayedRandomInit extends Thread {
