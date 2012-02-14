@@ -193,7 +193,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			logger.trace("Peer " + peer.getPeerID() + " propagating active searches " + searches + " for neighbors " + neighbors);
 			 
 			for (final SearchMessage searchMessage : searches)
-				propagateSearchMessage(searchMessage, true);
+				propagateSearchMessage(searchMessage, false);
 		}
 	}
 	
