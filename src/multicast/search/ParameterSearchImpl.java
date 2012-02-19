@@ -495,7 +495,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// this method is called when a search message is accepted by the current
 	// node
 	private void acceptSearchMessage(final SearchMessage searchMessage, final Set<Parameter> foundParameters) {
-		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getMessageID() + " distance " + searchMessage.getDistance());
+		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getRemoteMessageID() + " distance " + searchMessage.getDistance());
 
 		// Call listener and get user response payload
 		final PayloadMessage response = searchListener.searchMessageReceived(searchMessage);
@@ -840,8 +840,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (forcePropagation || !neighbors.isEmpty()) {
 			// Create a copy of the message for broadcasting using the current node
 			// as the new sender. This message responds to the received one
-				final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), neighbors, getNewDistance(searchMessage));
-				checkParameters(neighbors, newSearchMessage);
+			final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), neighbors, getNewDistance(searchMessage));
+			checkParameters(neighbors, newSearchMessage);
 		}
 	}
 
