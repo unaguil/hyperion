@@ -25,7 +25,6 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
-import multicast.search.unicastTable.UnicastTable.UpdateResult;
 import peer.BasicPeer;
 import peer.CommunicationLayer;
 import peer.Peer;
@@ -317,17 +316,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			final SearchMessage searchMessage = entry.getKey();
 			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), null, searchMessage.getRemoteMessageID());
 		}
-	}
-
-	private boolean sendDirectSearchMessage(final SearchMessage searchMessage) {
-		final Set<PeerID> sourcePeers = checkParameterRoutes(searchMessage);
-		if (!sourcePeers.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " sending direct search message " + searchMessage + " to " + sourcePeers);
-			searchMessage.setDirectDestinations(sourcePeers);
-			propagateSearchMessage(searchMessage, false);
-			return true;
-		}
-		return false;
 	}
 
 	private void checkActiveSearchesWithNonLocalParameters(final Set<Parameter> nonLocalAddedParameters) {
@@ -727,49 +715,18 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		}
 		
 		logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
-
-		// Update route table with the information contained in the message
-		UpdateResult updateResult;
 		
+		boolean tableUpdated = false;
 		synchronized (uTable) {
-			updateResult = uTable.updateUnicastTable(searchMessage, pDisseminator.getTaxonomy());
+			tableUpdated = uTable.updateUnicastTable(searchMessage, pDisseminator.getTaxonomy());
 		}
 		
 		final Set<Parameter> foundLocalParameters = checkLocalParameters(searchMessage);
 		if (!foundLocalParameters.isEmpty())
 			acceptSearchMessage(searchMessage, foundLocalParameters);
 		
-		if (searchMessage.isDirectSearch() || updateResult.equals(UpdateResult.ActiveSearch))
+		if (tableUpdated)
 			propagateSearchMessage(searchMessage, false);
-		else if (updateResult.equals(UpdateResult.AssociatedSearch)) {
-			final boolean directSent = sendDirectSearchMessage(searchMessage);
-			if (!directSent)
-				propagateSearchMessage(searchMessage, false);
-		}
-	}
-	
-	private Set<PeerID> checkParameterRoutes(final SearchMessage searchMessage) {
-		final Set<PeerID> sourcePeers = new HashSet<PeerID>();
-		
-		Map<PeerID, Set<Parameter>> alreadyFoundParameters = new HashMap<PeerID, Set<Parameter>>();
-		
-		synchronized (uTable) {
-			 alreadyFoundParameters.putAll(uTable.getAlreadyFoundParameters());
-		}
-			
-		for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
-			for (final Entry<PeerID, Set<Parameter>> entry :  alreadyFoundParameters.entrySet()) {
-				for (final Parameter alreadyFoundParameter : entry.getValue()) {
-					if (searchMessage.getSearchType().equals(SearchType.Exact)) {
-						if (alreadyFoundParameter.equals(searchedParameter))
-							sourcePeers.add(entry.getKey());
-					} else if (searchMessage.getSearchType().equals(SearchType.Generic) && pDisseminator.getTaxonomy().subsumes(searchedParameter.getID(), alreadyFoundParameter.getID()))
-						sourcePeers.add(entry.getKey());
-				}
-			}
-		}
-		
-		return sourcePeers; 
 	}
 
 	private Set<Parameter> checkLocalParameters(final SearchMessage searchMessage) {
@@ -883,22 +840,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (forcePropagation || !neighbors.isEmpty()) {
 			// Create a copy of the message for broadcasting using the current node
 			// as the new sender. This message responds to the received one
-			
-			if (searchMessage.isDirectSearch()) {
-				final Set<PeerID> throughNeighbors = new HashSet<PeerID>();
-				synchronized (uTable) {
-					for (final PeerID destination : searchMessage.getDirectDestinations()) {
-						if (uTable.knowsRouteTo(destination))
-							throughNeighbors.add(uTable.getRoute(destination).getThrough());
-					}
-				}
-				
-				final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), throughNeighbors, getNewDistance(searchMessage));
-				checkParameters(neighbors, newSearchMessage);
-			} else {
 				final SearchMessage newSearchMessage = new SearchMessage(searchMessage, peer.getPeerID(), neighbors, getNewDistance(searchMessage));
 				checkParameters(neighbors, newSearchMessage);
-			}
 		}
 	}
 

@@ -103,9 +103,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 	private final PayloadMessage payload;
 
 	// searched parameters
-	private final Map<Parameter, ParameterEntry> parameterEntries = new HashMap<Parameter, ParameterEntry>();
-	
-	private final Set<PeerID> directDestinations = new HashSet<PeerID>(); 
+	private final Map<Parameter, ParameterEntry> parameterEntries = new HashMap<Parameter, ParameterEntry>(); 
 
 	// the type of this search
 	private final SearchType searchType;
@@ -147,8 +145,6 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		this.payload = searchMessage.payload;
 		this.searchType = searchMessage.searchType;
 		this.previousSender = searchMessage.getSender();
-		
-		this.directDestinations.addAll(searchMessage.getDirectDestinations());
 
 		for (final ParameterEntry pEntry : searchMessage.parameterEntries.values())
 			this.parameterEntries.put(pEntry.getParameter(), new ParameterEntry(pEntry.getParameter(), pEntry.getTTL()));
@@ -288,8 +284,6 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "payload", in.readObject());
 		
 		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
-		
-		directDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 
 	@Override
@@ -304,8 +298,6 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		out.writeObject(payload);
 		
 		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
-		
-		out.writeObject(directDestinations.toArray(new PeerID[0]));
 	}
 
 	public void removeParameter(Parameter p) {
@@ -315,21 +307,5 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 	@Override
 	public PayloadMessage copy() {
 		return new SearchMessage(this, getSender(), getExpectedDestinations(), getDistance());
-	}
-
-	public void setDirectDestinations(final Set<PeerID> destinations) {
-		directDestinations.addAll(destinations);		
-	}
-	
-	public boolean isDirectSearch() {
-		return !directDestinations.isEmpty();
-	}
-	
-	public Set<PeerID> getDirectDestinations() {
-		return directDestinations;
-	}
-	
-	public void disableDirectSearch() {
-		directDestinations.clear();
 	}
 }

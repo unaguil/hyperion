@@ -474,21 +474,19 @@ public class UnicastTable implements XMLSerializable {
 
 		return strBuilder.toString();
 	}
-
-	public enum UpdateResult { NotUpdated, ActiveSearch, AssociatedSearch }
 	
-	public UpdateResult updateUnicastTable(final SearchMessage searchMessage, @SuppressWarnings("unused") final Taxonomy taxonomy) {
+	public boolean updateUnicastTable(final SearchMessage searchMessage, @SuppressWarnings("unused") final Taxonomy taxonomy) {
 		// Check if the received search message was not previously received (it
 		// is contained in the active searches)
-		
-		//All searches are active searches now.
+		if (activeSearches.contains(searchMessage))
+			return false;
 		
 		// Add the search to the current active ones
 		activeSearches.add(searchMessage);
 		updateTable(searchMessage);
 		
 		logUTable();
-		return UpdateResult.ActiveSearch;
+		return true;
 	}
 
 	private void updateTable(final SearchMessage searchMessage) {
