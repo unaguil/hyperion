@@ -32,7 +32,6 @@ import multicast.ParameterSearch;
 import multicast.ParameterSearchListener;
 import multicast.search.ParameterSearchImpl;
 import multicast.search.Route;
-import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchResponseMessage;
 import peer.CommunicationLayer;
 import peer.Peer;
@@ -408,13 +407,13 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 
 	@Override
-	public PayloadMessage searchMessageReceived(final SearchMessage message) {
+	public PayloadMessage searchReceived(final Set<Parameter> foundParameters, final PeerID source) {
 		// only messages containing a collision message as payload are valid
 
 		Set<Service> services;
 		synchronized (sdg) {
 			// obtain those services which provide the searched parameters
-			services = sdg.findLocalCompatibleServices(message.getSearchedParameters());
+			services = sdg.findLocalCompatibleServices(foundParameters);
 		}
 
 		// initial distance is zero because all services are local
@@ -424,7 +423,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 
 		final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
 
-		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + message.getSource());
+		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + source);
 		return collisionResponseMessage;
 	}
 	

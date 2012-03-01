@@ -498,7 +498,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getRemoteMessageID() + " distance " + searchMessage.getDistance() + " parameters " + foundParameters);
 
 		// Call listener and get user response payload
-		final PayloadMessage response = searchListener.searchMessageReceived(searchMessage);
+		final PayloadMessage response = searchListener.searchReceived(foundParameters, searchMessage.getSource());
 		// Send response to source node including payload
 		sendSearchResponseMessage(searchMessage.getSource(), foundParameters, response, searchMessage.getRemoteMessageID());
 	}

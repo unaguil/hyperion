@@ -150,25 +150,12 @@ class CollisionNode {
 
 		return null;
 	}
-	
-	private int[] getTTL(final Collision collision) {
-		final int[] ttls = new int[2];
-		final int iDistance = gCreator.getPSearch().getDisseminationLayer().getDistanceTo(collision.getInput());
-		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getInput() + ": " + iDistance);
-		final int oDistance = gCreator.getPSearch().getDisseminationLayer().getDistanceTo(collision.getOutput());
-		logger.trace("Peer " + peer.getPeerID() + " distance to " + collision.getOutput() + ": " + oDistance);
-		ttls[0] = gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - oDistance;
-		ttls[1] = gCreator.getPSearch().getDisseminationLayer().getMaxDistance() - iDistance;
-		return ttls; 
-	}
 
 	private void sendCollisionSearchMessage(final Set<Collision> collisions) {
 		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
 		for (final Collision collision : collisions) {
-			final int[] ttls = getTTL(collision);
-			logger.trace("Peer " + peer.getPeerID() + " searching for collision parameters " + collision + " with TTLs " + ttls[0] + ", " + ttls[1]);
-			searchedParameters.add(new SearchedParameter(collision.getInput(), ttls[0]));
-			searchedParameters.add(new SearchedParameter(collision.getOutput(), ttls[1]));
+			searchedParameters.add(new SearchedParameter(collision.getInput(), gCreator.getPSearch().getDisseminationLayer().getMaxDistance()));
+			searchedParameters.add(new SearchedParameter(collision.getOutput(), gCreator.getPSearch().getDisseminationLayer().getMaxDistance()));
 		}
 		
 		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + searchedParameters);
