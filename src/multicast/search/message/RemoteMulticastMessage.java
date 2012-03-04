@@ -151,4 +151,12 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 		out.writeObject(throughPeers.getPeerSet().toArray(new PeerID[0]));
 		out.writeObject(payload);
 	}
+
+	@Override
+	public String getType() {
+		if (payload != null)
+			return super.getType() + "(" + payload.getType() + ")";
+		
+		return super.getType();
+	}
 }
