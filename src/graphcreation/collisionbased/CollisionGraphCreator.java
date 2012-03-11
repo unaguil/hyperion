@@ -268,37 +268,53 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		logger.trace("Peer " + peer.getPeerID() + " connecting compatible services RS: " + connectServicesMessage.getRemoteSuccessors() + " RA: " + connectServicesMessage.getRemoteAncestors() + " thanks to collision detected in peer " + connectServicesMessage.getSource());
 
 		traceSDG();
+		
+		final Map<Service, Set<ServiceDistance>> addedRemoteSuccessors = new HashMap<Service, Set<ServiceDistance>>();
+		final Map<Service, Set<ServiceDistance>> addedRemoteAncestors = new HashMap<Service, Set<ServiceDistance>>();
 
 		synchronized (sdg) {
 			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = connectServicesMessage.getRemoteSuccessors().entrySet().iterator(); it.hasNext();) {
 				final Entry<Service, Set<ServiceDistance>> entry = it.next();
 				final Service service = entry.getKey();
+				final Set<ServiceDistance> newSuccessors =  new HashSet<ServiceDistance>();
 				if (sdg.isLocal(service)) {
 					try {	
-						sdg.connectRemoteServices(service, entry.getValue(), new HashSet<ServiceDistance>(), source);
+						final Set<ServiceDistance> addedSuccessors = sdg.connectRemoteServices(service, entry.getValue(), new HashSet<ServiceDistance>(), source);
+						newSuccessors.addAll(addedSuccessors);
 					} catch (final NonLocalServiceException nlse) {
 						logger.error("Peer " + peer.getPeerID() + " error connecting remote service. " + nlse.getMessage());
 					}
 				}
+				
+				if (!newSuccessors.isEmpty())
+					addedRemoteSuccessors.put(service, newSuccessors);
 			}
 	
 			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = connectServicesMessage.getRemoteAncestors().entrySet().iterator(); it.hasNext();) {
 				final Entry<Service, Set<ServiceDistance>> entry = it.next();
 				final Service service = entry.getKey();
+				final Set<ServiceDistance> newAncestors = new HashSet<ServiceDistance>();
 				if (sdg.isLocal(service)) {
 					try {
-						sdg.connectRemoteServices(service, new HashSet<ServiceDistance>(), entry.getValue(), source);
+						final Set<ServiceDistance> addedAncestors = sdg.connectRemoteServices(service, new HashSet<ServiceDistance>(), entry.getValue(), source);
+						newAncestors.addAll(addedAncestors);
 					} catch (final NonLocalServiceException nlse) {
 						logger.error("Peer " + peer.getPeerID() + " error connecting remote service. " + nlse.getMessage());
 					}
 				}
+				
+				if (!newAncestors.isEmpty())
+					addedRemoteAncestors.put(service, newAncestors);
 			}
 		}
 
 		traceSDG();
 
-		graphCreationListener.newSuccessors(connectServicesMessage.getRemoteSuccessors());
-		graphCreationListener.newAncestors(connectServicesMessage.getRemoteAncestors());
+		if (!addedRemoteSuccessors.isEmpty())
+			graphCreationListener.newSuccessors(addedRemoteSuccessors);
+		
+		if (!addedRemoteAncestors.isEmpty())
+			graphCreationListener.newAncestors(addedRemoteAncestors);
 	}
 
 	private void traceSDG() {

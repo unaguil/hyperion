@@ -45,7 +45,7 @@ public interface SDG extends XMLSerializable {
 	 * @throws exception
 	 *             is thrown when a non local service is passed
 	 */
-	public void connectRemoteServices(Service localService, Set<ServiceDistance> remoteSuccessors, Set<ServiceDistance> remoteAncestors, PeerID collisionNode) throws NonLocalServiceException;
+	public Set<ServiceDistance> connectRemoteServices(Service localService, Set<ServiceDistance> remoteSuccessors, Set<ServiceDistance> remoteAncestors, PeerID collisionNode) throws NonLocalServiceException;
 
 	/**
 	 * Gets all the successors of the passed service

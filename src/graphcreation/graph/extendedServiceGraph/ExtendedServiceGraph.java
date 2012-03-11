@@ -256,6 +256,10 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 
 		return new ConnectionNode((OutputParameter) ParameterFactory.createParameter(outputID), (InputParameter) ParameterFactory.createParameter(inputID));
 	}
+	
+	public boolean contains(final Service service) {
+		return serviceNodeMap.containsKey(service);
+	}
 
 	@Override
 	public void readFromXML(final InputStream is) throws IOException {
