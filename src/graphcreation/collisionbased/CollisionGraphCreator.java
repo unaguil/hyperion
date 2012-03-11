@@ -189,6 +189,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 	
 	private void commit(Set<Service> addedServices, Set<Service> removedServices) throws NonLocalServiceException{
+		final Map<Service, Set<ServiceDistance>> newSuccessors = new HashMap<Service, Set<ServiceDistance>>();
+		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>();
+		
 		for (final Service addedService : addedServices) {
 			// Increment parameter references
 			for (final Parameter parameter : addedService.getParameters()) {
@@ -201,6 +204,13 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 
 			synchronized (sdg) {
 				sdg.addLocalService(addedService);
+				final Set<ServiceDistance> localSuccessors = sdg.getLocalSuccessors(addedService);
+				if (!localSuccessors.isEmpty())
+					newSuccessors.put(addedService, localSuccessors);
+				
+				final Set<ServiceDistance> localAncestors = sdg.getLocalAncestors(addedService);
+				if (!localAncestors.isEmpty())
+					newAncestors.put(addedService, localAncestors);
 			}
 		}
 
@@ -220,6 +230,12 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	
 			pSearch.commit();
 		}
+		
+		if (!newSuccessors.isEmpty())
+			graphCreationListener.newSuccessors(newSuccessors);
+		
+		if (!newAncestors.isEmpty())
+			graphCreationListener.newAncestors(newAncestors);
 	}
 
 	private void incReference(final Parameter p) {
