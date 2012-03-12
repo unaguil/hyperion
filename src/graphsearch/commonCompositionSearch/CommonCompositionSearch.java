@@ -218,4 +218,14 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 	public ShortestPathNotificator getShortestPathNotificator() {
 		return shortestPathNotificator;
 	}
+	
+	@Override
+	public void lostSuccessors(final Map<Service, Set<Service>> lostSuccessors) {
+		logger.debug("Peer " + peer.getPeerID() + " lost successors " + lostSuccessors);
+	}
+
+	@Override
+	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
+		logger.debug("Peer " + peer.getPeerID() + " lost successors " + lostAncestors);
+	}
 }

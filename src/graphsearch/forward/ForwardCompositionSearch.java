@@ -66,15 +66,6 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public void lostSuccessors(final Map<Service, Set<Service>> lostSuccessors) {
-	}
-
-	@Override
-	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
-		//forwardComposer.lostAncestors(lostAncestors);
-	}
-
-	@Override
 	public void acceptShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
 		if (shortestPathNotificationMessage instanceof CompositionModificationMessage) {
 			final CompositionModificationMessage compositionModificationMessage = (CompositionModificationMessage) shortestPathNotificationMessage;
