@@ -22,8 +22,16 @@ import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
 
 public class ParameterTableTest {
+	
+	static class DisseminationDistance implements DisseminationDistanceInfo {
+		
+		private final int DDISTANCE = 5;
 
-	private static final int DDISTANCE = 5;
+		@Override
+		public int getMaxDistance() {
+			return DDISTANCE;
+		}
+	}
 
 	private final PeerID host = new PeerID("0");
 
@@ -32,10 +40,12 @@ public class ParameterTableTest {
 	private final PeerID anotherOnePeer = new PeerID("3");
 
 	private final Taxonomy emptyTaxonomy = new BasicTaxonomy();
+	
+	private static final DisseminationDistanceInfo disseminationInfo = new DisseminationDistance();
 
 	@Test
 	public void testAddLocalParameters() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -57,7 +67,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testParametersFromNeighbor() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -78,7 +88,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testIsEmtpy() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 
 		assertTrue(table.isEmpty());
 
@@ -93,7 +103,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testParameters() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -114,7 +124,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testGetLocalParameters() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -133,7 +143,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testIsLocalParameter() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -156,7 +166,7 @@ public class ParameterTableTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, taxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, taxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-B"));
 		newParameters.add(ParameterFactory.createParameter("I-C"));
@@ -171,7 +181,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testRemoveLocalParameters() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -202,7 +212,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testGetNewNeighborTable() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -221,7 +231,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testDecrementEstimatedDistances() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -230,12 +240,12 @@ public class ParameterTableTest {
 		table.decEstimatedDistances();
 
 		for (final Parameter p : table.getParameters())
-			assertEquals(DDISTANCE - 1, table.getEstimatedDistance(p));
+			assertEquals(disseminationInfo.getMaxDistance() - 1, table.getEstimatedDistance(p));
 	}
 
 	@Test
 	public void testGetDistance() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -254,14 +264,14 @@ public class ParameterTableTest {
 	@Test
 	public void testUpdateEmptyTable() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
 		table.addLocalParameters(newParameters);
 
 		// Create an empty table in the peer "otherPeer"
-		final ParameterTable table2 = new ParameterTable(DDISTANCE, otherPeer, emptyTaxonomy);
+		final ParameterTable table2 = new ParameterTable(disseminationInfo, otherPeer, emptyTaxonomy);
 
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
@@ -285,11 +295,11 @@ public class ParameterTableTest {
 	@Test
 	public void testUpdateEmptyTableNonGreaterThanZero() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(2, anotherPeer));
 
 		// Create an empty table in the peer "otherPeer"
-		final ParameterTable table2 = new ParameterTable(DDISTANCE, otherPeer, emptyTaxonomy);
+		final ParameterTable table2 = new ParameterTable(disseminationInfo, otherPeer, emptyTaxonomy);
 
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
@@ -312,14 +322,14 @@ public class ParameterTableTest {
 	@Test
 	public void testSameUpdateHasNoEffect() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
 		table.addLocalParameters(newParameters);
 
 		// Create an empty table in the peer "otherPeer"
-		final ParameterTable table2 = new ParameterTable(DDISTANCE, otherPeer, emptyTaxonomy);
+		final ParameterTable table2 = new ParameterTable(disseminationInfo, otherPeer, emptyTaxonomy);
 
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
@@ -346,14 +356,14 @@ public class ParameterTableTest {
 	@Test
 	public void testAddAnotherTableFromOtherPeer() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
 		table.addLocalParameters(newParameters);
 
 		// Create an empty table in the peer "otherPeer" and add first one
-		final ParameterTable table2 = new ParameterTable(DDISTANCE, otherPeer, emptyTaxonomy);
+		final ParameterTable table2 = new ParameterTable(disseminationInfo, otherPeer, emptyTaxonomy);
 		final UpdateTable newNeighborTable = table.getNewNeighborTable();
 		table2.updateTable(newNeighborTable, host);
 
@@ -399,7 +409,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalElementNotGreaterThanOne() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(1, otherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(1, otherPeer));
 
@@ -422,7 +432,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalNonExistentElement() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 
 		// Create a table to remove parameter A and B received from node
 		// otherPeer
@@ -442,7 +452,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalElementGreaterThanOneNoNewEffectiveDistance() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(3, otherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(1, otherPeer));
 
@@ -467,7 +477,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalElementGreaterThanOneWithEffectiveDistanceGreaterThanOne() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(3, otherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(2, anotherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(1, otherPeer));
@@ -493,7 +503,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalElementGreaterThanOneWithEffectiveDistanceNotGreaterThanOne() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(3, otherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(1, anotherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(1, otherPeer));
@@ -519,7 +529,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemovalInsertionListNotChanged() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(3, otherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(4, anotherPeer));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(2, otherPeer));
@@ -541,14 +551,14 @@ public class ParameterTableTest {
 	@Test
 	public void testUpdateWithDataComingfromSameNode() throws InvalidParameterIDException {
 		// Create a table in peer "host" with two local parameters
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
 		table.addLocalParameters(newParameters);
 
 		// Create an empty table in the peer "otherPeer" and add first one
-		final ParameterTable table2 = new ParameterTable(DDISTANCE, otherPeer, emptyTaxonomy);
+		final ParameterTable table2 = new ParameterTable(disseminationInfo, otherPeer, emptyTaxonomy);
 		UpdateTable newNeighborTable = table.getNewNeighborTable();
 		table2.updateTable(newNeighborTable, host);
 
@@ -580,7 +590,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testXMLSerialization() throws IOException, InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
 		newParameters.add(ParameterFactory.createParameter("I-A"));
 		newParameters.add(ParameterFactory.createParameter("I-B"));
@@ -592,7 +602,7 @@ public class ParameterTableTest {
 
 		final ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 
-		final ParameterTable otherTable = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable otherTable = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 		otherTable.readFromXML(bais);
 
 		assertEquals(table, otherTable);
@@ -602,7 +612,7 @@ public class ParameterTableTest {
 	@Test
 	public void testRemoveNonExistentParameter() throws InvalidParameterIDException {
 		// Create empty table
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, emptyTaxonomy);
 
 		// Remove inexistent parameter
 		final UpdateTable removalTable = new UpdateTable();
@@ -615,7 +625,7 @@ public class ParameterTableTest {
 
 	@Test
 	public void testUpdateIssue() throws InvalidParameterIDException {
-		final ParameterTable table = new ParameterTable(DDISTANCE, new PeerID("2"), emptyTaxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, new PeerID("2"), emptyTaxonomy);
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(3, new PeerID("1")));
 		table.addEntry(ParameterFactory.createParameter("I-A"), new EstimatedDistance(4, new PeerID("0")));
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(2, new PeerID("3")));
@@ -645,7 +655,7 @@ public class ParameterTableTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, taxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, taxonomy);
 
 		table.addEntry(ParameterFactory.createParameter("I-B"), new EstimatedDistance(2, otherPeer));
 
@@ -668,7 +678,7 @@ public class ParameterTableTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, taxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, taxonomy);
 		Set<Parameter> parameters = new HashSet<Parameter>();
 		parameters.add(ParameterFactory.createParameter("I-B"));
 		UpdateTable updateTable = table.addLocalParameters(parameters);
@@ -692,7 +702,7 @@ public class ParameterTableTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final ParameterTable table = new ParameterTable(DDISTANCE, host, taxonomy);
+		final ParameterTable table = new ParameterTable(disseminationInfo, host, taxonomy);
 		Set<Parameter> parameters = new HashSet<Parameter>();
 		parameters.add(ParameterFactory.createParameter("I-A"));
 		UpdateTable updateTable = table.addLocalParameters(parameters);
