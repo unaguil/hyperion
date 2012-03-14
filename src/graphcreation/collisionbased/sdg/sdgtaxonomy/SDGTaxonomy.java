@@ -76,24 +76,18 @@ public class SDGTaxonomy implements SDG {
 	}
 
 	@Override
-	public Set<ServiceDistance> connectRemoteServices(final Service localService, final Set<ServiceDistance> remoteSuccessors, final Set<ServiceDistance> remoteAncestors, final PeerID collisionNode) throws NonLocalServiceException {
+	public Set<ServiceDistance> connectServices(final Service localService, final Set<ServiceDistance> remoteServices, final PeerID collisionNode) {
 		final Set<ServiceDistance> addedServices = new HashSet<ServiceDistance>();
 		
-		if (isLocal(localService)) {
-			final Set<ServiceDistance> remoteServices = new HashSet<ServiceDistance>(remoteSuccessors);
-			remoteServices.addAll(remoteAncestors);
-			
-			for (final ServiceDistance remoteService : remoteServices) {
-				if (!eServiceGraph.contains(remoteService.getService())) {
-					eServiceGraph.merge(remoteService.getService());
-					addedServices.add(remoteService);
-				}
-					
-				IndirectRoute route = new IndirectRoute(remoteService.getService().getPeerID(), collisionNode, remoteService.getDistance());
-				indirectRoutes.add(route);
+		for (final ServiceDistance remoteService : remoteServices) {
+			if (!eServiceGraph.contains(remoteService.getService())) {
+				eServiceGraph.merge(remoteService.getService());
+				addedServices.add(remoteService);
 			}
-		} else
-			throw new NonLocalServiceException();
+				
+			IndirectRoute route = new IndirectRoute(remoteService.getService().getPeerID(), collisionNode, remoteService.getDistance());
+			indirectRoutes.add(route);
+		}
 		
 		return addedServices; 
 	}

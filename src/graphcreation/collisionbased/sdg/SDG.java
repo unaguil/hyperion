@@ -36,16 +36,14 @@ public interface SDG extends XMLSerializable {
 	 * 
 	 * @param localService
 	 *            the connected local service
-	 * @param remoteSuccessors
+	 * @param remoteServices
 	 *            the remote successors of this service
-	 * @param remoteAncestors
-	 *            the remote ancestors of this service
 	 * @param collisionNode
 	 *            the node which detected the collision
 	 * @throws exception
 	 *             is thrown when a non local service is passed
 	 */
-	public Set<ServiceDistance> connectRemoteServices(Service localService, Set<ServiceDistance> remoteSuccessors, Set<ServiceDistance> remoteAncestors, PeerID collisionNode) throws NonLocalServiceException;
+	public Set<ServiceDistance> connectServices(Service localService, Set<ServiceDistance> remoteServices, PeerID collisionNode);
 
 	/**
 	 * Gets all the successors of the passed service

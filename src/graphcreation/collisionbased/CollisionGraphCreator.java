@@ -283,41 +283,50 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	public void messageReceived(final BroadcastMessage m, final long receptionTime) {
 	}
 
-	private void processConnectServicesMessage(final ConnectServicesMessage connectServicesMessage, final PeerID source) {
+	private void processConnectServicesMessage(final ConnectServicesMessage connectServicesMessage, final PeerID collDetectionNode) {
 		logger.trace("Peer " + peer.getPeerID() + " connecting compatible services RS: " + connectServicesMessage.getRemoteSuccessors() + " RA: " + connectServicesMessage.getRemoteAncestors() + " thanks to collision detected in peer " + connectServicesMessage.getSource());
 
 		traceSDG();
+		
+		final Map<Service, Set<ServiceDistance>> newSuccessors = new HashMap<Service, Set<ServiceDistance>>();
+		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>();
 
 		synchronized (sdg) {
-			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = connectServicesMessage.getRemoteSuccessors().entrySet().iterator(); it.hasNext();) {
-				final Entry<Service, Set<ServiceDistance>> entry = it.next();
-				final Service service = entry.getKey();
-				if (sdg.isLocal(service)) {
-					try {	
-						sdg.connectRemoteServices(service, entry.getValue(), new HashSet<ServiceDistance>(), source);
-					} catch (final NonLocalServiceException nlse) {
-						logger.error("Peer " + peer.getPeerID() + " error connecting remote service. " + nlse.getMessage());
-					}
-				}
-			}
-	
-			for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = connectServicesMessage.getRemoteAncestors().entrySet().iterator(); it.hasNext();) {
-				final Entry<Service, Set<ServiceDistance>> entry = it.next();
-				final Service service = entry.getKey();
-				if (sdg.isLocal(service)) {
-					try {
-						sdg.connectRemoteServices(service, new HashSet<ServiceDistance>(), entry.getValue(), source);
-					} catch (final NonLocalServiceException nlse) {
-						logger.error("Peer " + peer.getPeerID() + " error connecting remote service. " + nlse.getMessage());
-					}
-				}
-			}
+			connectServices(connectServicesMessage.getRemoteSuccessors(), collDetectionNode, newSuccessors, newAncestors);
+			
+			connectServices(connectServicesMessage.getRemoteAncestors(), collDetectionNode, newSuccessors, newAncestors);
 		}
 
 		traceSDG();
 
-		graphCreationListener.newSuccessors(connectServicesMessage.getRemoteSuccessors());
-		graphCreationListener.newAncestors(connectServicesMessage.getRemoteAncestors());
+		if (!newSuccessors.isEmpty())
+			graphCreationListener.newSuccessors(newSuccessors);
+		
+		if (!newAncestors.isEmpty())
+			graphCreationListener.newAncestors(newAncestors);
+	}
+
+	private void connectServices(final Map<Service, Set<ServiceDistance>> detectedConnections, final PeerID collDetectionNode, final Map<Service, Set<ServiceDistance>> newSuccessors, final Map<Service, Set<ServiceDistance>> newAncestors) {
+		for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = detectedConnections.entrySet().iterator(); it.hasNext();) {
+			final Entry<Service, Set<ServiceDistance>> entry = it.next();
+			final Service service = entry.getKey();
+			if (sdg.isLocal(service)) {	
+				final Set<ServiceDistance> newServices = sdg.connectServices(service, entry.getValue(), collDetectionNode);				
+				for (final ServiceDistance newService : newServices) {
+					for (final ServiceDistance ancestor : sdg.getLocalAncestors(newService.getService())) {
+						if (!newSuccessors.containsKey(ancestor))
+							newSuccessors.put(ancestor.getService(), new HashSet<ServiceDistance>());
+						newSuccessors.get(ancestor.getService()).add(newService);
+					}
+					
+					for (final ServiceDistance successor : sdg.getLocalSuccessors(newService.getService())) {
+						if (!newAncestors.containsKey(successor))
+							newAncestors.put(successor.getService(), new HashSet<ServiceDistance>());
+						newAncestors.get(successor.getService()).add(newService);
+					}
+				}
+			}
+		}
 	}
 
 	private void traceSDG() {
