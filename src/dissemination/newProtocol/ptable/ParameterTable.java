@@ -51,7 +51,7 @@ public class ParameterTable implements XMLSerializable {
 	private final Set<Parameter> localParameters = new HashSet<Parameter>();
 
 	// the maximum dissemination distance
-	private final int dDistance;
+	private final DisseminationDistanceInfo disseminationInfo;
 
 	// the peer hosting this parameter table
 	private final PeerID host;
@@ -71,8 +71,8 @@ public class ParameterTable implements XMLSerializable {
 	 * @param taxonomy
 	 *            the taxonomy used for parameter grouping
 	 */
-	public ParameterTable(final int dDistance, final PeerID host, final Taxonomy taxonomy) {
-		this.dDistance = dDistance;
+	public ParameterTable(final DisseminationDistanceInfo disseminationInfo, final PeerID host, final Taxonomy taxonomy) {
+		this.disseminationInfo = disseminationInfo;
 		this.host = host;
 		this.taxonomy = taxonomy;
 	}
@@ -96,7 +96,7 @@ public class ParameterTable implements XMLSerializable {
 		final UpdateTable updateTable = new UpdateTable();
 
 		for (final Parameter p : parameters) {
-			insertParameter(host, updateTable, p, new EstimatedDistance(dDistance, host), true);
+			insertParameter(host, updateTable, p, new EstimatedDistance(disseminationInfo.getMaxDistance(), host), true);
 
 			localParameters.add(p);
 		}

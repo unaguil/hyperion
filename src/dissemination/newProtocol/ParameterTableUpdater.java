@@ -383,7 +383,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		peer.getDetector().addNeighborListener(this);
 
 		// Create the parameter table using loaded configuration
-		pTable = new ParameterTable(MAX_DISTANCE, peer.getPeerID(), getTaxonomy());
+		pTable = new ParameterTable(this, peer.getPeerID(), getTaxonomy());
 	}
 
 	@Override

@@ -7,8 +7,9 @@ import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 import dissemination.newProtocol.ParameterTableUpdater.CommitedParameters;
+import dissemination.newProtocol.ptable.DisseminationDistanceInfo;
 
-public interface ParameterDisseminator extends XMLSerializable {
+public interface ParameterDisseminator extends XMLSerializable, DisseminationDistanceInfo {
 
 	/**
 	 * Adds a local parameter to the local parameter table. After finalizing a
@@ -101,8 +102,6 @@ public interface ParameterDisseminator extends XMLSerializable {
 	public Set<Parameter> getLocalParameters();
 
 	public int getDistanceTo(Parameter p);
-
-	public int getMaxDistance();
 
 	public void setDisseminationTTL(int sameTTL);
 
