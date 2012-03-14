@@ -52,9 +52,11 @@ public abstract class CompositionData implements TimerTask {
 	@Override
 	public void perform() {
 		// remove local searches
-		final Set<SearchID> expiredLocalSearches = localSearchesTable.cleanExpiredSearches();
-		synchronized (searchExpiredListener) {
-			searchExpiredListener.expiredSearches(expiredLocalSearches);
+		final Set<ExpiredSearch> expiredLocalSearches = localSearchesTable.cleanExpiredSearches();
+		if (!expiredLocalSearches.isEmpty()) {
+			synchronized (searchExpiredListener) {
+				searchExpiredListener.expiredSearches(expiredLocalSearches);
+			}
 		}
 	}
 

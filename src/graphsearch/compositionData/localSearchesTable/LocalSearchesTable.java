@@ -2,6 +2,7 @@ package graphsearch.compositionData.localSearchesTable;
 
 import graphcreation.services.Service;
 import graphsearch.SearchID;
+import graphsearch.compositionData.ExpiredSearch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -143,14 +144,16 @@ public class LocalSearchesTable {
 	 * 
 	 * @return the set of expired searches
 	 */
-	public Set<SearchID> cleanExpiredSearches() {
-		final Set<SearchID> expiredSearches = new HashSet<SearchID>();
+	public Set<ExpiredSearch> cleanExpiredSearches() {
+		final Set<ExpiredSearch> expiredSearches = new HashSet<ExpiredSearch>();
 		synchronized (runningSearches) {
 			for (final Iterator<SearchID> it = runningSearches.keySet().iterator(); it.hasNext();) {
 				final SearchID searchID = it.next();
 				if (getRelatedData(searchID).getRemainingTime() == 0) {
+					final Service initService = getInitService(searchID);
+					final Service goalService = getGoalService(searchID);
 					it.remove();
-					expiredSearches.add(searchID);
+					expiredSearches.add(new ExpiredSearch(searchID, initService, goalService));
 				}
 			}
 		}

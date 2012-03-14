@@ -18,6 +18,7 @@ import graphsearch.connectionsFilter.ConnectionsFilter;
 import graphsearch.shortestpathnotificator.ShortestPathListener;
 import graphsearch.shortestpathnotificator.ShortestPathNotificator;
 import graphsearch.util.Utility;
+import graphsearch.compositionData.ExpiredSearch;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -130,9 +131,15 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 	}
 
 	@Override
-	public void expiredSearches(final Set<SearchID> searches) {
-		for (final SearchID searchID : searches)
-			compositionListener.compositionTimeExpired(searchID);
+	public void expiredSearches(final Set<ExpiredSearch> expiredSearches) {
+		final ServiceList removedServices = new ServiceList();
+		for (final ExpiredSearch expiredSearch : expiredSearches) {
+			removedServices.addService(expiredSearch.getInitService());
+			removedServices.addService(expiredSearch.getGoalService());
+			compositionListener.compositionTimeExpired(expiredSearch.getSearchID());
+		}
+		
+		manageLocalServices(new ServiceList(), removedServices);
 	}
 
 	@Override

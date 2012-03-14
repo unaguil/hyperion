@@ -1,10 +1,10 @@
 package graphsearch.compositionData.localSearchesTable;
 
-import graphsearch.SearchID;
+import graphsearch.compositionData.ExpiredSearch;
 
 import java.util.Set;
 
 public interface SearchExpiredListener {
 
-	public void expiredSearches(Set<SearchID> searches);
+	public void expiredSearches(Set<ExpiredSearch> searches);
 }

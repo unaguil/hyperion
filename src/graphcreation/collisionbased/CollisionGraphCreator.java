@@ -162,10 +162,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		final Set<Service> removedServices = new HashSet<Service>(locallyRemovedServices.getServiceList());
 		
 		addedServices.remove(removedServices);
-		
-		logger.debug("Peer " + peer.getPeerID() + " adding local services " + addedServices);
-		logger.debug("Peer " + peer.getPeerID() + " removing local services " + removedServices);
-		
+			
 		final Set<ServiceDistance> remoteConnectedServices = new HashSet<ServiceDistance>();
 		final Set<PeerID> collisionPeers = new HashSet<PeerID>();
 	
@@ -189,6 +186,12 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 	
 	private void commit(Set<Service> addedServices, Set<Service> removedServices) throws NonLocalServiceException{
+		if (!addedServices.isEmpty())
+			logger.debug("Peer " + peer.getPeerID() + " adding local services " + addedServices);
+		
+		if (!removedServices.isEmpty())
+			logger.debug("Peer " + peer.getPeerID() + " removing local services " + removedServices);
+		
 		final Map<Service, Set<ServiceDistance>> newSuccessors = new HashMap<Service, Set<ServiceDistance>>();
 		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>();
 		
