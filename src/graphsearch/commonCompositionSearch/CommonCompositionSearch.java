@@ -204,7 +204,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		logger.trace("Peer " + peer.getPeerID() + " added INIT service " + initService);
 
 		logger.trace("Peer " + peer.getPeerID() + " added GOAL service " + goalService);
-		gCreator.manageLocalServices(addedServices, new ServiceList());
+		manageLocalServices(addedServices, new ServiceList());
 	}
 
 	public GraphCreator getGraphCreator() {
