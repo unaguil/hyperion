@@ -145,8 +145,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		}
 		
 		//perform direct multicast
-		logger.trace("Peer " + peer.getPeerID() + " multicasting to " + directMulticast);
-		pSearch.sendMulticastMessage(new PeerIDSet(directMulticast), payload);
+		if (!directMulticast.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " multicasting to " + directMulticast);
+			pSearch.sendMulticastMessage(new PeerIDSet(directMulticast), payload);
+		}
 	}
 
 	/*
