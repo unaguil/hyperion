@@ -220,13 +220,13 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 						newAncestors.put(addedService, ancestors);
 					
 					for (final ServiceDistance localSuccessor : sdg.getLocalSuccessors(addedService)) {
-						if (!newAncestors.containsKey(localSuccessor))
+						if (!newAncestors.containsKey(localSuccessor.getService()))
 							newAncestors.put(localSuccessor.getService(), new HashSet<ServiceDistance>());
 						newAncestors.get(localSuccessor.getService()).add(new ServiceDistance(addedService, new Integer(0)));
 					}
 					
 					for (final ServiceDistance localAncestor : sdg.getLocalAncestors(addedService)) {
-						if (!newSuccessors.containsKey(localAncestor))
+						if (!newSuccessors.containsKey(localAncestor.getService()))
 							newSuccessors.put(localAncestor.getService(), new HashSet<ServiceDistance>());
 						newSuccessors.get(localAncestor.getService()).add(new ServiceDistance(addedService, new Integer(0)));
 					}
@@ -310,7 +310,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 
 		synchronized (sdg) {
 			connectRemoteServices(connectServicesMessage.getRemoteSuccessors(), collDetectionNode, newSuccessors, newAncestors);
-			
 			connectRemoteServices(connectServicesMessage.getRemoteAncestors(), collDetectionNode, newSuccessors, newAncestors);
 		}
 
@@ -324,23 +323,26 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 
 	private void connectRemoteServices(final Map<Service, Set<ServiceDistance>> detectedConnections, final PeerID collDetectionNode, final Map<Service, Set<ServiceDistance>> newSuccessors, final Map<Service, Set<ServiceDistance>> newAncestors) {
+		final Set<ServiceDistance> addedServices = new HashSet<ServiceDistance>();
+		
 		for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = detectedConnections.entrySet().iterator(); it.hasNext();) {
 			final Entry<Service, Set<ServiceDistance>> entry = it.next();
 			final Service service = entry.getKey();
-			if (containsLocalService(service)) {					
-				for (final ServiceDistance newService : sdg.connectServices(service, entry.getValue(), collDetectionNode)) {
-					for (final ServiceDistance ancestor : sdg.getLocalAncestors(newService.getService())) {
-						if (!newSuccessors.containsKey(ancestor))
-							newSuccessors.put(ancestor.getService(), new HashSet<ServiceDistance>());
-						newSuccessors.get(ancestor.getService()).add(newService);
-					}
-					
-					for (final ServiceDistance successor : sdg.getLocalSuccessors(newService.getService())) {
-						if (!newAncestors.containsKey(successor))
-							newAncestors.put(successor.getService(), new HashSet<ServiceDistance>());
-						newAncestors.get(successor.getService()).add(newService);
-					}
-				}
+			if (containsLocalService(service))
+				addedServices.addAll(sdg.connectServices(service, entry.getValue(), collDetectionNode));
+		}
+			
+		for (final ServiceDistance addedService : addedServices) {
+			for (final ServiceDistance ancestor : sdg.getLocalAncestors(addedService.getService())) {
+				if (!newSuccessors.containsKey(ancestor.getService()))
+					newSuccessors.put(ancestor.getService(), new HashSet<ServiceDistance>());
+				newSuccessors.get(ancestor.getService()).add(addedService);
+			}
+			
+			for (final ServiceDistance successor : sdg.getLocalSuccessors(addedService.getService())) {
+				if (!newAncestors.containsKey(successor.getService()))
+					newAncestors.put(successor.getService(), new HashSet<ServiceDistance>());
+				newAncestors.get(successor.getService()).add(addedService);
 			}
 		}
 	}
