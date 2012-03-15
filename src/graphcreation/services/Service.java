@@ -36,6 +36,10 @@ public class Service implements Externalizable {
 		this.id = id;
 		this.peer = peer;
 	}
+	
+	public boolean isLocal(final PeerID peerID) {
+		return getPeerID().equals(peerID);
+	}
 
 	public void addParameter(final Parameter p) {
 		params.add(p);

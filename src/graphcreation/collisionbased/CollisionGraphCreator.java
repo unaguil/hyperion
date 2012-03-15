@@ -196,30 +196,45 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>();
 		
 		for (final Service addedService : addedServices) {
-			// Increment parameter references
-			for (final Parameter parameter : addedService.getParameters()) {
-				incReference(parameter);
+			if (addedService.isLocal(peer.getPeerID()) && !sdg.contains(addedService)) {
+				// Increment parameter references
+				for (final Parameter parameter : addedService.getParameters()) {
+					incReference(parameter);
+	
+					// Is the first addition of the parameter
+					if (refCount(parameter) == 1)
+						pSearch.addLocalParameter(parameter);
+				}
+	
+				synchronized (sdg) {
+					sdg.addLocalService(addedService);
+					
+					final Set<ServiceDistance> successors = sdg.getSuccessors(addedService);
+					if (!successors.isEmpty())
+						newSuccessors.put(addedService, successors);
 
-				// Is the first addition of the parameter
-				if (refCount(parameter) == 1)
-					pSearch.addLocalParameter(parameter);
-			}
-
-			synchronized (sdg) {
-				sdg.addLocalService(addedService);
-				final Set<ServiceDistance> localSuccessors = sdg.getLocalSuccessors(addedService);
-				if (!localSuccessors.isEmpty())
-					newSuccessors.put(addedService, localSuccessors);
-				
-				final Set<ServiceDistance> localAncestors = sdg.getLocalAncestors(addedService);
-				if (!localAncestors.isEmpty())
-					newAncestors.put(addedService, localAncestors);
+					final Set<ServiceDistance> ancestors = sdg.getAncestors(addedService);
+					if (!ancestors.isEmpty())
+						newAncestors.put(addedService, ancestors);
+					
+					for (final ServiceDistance localSuccessor : sdg.getLocalSuccessors(addedService)) {
+						if (!newAncestors.containsKey(localSuccessor))
+							newAncestors.put(localSuccessor.getService(), new HashSet<ServiceDistance>());
+						newAncestors.get(localSuccessor.getService()).add(new ServiceDistance(addedService, new Integer(0)));
+					}
+					
+					for (final ServiceDistance localAncestor : sdg.getLocalAncestors(addedService)) {
+						if (!newSuccessors.containsKey(localAncestor))
+							newSuccessors.put(localAncestor.getService(), new HashSet<ServiceDistance>());
+						newSuccessors.get(localAncestor.getService()).add(new ServiceDistance(addedService, new Integer(0)));
+					}
+				}
 			}
 		}
-
+		
 		synchronized (sdg) {
 			for (final Service removedService : removedServices)
-				if (sdg.isLocal(removedService)) {
+				if (containsLocalService(removedService)) {
 					for (final Parameter parameter : removedService.getParameters()) {
 						decReference(parameter);
 	
@@ -230,9 +245,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	
 					sdg.removeLocalService(removedService);
 				}
-	
-			pSearch.commit();
 		}
+		
+		pSearch.commit();
 		
 		if (!newSuccessors.isEmpty())
 			graphCreationListener.newSuccessors(newSuccessors);
@@ -292,9 +307,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		final Map<Service, Set<ServiceDistance>> newAncestors = new HashMap<Service, Set<ServiceDistance>>();
 
 		synchronized (sdg) {
-			connectServices(connectServicesMessage.getRemoteSuccessors(), collDetectionNode, newSuccessors, newAncestors);
+			connectRemoteServices(connectServicesMessage.getRemoteSuccessors(), collDetectionNode, newSuccessors, newAncestors);
 			
-			connectServices(connectServicesMessage.getRemoteAncestors(), collDetectionNode, newSuccessors, newAncestors);
+			connectRemoteServices(connectServicesMessage.getRemoteAncestors(), collDetectionNode, newSuccessors, newAncestors);
 		}
 
 		traceSDG();
@@ -306,13 +321,12 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			graphCreationListener.newAncestors(newAncestors);
 	}
 
-	private void connectServices(final Map<Service, Set<ServiceDistance>> detectedConnections, final PeerID collDetectionNode, final Map<Service, Set<ServiceDistance>> newSuccessors, final Map<Service, Set<ServiceDistance>> newAncestors) {
+	private void connectRemoteServices(final Map<Service, Set<ServiceDistance>> detectedConnections, final PeerID collDetectionNode, final Map<Service, Set<ServiceDistance>> newSuccessors, final Map<Service, Set<ServiceDistance>> newAncestors) {
 		for (final Iterator<Entry<Service, Set<ServiceDistance>>> it = detectedConnections.entrySet().iterator(); it.hasNext();) {
 			final Entry<Service, Set<ServiceDistance>> entry = it.next();
 			final Service service = entry.getKey();
-			if (sdg.isLocal(service)) {	
-				final Set<ServiceDistance> newServices = sdg.connectServices(service, entry.getValue(), collDetectionNode);				
-				for (final ServiceDistance newService : newServices) {
+			if (containsLocalService(service)) {					
+				for (final ServiceDistance newService : sdg.connectServices(service, entry.getValue(), collDetectionNode)) {
 					for (final ServiceDistance ancestor : sdg.getLocalAncestors(newService.getService())) {
 						if (!newSuccessors.containsKey(ancestor))
 							newSuccessors.put(ancestor.getService(), new HashSet<ServiceDistance>());
@@ -360,7 +374,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			
 			for (final Service remoteService : lostServices)
 				// test that service really exists in graph before removal
-				if (sdg.hasService(remoteService)) {
+				if (sdg.contains(remoteService)) {
 					// get the current ancestors and successors of the removed
 					// service
 					final Set<ServiceDistance> beforeAncestors = sdg.getLocalAncestors(remoteService);
@@ -496,13 +510,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	public void readFromXML(InputStream is) throws IOException {}
 
 	@Override
-	public boolean isLocal(Service service) {
-		synchronized (sdg) {
-			return sdg.isLocal(service);
-		}
-	}
-
-	@Override
 	public Set<ServiceDistance> getAncestors(Service service) {
 		synchronized (sdg) {
 			return sdg.getAncestors(service);
@@ -528,5 +535,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	@Override
 	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> addedParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, List<PayloadMessage> payloadMessages) {
 		return collisionNode.parametersChanged(neighbor, addedParameters, removedParameters, changedParameters, payloadMessages);
+	}
+
+	@Override
+	public boolean containsLocalService(Service service) {
+		return service.isLocal(peer.getPeerID()) && sdg.contains(service);
 	}
 }

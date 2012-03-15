@@ -87,16 +87,6 @@ public interface SDG extends XMLSerializable {
 	public Service getService(String serviceID);
 
 	/**
-	 * Checks whether the specified services is local or not to the peer which
-	 * hosts the SDG
-	 * 
-	 * @param service
-	 *            the service to check whether it is local or no
-	 * @return true if the service is local, false otherwise
-	 */
-	public boolean isLocal(Service service);
-
-	/**
 	 * Gets those collision nodes which provide access to the passed service
 	 * 
 	 * @param service
@@ -121,7 +111,7 @@ public interface SDG extends XMLSerializable {
 	 *            the service id to check
 	 * @return true if the service is contained in the SDG, false otherwise
 	 */
-	public boolean hasService(Service service);
+	public boolean contains(Service service);
 	
 	public Route getRoute(PeerID destination);
 
@@ -131,5 +121,5 @@ public interface SDG extends XMLSerializable {
 
 	public void removeIndirectRoute(PeerID dest, PeerID collisionNode);
 
-	public Set<ServiceDistance> getInaccesibleServices();	
+	public Set<ServiceDistance> getInaccesibleServices();
 }

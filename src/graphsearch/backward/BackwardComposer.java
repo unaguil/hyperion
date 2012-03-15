@@ -39,38 +39,36 @@ public class BackwardComposer {
 	}
 
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
-		for (final Service service : newAncestors.keySet())
-			if (gCreator.isLocal(service)) {
+		for (final Service service : newAncestors.keySet()) {
+			logger.trace("Peer " + peerID + " service " + service + " has new ancestors " + newAncestors.get(service));
 
-				logger.trace("Peer " + peerID + " service " + service + " has new ancestors " + newAncestors.get(service));
+			// Obtain the current ancestors set for the service
+			final Set<Set<ServiceDistance>> currentCoveringSets = bCompositionData.getCoveringSets(service);
 
-				// Obtain the current ancestors set for the service
-				final Set<Set<ServiceDistance>> currentCoveringSets = bCompositionData.getCoveringSets(service);
+			final Set<ServiceDistance> ancestors = gCreator.getAncestors(service);
+			// Calculate the current power set of the service
+			final Set<Set<ServiceDistance>> newCoveringSets = CoveringSets.calculateCoveringSets(service, currentCoveringSets, ancestors, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 
-				final Set<ServiceDistance> ancestors = gCreator.getAncestors(service);
-				// Calculate the current power set of the service
-				final Set<Set<ServiceDistance>> newCoveringSets = CoveringSets.calculateCoveringSets(service, currentCoveringSets, ancestors, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+			logger.trace("Peer " + peerID + " service " + service + " covering sets: " + currentCoveringSets + " news: " + newCoveringSets);
 
-				logger.trace("Peer " + peerID + " service " + service + " covering sets: " + currentCoveringSets + " news: " + newCoveringSets);
+			// Update the covering sets for the service
+			bCompositionData.addCoveringSets(service, newCoveringSets);
 
-				// Update the covering sets for the service
-				bCompositionData.addCoveringSets(service, newCoveringSets);
+			// if the service is the GOAL service start the composition
+			if (Utility.isGoalService(service))
+				startBComposition(service, newCoveringSets);
+			else {
+				// Get the current messages and propagate them
+				final Map<SearchID, List<BCompositionMessage>> receivedMessages = bCompositionData.getReceivedMessages(service);
+				if (!receivedMessages.isEmpty()) {
 
-				// if the service is the GOAL service start the composition
-				if (Utility.isGoalService(service))
-					startBComposition(service, newCoveringSets);
-				else {
-					// Get the current messages and propagate them
-					final Map<SearchID, List<BCompositionMessage>> receivedMessages = bCompositionData.getReceivedMessages(service);
-					if (!receivedMessages.isEmpty()) {
-
-						logger.trace("Peer " + peerID + " processing messages for searchs " + receivedMessages.keySet());
-						for (final List<BCompositionMessage> messages : receivedMessages.values())
-							for (final BCompositionMessage message : messages)
-								sendBCompositionMessages(service, newCoveringSets, message);
-					}
+					logger.trace("Peer " + peerID + " processing messages for searchs " + receivedMessages.keySet());
+					for (final List<BCompositionMessage> messages : receivedMessages.values())
+						for (final BCompositionMessage message : messages)
+							sendBCompositionMessages(service, newCoveringSets, message);
 				}
 			}
+		}
 	}
 
 	private void startBComposition(final Service service, final Set<Set<ServiceDistance>> newCoveringSets) {
@@ -108,7 +106,6 @@ public class BackwardComposer {
 	}
 
 	public void receivedBComposition(final BCompositionMessage bCompositionMessage) {
-
 		logger.trace("Peer " + peerID + " received backward composition search " + bCompositionMessage.getSearchID() + " from service " + bCompositionMessage.getSourceService());
 
 		for (final ServiceDistance sDistance : bCompositionMessage.getDestServices()) {
@@ -116,7 +113,7 @@ public class BackwardComposer {
 			logger.trace("Peer " + peerID + " checking service " + sDistance.getService());
 			final Service service = sDistance.getService();
 
-			if (gCreator.isLocal(service)) {
+			if (gCreator.containsLocalService(service)) {
 				// Updating received messages for current service node
 				final MessageTree modifiedTree = bCompositionData.addReceivedMessage(service, bCompositionMessage);
 

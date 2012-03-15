@@ -35,9 +35,9 @@ public interface GraphCreator extends XMLSerializable {
 
 	public Service getService(String serviceID);
 
-	public boolean isLocal(Service service);
-
 	public Set<ServiceDistance> getAncestors(Service service);
 
 	public Set<ServiceDistance> getSuccessors(Service service);
+
+	public boolean containsLocalService(Service service);
 }

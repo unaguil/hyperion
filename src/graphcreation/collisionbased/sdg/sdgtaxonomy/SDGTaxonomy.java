@@ -69,7 +69,7 @@ public class SDGTaxonomy implements SDG {
 
 	@Override
 	public void addLocalService(final Service service) throws NonLocalServiceException {
-		if (isLocal(service))
+		if (service.isLocal(peerID))
 			eServiceGraph.merge(service);
 		else
 			throw new NonLocalServiceException();
@@ -95,10 +95,10 @@ public class SDGTaxonomy implements SDG {
 	@Override
 	public Set<ServiceDistance> getSuccessors(final Service service) {
 		final Set<ServiceDistance> successors = new HashSet<ServiceDistance>();
-		if (isLocal(service)) {
+		if (service.isLocal(peerID)) {
 			ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
 			for (final ServiceNode successorNode : eServiceGraph.getSuccessors(serviceNode, false)) {
-				if (isLocal(successorNode.getService()))
+				if (successorNode.getService().isLocal(peerID))
 					successors.add(new ServiceDistance(successorNode.getService(), new Integer(0)));
 				else
 					successors.add(new ServiceDistance(successorNode.getService(), getDistance(successorNode.getService().getPeerID())));
@@ -117,10 +117,10 @@ public class SDGTaxonomy implements SDG {
 	@Override
 	public Set<ServiceDistance> getAncestors(final Service service) {
 		final Set<ServiceDistance> ancestors = new HashSet<ServiceDistance>();
-		if (isLocal(service)) {
+		if (service.isLocal(peerID)) {
 			ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
 			for (final ServiceNode ancestorNode : eServiceGraph.getAncestors(serviceNode, false)) {
-				if (isLocal(ancestorNode.getService()))
+				if (ancestorNode.getService().isLocal(peerID))
 					ancestors.add(new ServiceDistance(ancestorNode.getService(), new Integer(0)));
 				else
 					ancestors.add(new ServiceDistance(ancestorNode.getService(), getDistance(ancestorNode.getService().getPeerID())));
@@ -145,7 +145,7 @@ public class SDGTaxonomy implements SDG {
 	public Set<Service> findLocalCompatibleServices(final Set<Parameter> parameters) {
 		final Set<Service> services = new HashSet<Service>();
 		for (final Service service : eServiceGraph.getServices())
-			if (isLocal(service) && isCompatible(service, parameters))
+			if (service.isLocal(peerID) && isCompatible(service, parameters))
 				services.add(service);
 		return services;
 	}
@@ -246,11 +246,6 @@ public class SDGTaxonomy implements SDG {
 	public String toString() {
 		return eServiceGraph.toString();
 	}
-
-	@Override
-	public boolean isLocal(final Service service) {
-		return service.getPeerID().equals(peerID);
-	}
 	
 	@Override
 	public Set<PeerID> getThroughCollisionNodes(final Service service) {
@@ -298,11 +293,11 @@ public class SDGTaxonomy implements SDG {
 		final Set<ServiceDistance> connectedServices = new HashSet<ServiceDistance>();
 
 		for (final ServiceDistance sDistance : getSuccessors(service))
-			if (!isLocal(sDistance.getService()))
+			if (!sDistance.getService().isLocal(peerID))
 				connectedServices.add(sDistance);
 		
 		for (final ServiceDistance sDistance : getAncestors(service))
-			if (!isLocal(sDistance.getService()))
+			if (!sDistance.getService().isLocal(peerID))
 				connectedServices.add(sDistance);
 
 		return connectedServices;
@@ -312,7 +307,7 @@ public class SDGTaxonomy implements SDG {
 	private Set<ServiceDistance> removeNonLocalDisconnectedServices() {
 		Set<ServiceDistance> removedRemotedServices = new HashSet<ServiceDistance>();
 		for (final Service s : eServiceGraph.getServices()) {
-			if (!isLocal(s) && eServiceGraph.isDisconnected(s)) {
+			if (!s.isLocal(peerID) && eServiceGraph.isDisconnected(s)) {
 				eServiceGraph.removeService(s);
 				removedRemotedServices.add(new ServiceDistance(s, getDistance(s.getPeerID())));
 			}
@@ -321,7 +316,7 @@ public class SDGTaxonomy implements SDG {
 	}
 
 	@Override
-	public boolean hasService(final Service service) {
+	public boolean contains(final Service service) {
 		return getService(service.getID()) != null;
 	}
 
@@ -331,7 +326,7 @@ public class SDGTaxonomy implements SDG {
 		
 		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService); 
 		for (final ServiceNode ancestor : eServiceGraph.getAncestors(serviceNode, false)) {
-			if (isLocal(ancestor.getService()))
+			if (ancestor.getService().isLocal(peerID))
 				localAncestors.add(new ServiceDistance(ancestor.getService(), getDistance(ancestor.getService().getPeerID())));
 		}
 		
@@ -344,7 +339,7 @@ public class SDGTaxonomy implements SDG {
 		
 		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService);
 		for (final ServiceNode succesor : eServiceGraph.getSuccessors(serviceNode, false)) {
-			if (isLocal(succesor.getService()))
+			if (succesor.getService().isLocal(peerID))
 				localSuccesors.add(new ServiceDistance(succesor.getService(), getDistance(succesor.getService().getPeerID())));
 		}
 		

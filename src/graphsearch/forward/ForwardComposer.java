@@ -49,21 +49,18 @@ public class ForwardComposer {
 		logger.debug("Peer " + peer.getPeerID() + " detected new successors " + newSuccessors);
 		for (final Entry<Service, Set<ServiceDistance>> entry : newSuccessors.entrySet()) {
 			final Service service = entry.getKey();
-			// Only local services are taken into account
-			if (gCreator.isLocal(service)) {
-				logger.trace("Peer " + peer.getPeerID() + " service " + service + " has new successors " + entry.getValue());
-				if (Utility.isINITService(service)) {
-					// the INIT node is always covered. Send the start
-					// composition message to new successors
-					logger.trace("Peer " + peer.getPeerID() + " the service is an INIT service. Sending start messages.");
-					initFComposition(entry.getValue(), service);
-				} else {
-					// the service is a not an INIT service -> check if the
-					// service is covered and forward its composition message
-					final Map<SearchID, List<FCompositionMessage>> receivedMessages = fCompositionData.getReceivedMessages(service);
-					for (final SearchID searchID : receivedMessages.keySet())
-						processForwardCompositionMessages(entry.getValue(), service, searchID);
-				}
+			logger.trace("Peer " + peer.getPeerID() + " service " + service + " has new successors " + entry.getValue());
+			if (Utility.isINITService(service)) {
+				// the INIT node is always covered. Send the start
+				// composition message to new successors
+				logger.trace("Peer " + peer.getPeerID() + " the service is an INIT service. Sending start messages.");
+				initFComposition(entry.getValue(), service);
+			} else {
+				// the service is a not an INIT service -> check if the
+				// service is covered and forward its composition message
+				final Map<SearchID, List<FCompositionMessage>> receivedMessages = fCompositionData.getReceivedMessages(service);
+				for (final SearchID searchID : receivedMessages.keySet())
+					processForwardCompositionMessages(entry.getValue(), service, searchID);
 			}
 		}
 	}
@@ -150,8 +147,7 @@ public class ForwardComposer {
 			final Service service = sDistance.getService();
 
 			logger.trace("Peer " + peer.getPeerID() + " checking service " + service);
-			if (gCreator.isLocal(service)) {
-
+			if (gCreator.containsLocalService(service)) {
 				logger.trace("Peer " + peer.getPeerID() + " added composition message to message table");
 
 				// Updating received messages for current service node
