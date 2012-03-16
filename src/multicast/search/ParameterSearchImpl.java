@@ -718,7 +718,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		boolean tableUpdated = false;
 		synchronized (uTable) {
-			tableUpdated = uTable.updateUnicastTable(searchMessage, pDisseminator.getTaxonomy());
+			tableUpdated = uTable.updateUnicastTable(searchMessage);
 		}
 		
 		final Set<Parameter> foundLocalParameters = checkLocalParameters(searchMessage);

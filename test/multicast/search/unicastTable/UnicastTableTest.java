@@ -69,8 +69,6 @@ public class UnicastTableTest {
 	
 	private static final NeighborDetector nDetector = new DummyNeighborDetector();
 	
-	private final Taxonomy emptyTaxonomy = new BasicTaxonomy();
-	
 	private static final Taxonomy taxonomy = new BasicTaxonomy();
 	
 	@BeforeClass
@@ -111,39 +109,39 @@ public class UnicastTableTest {
 		localSearchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-L")), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
 		localSearchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-M")), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
 
-		table1.updateUnicastTable(searchMessage1, emptyTaxonomy);
-		table1.updateUnicastTable(searchMessage2, emptyTaxonomy);
-		table1.updateUnicastTable(searchMessage3, emptyTaxonomy);
-		table1.updateUnicastTable(searchMessage4, emptyTaxonomy);
-		table1.updateUnicastTable(searchMessage5, emptyTaxonomy);
+		table1.updateUnicastTable(searchMessage1);
+		table1.updateUnicastTable(searchMessage2);
+		table1.updateUnicastTable(searchMessage3);
+		table1.updateUnicastTable(searchMessage4);
+		table1.updateUnicastTable(searchMessage5);
 		table1.updateUnicastTable(searchResponseMessage1);
 		table1.updateUnicastTable(searchResponseMessage2);
 		table1.updateUnicastTable(searchResponseMessage3);
 		table1.updateUnicastTable(searchResponseMessage4);
 		table1.updateUnicastTable(localSearchResponseMessage1);
 		table1.updateUnicastTable(localSearchResponseMessage2);
-		table1.updateUnicastTable(localSearchMessage1, emptyTaxonomy);
-		table1.updateUnicastTable(localSearchMessage2, emptyTaxonomy);
+		table1.updateUnicastTable(localSearchMessage1);
+		table1.updateUnicastTable(localSearchMessage2);
 
 		table2 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
-		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("1"), new PeerID("2")), emptyTaxonomy);
-		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("3")), emptyTaxonomy);
+		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("1"), new PeerID("2")));
+		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("3")));
 		table2.updateUnicastTable(createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("5"), new PeerID("6"), searchMessage4));
 
 		table3 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
-		table3.updateUnicastTable(searchMessage1, emptyTaxonomy);
-		table3.updateUnicastTable(searchMessage2, emptyTaxonomy);
-		table3.updateUnicastTable(searchMessage3, emptyTaxonomy);
-		table3.updateUnicastTable(searchMessage4, emptyTaxonomy);
-		table3.updateUnicastTable(searchMessage5, emptyTaxonomy);
+		table3.updateUnicastTable(searchMessage1);
+		table3.updateUnicastTable(searchMessage2);
+		table3.updateUnicastTable(searchMessage3);
+		table3.updateUnicastTable(searchMessage4);
+		table3.updateUnicastTable(searchMessage5);
 		table3.updateUnicastTable(searchResponseMessage1);
 		table3.updateUnicastTable(searchResponseMessage2);
 		table3.updateUnicastTable(searchResponseMessage3);
 		table3.updateUnicastTable(searchResponseMessage4);
 		table3.updateUnicastTable(localSearchResponseMessage1);
 		table3.updateUnicastTable(localSearchResponseMessage2);
-		table3.updateUnicastTable(localSearchMessage1, emptyTaxonomy);
-		table3.updateUnicastTable(localSearchMessage2, emptyTaxonomy);
+		table3.updateUnicastTable(localSearchMessage1);
+		table3.updateUnicastTable(localSearchMessage2);
 	}
 
 	private SearchMessage createSearchMessage(final Set<Parameter> parameters, final PeerID source, final PeerID sender) {

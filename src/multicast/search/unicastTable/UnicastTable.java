@@ -475,7 +475,7 @@ public class UnicastTable implements XMLSerializable {
 		return strBuilder.toString();
 	}
 	
-	public boolean updateUnicastTable(final SearchMessage searchMessage, @SuppressWarnings("unused") final Taxonomy taxonomy) {
+	public boolean updateUnicastTable(final SearchMessage searchMessage) {
 		// Check if the received search message was not previously received (it
 		// is contained in the active searches)
 		if (activeSearches.contains(searchMessage))
