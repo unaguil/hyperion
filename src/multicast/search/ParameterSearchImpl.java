@@ -695,9 +695,9 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (removeRouteMessage.mustRepropagateSearches())
 			repropagateCurrentActiveSearches(peer.getDetector().getCurrentNeighbors());
 
-		if (notify) {
-			searchListener.lostDestinations(lostDestinations);
+		if (notify && !lostDestinations.isEmpty()) {
 			logger.debug("Peer " + peer.getPeerID() + " lost route to destinations " + lostDestinations);
+			searchListener.lostDestinations(lostDestinations);
 		}
 		
 		if (notify || repropagateSearches) {			
