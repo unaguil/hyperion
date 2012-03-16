@@ -387,7 +387,7 @@ public class UnicastTable implements XMLSerializable {
 			if (route.getRouteID().equals(routeID)) {
 				it.remove();
 				final PeerID dest = route.getDest();
-				logger.debug("Peer " + peerID + " removed route to " + dest);
+				logger.trace("Peer " + peerID + " removed route to " + dest);
 				if (!knowsRouteTo(dest))
 					foundParameters.remove(dest);
 				return dest;
@@ -515,7 +515,7 @@ public class UnicastTable implements XMLSerializable {
 	private void addRoute(final MessageID routeID, final PeerID dest, final PeerID neighbor, final int distance) {
 		final BroadcastRoute route = new BroadcastRoute(dest, neighbor, routeID, distance);
 		if (!routes.contains(route)) {
-			logger.debug("Peer " + peerID + " added route to " + dest);
+			logger.trace("Peer " + peerID + " added route to " + dest);
 			routes.add(route);
 		}
 	}
