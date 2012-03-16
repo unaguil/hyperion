@@ -9,7 +9,6 @@ import graphcreation.collisionbased.connectionManager.ConnectionsManager;
 import graphcreation.collisionbased.message.CollisionResponseMessage;
 import graphcreation.services.Service;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -139,19 +138,7 @@ public class ConnectionsManagerTest {
 		assertTrue(updatedConnections.get(connection2).contains(new PeerID("3")));
 		assertTrue(updatedConnections.get(connection2).contains(new PeerID("6")));
 	}
-
-	@Test
-	public void testRemoveParameters() throws InvalidParameterIDException {
-		cManager.updateConnections(searchResponseMessage);
-		cManager.updateConnections(searchResponseMessage2);
-		cManager.updateConnections(searchResponseMessage3);
-		cManager.updateConnections(searchResponseMessage4);
-		cManager.updateConnections(searchResponseMessage5);
-
-		final Map<PeerIDSet, Set<Service>> notifiedPeers = cManager.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("1"));
-		assertEquals(1, notifiedPeers.size());
-	}
-
+	
 	@Test
 	public void testRemoveResponse() {
 		cManager.updateConnections(searchResponseMessage);

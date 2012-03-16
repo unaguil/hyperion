@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.SearchResponseMessage;
-import peer.conditionregister.ConditionRegister;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.Taxonomy;
@@ -22,10 +21,6 @@ public class ConnectionsManager {
 
 	// collisions detected by the current node
 	private final Set<Connection> detectedConnections = new HashSet<Connection>();
-	
-	private static final long CLEAN_INVALID_TIME = 60000;
-	
-	private final ConditionRegister<Connection> invalidConnections = new ConditionRegister<Connection>(CLEAN_INVALID_TIME);
 	
 	private final GraphType graphType;
 
@@ -68,45 +63,9 @@ public class ConnectionsManager {
 		return updatedConnections;
 	}
 
-	/**
-	 * Removes the specified parameters from those responses coming from the
-	 * passed peers
-	 * 
-	 * @param parameters
-	 *            the removed parameters
-	 * @param source
-	 *            the peers whose parameters are removed from
-	 * @return a map containing the peers which must notified and the lost
-	 *         services to notify
-	 */
-	public Map<PeerIDSet, Set<Service>> removeParameters(final Set<Parameter> parameters, final PeerID source) {
-		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-		for (Iterator<Connection> it = detectedConnections.iterator(); it.hasNext(); ) {
-			Connection connection = it.next();
-			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeParameters(parameters, source);
-			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
-				final PeerIDSet peers = entry.getKey();
-				if (!notifications.containsKey(peers))
-					notifications.put(peers, new HashSet<Service>());
-				notifications.get(peers).addAll(entry.getValue());
-			}
-			
-			if (!connection.isConnected())
-				it.remove();
-		}
-		return notifications;
-	}
-
-	/**
-	 * Removes those responses identified by the passed route identifiers
-	 * 
-	 * @param lostRoutes
-	 *            the routes which have been lost
-	 * @return the notifications for colliding peers
-	 */
 	public Map<PeerIDSet, Set<Service>> removeResponses(final Set<PeerID> lostDestinations) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-		for (Iterator<Connection> it = getAllConnections().iterator(); it.hasNext(); ) {
+		for (Iterator<Connection> it = detectedConnections.iterator(); it.hasNext(); ) {
 			Connection connection = it.next();
 			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeResponses(lostDestinations);
 			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
@@ -134,7 +93,7 @@ public class ConnectionsManager {
 	public Map<PeerIDSet, Set<Service>> removeServices(final Set<Service> removedServices, final PeerID source) {
 		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
 		
-		for (final Connection connection : getAllConnections()) {
+		for (final Connection connection : detectedConnections) {
 			final Map<PeerIDSet, Set<Service>> partialNotifications = connection.removeServices(removedServices, source);
 			for (final Entry<PeerIDSet, Set<Service>> entry : partialNotifications.entrySet()) {
 				final PeerIDSet peers = entry.getKey();
@@ -144,13 +103,6 @@ public class ConnectionsManager {
 			}
 		}
 		return notifications;
-	}
-
-	private Set<Connection> getAllConnections() {
-		//include valid & invalid connections
-		final Set<Connection> checkedConnections = new HashSet<Connection>(detectedConnections);
-		checkedConnections.addAll(invalidConnections.getEntries());
-		return checkedConnections;
 	}
 
 	/**
@@ -168,7 +120,6 @@ public class ConnectionsManager {
 			if (removedParameters.contains(collision.getInput()) || removedParameters.contains(collision.getOutput())) {
 				connections.add(connection);
 				it.remove();
-				invalidConnections.addEntry(connection);
 			}
 		}
 
