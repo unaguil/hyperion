@@ -21,7 +21,7 @@ public interface TableChangedListener {
 	 * 
 	 * @param neighbor
 	 *            the neighbor where the changes came from
-	 * @param addedParameters
+	 * @param newParameters
 	 *            the added parameters
 	 * @param removedParameters
 	 *            the removed parameters
@@ -33,5 +33,7 @@ public interface TableChangedListener {
 	 * @return the payload will be included in the table message by the
 	 *         dissemination layer
 	 */
-	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> addedParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, List<PayloadMessage> payloadMessages);
+	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> newParameters, Set<Parameter> removedParameters, 
+											Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters,
+											List<PayloadMessage> payloadMessages);
 }

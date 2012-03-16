@@ -537,8 +537,8 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 
 	@Override
-	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> addedParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, List<PayloadMessage> payloadMessages) {
-		return collisionNode.parametersChanged(neighbor, addedParameters, removedParameters, changedParameters, payloadMessages);
+	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> newParameters, Set<Parameter> removedParameters, Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters, List<PayloadMessage> payloadMessages) {
+		return collisionNode.parametersChanged(neighbor, newParameters, removedParameters, changedParameters, payloadMessages);
 	}
 
 	@Override
