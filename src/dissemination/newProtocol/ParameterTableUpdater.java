@@ -203,7 +203,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 		logger.trace("Peer " + peer.getPeerID() + " removed parameters " + removedLocalParameters + " from local table");
 
 		// Notify added and removed parameters
-		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), newLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, Collections.<PayloadMessage> emptyList());
+		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), newLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, newLocalParameters, Collections.<PayloadMessage> emptyList());
 
 		// Send the tables using a table message only if neighbors exist
 		final PeerIDSet currentNeighbors = peer.getDetector().getCurrentNeighbors();
@@ -466,6 +466,12 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				}
 			}
 			
+			final Set<Parameter> addedParameters = new HashSet<Parameter>();
+			for (final Parameter p : tableMessage.getUpdateTable().getParameters()) {
+				if (tableMessage.getUpdateTable().getAddition(p) != null)
+					addedParameters.add(p);
+			}
+			
 			String pTableStatus;
 			synchronized (mutex) {
 				pTableStatus = pTable.toString();
@@ -473,7 +479,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			logger.trace("Peer " + peer.getPeerID() + " local table after update " + pTableStatus);
 
 			// Notify table changes to listeners
-			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), newParameters, removedParameters, new HashSet<Parameter>(), changedParameters, tableMessage.getPayloadMessages());
+			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), newParameters, removedParameters, new HashSet<Parameter>(), changedParameters, addedParameters, tableMessage.getPayloadMessages());
 
 			logger.trace("Peer " + peer.getPeerID() + " addedParameters: " + newParameters + " removedParameters: " + removedParameters);
 			logger.trace("Peer " + peer.getPeerID() + " adding payload " + payload + " to table message");
@@ -501,9 +507,12 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	}
 
 	// Notifies the table changed listener
-	private PayloadMessage notifyTableChangedListener(final PeerID neighbor, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
+	private PayloadMessage notifyTableChangedListener(final PeerID neighbor, final Set<Parameter> newParameters, 
+													  final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters,
+													  final Map<Parameter, DistanceChange> changedParameters, 
+													  final Set<Parameter> addedParameters, final List<PayloadMessage> payloadMessages) {
 		if (tableChangedListener != null)
-			return tableChangedListener.parametersChanged(neighbor, addedParameters, removedParameters, removedLocalParameters, changedParameters, payloadMessages);
+			return tableChangedListener.parametersChanged(neighbor, newParameters, removedParameters, removedLocalParameters, changedParameters, addedParameters, payloadMessages);
 
 		return null;
 	}

@@ -57,7 +57,9 @@ class CollisionNode {
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
 
-	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
+	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, 
+											final Map<Parameter, DistanceChange> changedParameters,
+											final List<PayloadMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
@@ -84,10 +86,10 @@ class CollisionNode {
 		}
 		
 		if (!addedParameters.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " new parameters added " + addedParameters + ", checking for collisions");
+			logger.trace("Peer " + peer.getPeerID() + " parameters added " + addedParameters + ", checking for collisions");
 
 			// obtain which collisions are caused by the new parameters addition
-			collisions.addAll(checkParametersCollisions(addedParameters, sender));
+			collisions.addAll(checkParametersCollisions(addedParameters));
 			
 			processCollisions(sender, inhibitions, collisions);
 		}
@@ -95,7 +97,7 @@ class CollisionNode {
 		if (!changedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
 			
-			Set<Collision> detectedCollisions = checkParametersCollisions(changedParameters.keySet(), sender);
+			Set<Collision> detectedCollisions = checkParametersCollisions(changedParameters.keySet());
 			
 			//remove already detected collisions
 			//TODO improve with taxonomy checking
@@ -190,12 +192,8 @@ class CollisionNode {
 
 	// checks for new collisions taking into account the new added parameters.
 	// Returns the list of detected collisions
-	private Set<Collision> checkParametersCollisions(final Set<Parameter> addedParameters, final PeerID sender) {
-		boolean checkNewParameters = false;
-		if (sender.equals(peer.getPeerID()))
-			checkNewParameters = true;
-
-		return CollisionDetector.getParametersColliding(addedParameters, gCreator.getPSearch().getDisseminationLayer().getParameters(), checkNewParameters, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+	private Set<Collision> checkParametersCollisions(final Set<Parameter> addedParameters) {
+		return CollisionDetector.getParametersColliding(addedParameters, gCreator.getPSearch().getDisseminationLayer().getParameters(), true, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 	}
 	
 	// checks if the collision must be detected by the current node

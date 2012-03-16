@@ -27,6 +27,7 @@ public interface TableChangedListener {
 	 *            the removed parameters
 	 * @param removedLocalParameters
 	 *            the set of removed parameters which where local
+	 * @param addedParameters TODO
 	 * @param changedParamaters
 	 *            those parameters whose distance has changed (but not
 	 *            completely removed).
@@ -35,5 +36,5 @@ public interface TableChangedListener {
 	 */
 	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> newParameters, Set<Parameter> removedParameters, 
 											Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters,
-											List<PayloadMessage> payloadMessages);
+											Set<Parameter> addedParameters, List<PayloadMessage> payloadMessages);
 }

@@ -224,7 +224,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	@Override
-	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> newParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, final List<PayloadMessage> payloadMessages) {
+	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> newParameters, final Set<Parameter> removedParameters, final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, Set<Parameter> addedParameters, final List<PayloadMessage> payloadMessages) {
 		// Check if the added parameters are local
 
 		final Set<Parameter> localAddedParameters = new HashSet<Parameter>();
@@ -242,7 +242,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		if (!nonLocalAddedParameters.isEmpty())
 			checkActiveSearchesWithNonLocalParameters(nonLocalAddedParameters);
 
-		return tableChangedListener.parametersChanged(neighbor, newParameters, removedParameters, removedLocalParameters, changedParameters, payloadMessages);
+		return tableChangedListener.parametersChanged(neighbor, newParameters, removedParameters, removedLocalParameters, changedParameters, addedParameters, payloadMessages);
 	}
 
 	@Override
