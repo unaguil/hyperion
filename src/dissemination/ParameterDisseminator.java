@@ -6,7 +6,6 @@ import peer.peerid.PeerID;
 import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
-import dissemination.newProtocol.ParameterTableUpdater.CommitedParameters;
 import dissemination.newProtocol.ptable.DisseminationDistanceInfo;
 
 public interface ParameterDisseminator extends XMLSerializable, DisseminationDistanceInfo {
@@ -35,10 +34,8 @@ public interface ParameterDisseminator extends XMLSerializable, DisseminationDis
 	/**
 	 * Propagates the changes performed using addLocalEntry() or
 	 * removeLocalEntry() methods.
-	 * 
-	 * @return the commited parameter changes
 	 */
-	public CommitedParameters commit();
+	public void commit();
 
 	/**
 	 * Gets the associated taxonomy
