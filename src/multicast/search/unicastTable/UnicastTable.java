@@ -526,14 +526,10 @@ public class UnicastTable implements XMLSerializable {
 
 	private boolean removeSearch(final MessageID routeID) {		
 		//check active searches
-		final Set<SearchMessage> newActiveSearches = new HashSet<SearchMessage>();
 		for (final Iterator<SearchMessage> activeSearchesIterator = activeSearches.iterator(); activeSearchesIterator.hasNext(); ) {
 			final SearchMessage activeSearch = activeSearchesIterator.next();
 			if (activeSearch.getRemoteMessageID().equals(routeID)) {						
-				activeSearchesIterator.remove();
-				
-				activeSearches.addAll(newActiveSearches);
-				
+				activeSearchesIterator.remove();			
 				logUTable();
 				return true;
 			}
