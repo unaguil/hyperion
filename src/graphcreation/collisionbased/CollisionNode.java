@@ -113,17 +113,20 @@ class CollisionNode {
 		// new parameters
 		for (final PayloadMessage payload : payloadMessages) {
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
-			logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + inhibeCollisionsMessage.getInhibedCollisions());
-
-			// remove collisions using received inhibitions (checking if collision is applied)
-			for (Inhibition inhibedCollision : inhibeCollisionsMessage.getInhibedCollisions()) {
-				if (!inhibedCollision.getNotAppliedTo().equals(peer.getPeerID()))
-					collisions.remove(inhibedCollision.getCollision());
-			}
-			
-			logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);
+			final Set<Inhibition> receivedInhibitions = inhibeCollisionsMessage.getInhibedCollisions();
+			if (!receivedInhibitions.isEmpty()) {
+				logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + receivedInhibitions);
+	
+				// remove collisions using received inhibitions (checking if collision is applied)
+				for (Inhibition inhibedCollision : receivedInhibitions) {
+					if (!inhibedCollision.getNotAppliedTo().equals(peer.getPeerID()))
+						collisions.remove(inhibedCollision.getCollision());
+				}
 				
-			inhibitions.addAll(inhibeCollisionsMessage.getInhibedCollisions());
+				logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);
+					
+				inhibitions.addAll(receivedInhibitions);
+			}
 		}
 
 		// if collisions were detected, notify them
