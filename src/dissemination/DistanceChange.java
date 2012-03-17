@@ -17,4 +17,9 @@ public class DistanceChange {
 	public int getNewValue() {
 		return newValue;
 	}
+	
+	@Override
+	public String toString() {
+		return "Change:" + previousValue + "->" + newValue;
+	}
 }
