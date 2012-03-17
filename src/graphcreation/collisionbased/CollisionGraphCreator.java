@@ -87,7 +87,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	 */
 	public CollisionGraphCreator(final Peer peer, final MulticastMessageListener mMessageListener, final GraphCreationListener graphCreationListener, final GraphType graphType) {
 		this.peer = peer;
-		this.pSearch = new ParameterSearchImpl(peer, this, this);
+		this.pSearch = new ParameterSearchImpl(peer, this, this, true);
 		this.collisionNode = new CollisionNode(peer, this, graphCreationListener, graphType);
 		this.mMessageListener = mMessageListener;
 		this.graphCreationListener = graphCreationListener;

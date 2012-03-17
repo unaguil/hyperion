@@ -93,7 +93,7 @@ class CollisionNode {
 		}
 
 		if (!changedParameters.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
+			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed " + changedParameters);
 			collisions.addAll(checkParametersCollisions(changedParameters.keySet()));
 		}
 		

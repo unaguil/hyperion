@@ -25,6 +25,7 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
+import multicast.search.unicastTable.UnicastTable.RemoveSearchResult;
 import peer.BasicPeer;
 import peer.CommunicationLayer;
 import peer.Peer;
@@ -106,6 +107,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private final ConditionRegister<ReceivedMessageID> receivedMessages = new ConditionRegister<ReceivedMessageID>(BasicPeer.CLEAN_REC_MSGS);
 	
 	private boolean enabled = true;
+	
+	private boolean retainEqualSearches = false;
 
 	private final Logger logger = Logger.getLogger(ParameterSearchImpl.class);
 
@@ -119,11 +122,12 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 * @param tableChangedListener
 	 *            the listener for events related to table changes
 	 */
-	public ParameterSearchImpl(final Peer peer, final ParameterSearchListener searchListener, final TableChangedListener tableChangedListener) {
+	public ParameterSearchImpl(final Peer peer, final ParameterSearchListener searchListener, final TableChangedListener tableChangedListener, final boolean retainEqualSearches) {
 		this.peer = peer;
 		this.tableChangedListener = tableChangedListener;
 		this.pDisseminator = new ParameterTableUpdater(peer, this, this);
 		this.searchListener = searchListener;
+		this.retainEqualSearches = retainEqualSearches;
 
 		final Set<Class<? extends BroadcastMessage>> messageClasses = new HashSet<Class<? extends BroadcastMessage>>();
 		messageClasses.add(SearchMessage.class);
@@ -375,7 +379,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 
-		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector());
+		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector(), retainEqualSearches);
 
 		receivedMessages.start();
 	}
@@ -672,14 +676,18 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		boolean notify = false;
 		boolean repropagateSearches = false;
 		
+		final Set<SearchMessage> newActiveSearches = new HashSet<SearchMessage>();		
 		synchronized (uTable) {
 			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
 				if (uTable.isSearchRoute(routeID)) {
-					final boolean removedRoute = uTable.cancelSearch(routeID, removeRouteMessage.getSender());
-					if (removedRoute) {
+					final RemoveSearchResult removeSearchResult = uTable.cancelSearch(routeID, removeRouteMessage.getSender());
+					if (removeSearchResult.wasActiveRemoved()) {
 						removedRoutes.add(routeID);
 						notify = true;
 						repropagateSearches = true;
+						
+						if (removeSearchResult.getPropagatedSearch() != null)
+							newActiveSearches.add(removeSearchResult.getPropagatedSearch());
 					}
 				}
 			
@@ -694,6 +702,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		if (removeRouteMessage.mustRepropagateSearches())
 			repropagateCurrentActiveSearches(peer.getDetector().getCurrentNeighbors());
+		else if (!newActiveSearches.isEmpty())
+			repropagateSearches(peer.getDetector().getCurrentNeighbors(), newActiveSearches);
 
 		if (notify && !lostDestinations.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " lost route to destinations " + lostDestinations);
@@ -716,16 +726,16 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
 		
-		boolean tableUpdated = false;
+		boolean propagateSearch = false;
 		synchronized (uTable) {
-			tableUpdated = uTable.updateUnicastTable(searchMessage);
+			propagateSearch = uTable.updateUnicastTable(searchMessage);
 		}
 		
 		final Set<Parameter> foundLocalParameters = checkLocalParameters(searchMessage);
 		if (!foundLocalParameters.isEmpty())
 			acceptSearchMessage(searchMessage, foundLocalParameters);
 		
-		if (tableUpdated)
+		if (propagateSearch)
 			propagateSearchMessage(searchMessage, false);
 	}
 

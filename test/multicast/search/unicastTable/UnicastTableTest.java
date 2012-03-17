@@ -83,7 +83,7 @@ public class UnicastTableTest {
 
 	@Before
 	public void setUp() throws Exception, InvalidParameterIDException {
-		table1 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
+		table1 = new UnicastTable(PeerID.VOID_PEERID, nDetector, false);
 		searchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-A")), new PeerID("1"), new PeerID("2"));
 		searchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("4"));
 		final Set<Parameter> searchParameters = new HashSet<Parameter>();
@@ -123,12 +123,12 @@ public class UnicastTableTest {
 		table1.updateUnicastTable(localSearchMessage1);
 		table1.updateUnicastTable(localSearchMessage2);
 
-		table2 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
+		table2 = new UnicastTable(PeerID.VOID_PEERID, nDetector, false);
 		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("1"), new PeerID("2")));
 		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("3")));
 		table2.updateUnicastTable(createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("5"), new PeerID("6"), searchMessage4));
 
-		table3 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
+		table3 = new UnicastTable(PeerID.VOID_PEERID, nDetector, false);
 		table3.updateUnicastTable(searchMessage1);
 		table3.updateUnicastTable(searchMessage2);
 		table3.updateUnicastTable(searchMessage3);
@@ -182,7 +182,7 @@ public class UnicastTableTest {
 		assertEquals(7, table1.getActiveSearches().size());
 
 		Set<MessageID> routeIDs = table1.getRouteIDs(new PeerID("1"));
-		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("2")));
+		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("2")).wasActiveRemoved());
 
 		routeIDs = table1.getRouteIDs(new PeerID("5"));
 		table1.removeRoute(routeIDs.iterator().next());
@@ -193,22 +193,22 @@ public class UnicastTableTest {
 		assertEquals(6, table1.getActiveSearches().size());
 
 		routeIDs = table1.getRouteIDs(new PeerID("3"));
-		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")));
+		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")).wasActiveRemoved());
 
 		assertEquals(5, table1.getActiveSearches().size());
 
 		routeIDs = table1.getRouteIDs(new PeerID("13"));
-		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("14")));
+		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("14")).wasActiveRemoved());
 
 		assertEquals(4, table1.getActiveSearches().size());
 
 		routeIDs = table1.getRouteIDs(new PeerID("17"));
-		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")));
+		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")).wasActiveRemoved());
 
 		assertEquals(3, table1.getActiveSearches().size());
 
 		routeIDs = table1.getRouteIDs(new PeerID("18"));
-		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")));
+		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("4")).wasActiveRemoved());
 
 		assertEquals(2, table1.getActiveSearches().size());
 	}
@@ -220,7 +220,7 @@ public class UnicastTableTest {
 
 		assertFalse(table1.equals(table2));
 
-		assertEquals(new UnicastTable(PeerID.VOID_PEERID, nDetector), new UnicastTable(PeerID.VOID_PEERID, nDetector));
+		assertEquals(new UnicastTable(PeerID.VOID_PEERID, nDetector, false), new UnicastTable(PeerID.VOID_PEERID, nDetector, false));
 	}
 
 	@Test
