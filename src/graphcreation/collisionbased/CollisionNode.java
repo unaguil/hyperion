@@ -61,8 +61,6 @@ class CollisionNode {
 											final Map<Parameter, DistanceChange> changedParameters,
 											final List<PayloadMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
-		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
-		final Set<Collision> collisions = new HashSet<Collision>();
 		
 		if (!removedParameters.isEmpty()) {	
 			logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
@@ -85,31 +83,30 @@ class CollisionNode {
 			}	
 		}
 		
+		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
+		final Set<Collision> collisions = new HashSet<Collision>();
+		
 		if (!addedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " parameters added " + addedParameters + ", checking for collisions");
-
-			// obtain which collisions are caused by the new parameters addition
 			collisions.addAll(checkParametersCollisions(addedParameters));
 			
-			processCollisions(sender, inhibitions, collisions);
 		}
 
 		if (!changedParameters.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed");
-			
-			Set<Collision> detectedCollisions = checkParametersCollisions(changedParameters.keySet());
-			
-			//remove already detected collisions
-			//TODO improve with taxonomy checking
-			synchronized (cManager) {
-				for (final Iterator<Collision> it = detectedCollisions.iterator(); it.hasNext(); ) {
-					Collision detectedCollision = it.next();
-					if (cManager.contains(detectedCollision))
-						it.remove();
-				}
+			collisions.addAll(checkParametersCollisions(changedParameters.keySet()));
+		}
+		
+		processCollisions(sender, inhibitions, collisions);
+		
+		//remove already detected collisions
+		//TODO improve with taxonomy checking
+		synchronized (cManager) {
+			for (final Iterator<Collision> it = collisions.iterator(); it.hasNext(); ) {
+				Collision detectedCollision = it.next();
+				if (cManager.contains(detectedCollision))
+					it.remove();
 			}
-			
-			processCollisions(sender, inhibitions, collisions);
 		}
 
 		// include those inhibitions received with the message which added the
@@ -136,7 +133,7 @@ class CollisionNode {
 			// Update the collisions detected by the current node
 			synchronized (cManager) {
 				for (final Collision collision : collisions)
-					cManager.addConnection(collision);
+					cManager.addCollision(collision);
 			}
 
 			// send a message to search for the colliding parameters

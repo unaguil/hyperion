@@ -44,9 +44,9 @@ public class ConnectionsManagerTest {
 	public void setUp() throws Exception {
 		cManager = new ConnectionsManager(new BasicTaxonomy(), GraphType.BIDIRECTIONAL);
 
-		cManager.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")));
-		cManager.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")));
-		cManager.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C")));
+		cManager.addCollision(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")));
+		cManager.addCollision(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")));
+		cManager.addCollision(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C")));
 
 		Set<Parameter> foundParameters = new HashSet<Parameter>();
 		foundParameters.add(ParameterFactory.createParameter("I-B"));
@@ -264,8 +264,8 @@ public class ConnectionsManagerTest {
 
 		final ConnectionsManager cManagerWithTaxonomy = new ConnectionsManager(taxonomy, GraphType.BIDIRECTIONAL);
 
-		cManagerWithTaxonomy.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")));
-		cManagerWithTaxonomy.addConnection(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C")));
+		cManagerWithTaxonomy.addCollision(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")));
+		cManagerWithTaxonomy.addCollision(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C")));
 
 		assertTrue(cManagerWithTaxonomy.updateConnections(searchResponseMessage).isEmpty());
 

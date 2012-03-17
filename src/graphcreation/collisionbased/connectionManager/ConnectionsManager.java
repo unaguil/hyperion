@@ -48,7 +48,7 @@ public class ConnectionsManager {
 	 *            the collision used to generate the connection
 	 * @param
 	 */
-	public void addConnection(final Collision collision) {
+	public void addCollision(final Collision collision) {
 		detectedConnections.add(new Connection(collision, taxonomy, graphType));
 	}
 
