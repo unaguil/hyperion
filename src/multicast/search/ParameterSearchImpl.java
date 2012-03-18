@@ -318,7 +318,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		// Notify peers with search response messages
 		for (final Entry<SearchMessage, Set<Parameter>> entry : parametersTable.entrySet()) {
 			final SearchMessage searchMessage = entry.getKey();
-			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), null, searchMessage.getRemoteMessageID());
+			final PayloadMessage payload = searchListener.searchReceived(entry.getValue(), searchMessage.getSource());
+			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), payload, searchMessage.getRemoteMessageID());
 		}
 	}
 
