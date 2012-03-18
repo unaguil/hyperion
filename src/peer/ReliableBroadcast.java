@@ -79,6 +79,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 			
 			synchronized (mutex) {
 				bundleMessage.addMessages(new ArrayList<BroadcastMessage>(responseProcessor.getWaitingACKMessages()));
+				bundleMessage.addMessages(responseProcessor.processResponses().getMessages());
 			}
 			
 			peer.broadcast(bundleMessage);

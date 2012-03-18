@@ -29,11 +29,7 @@ public class BundleMessage extends BroadcastMessage {
 	public BundleMessage(final PeerID sender, final List<BroadcastMessage> messages) {
 		super(sender, Collections.<PeerID> emptySet());
 		
-		this.messages.addAll(messages);
-		
-		for (final BroadcastMessage message : messages) {
-			expectedDestinations.addAll(message.getExpectedDestinations());
-		}
+		addMessages(messages);
 	}
 
 	public List<BroadcastMessage> getMessages() {
@@ -99,6 +95,9 @@ public class BundleMessage extends BroadcastMessage {
 	}
 	
 	public void addMessages(final List<BroadcastMessage> addedMessages) {
-		messages.addAll(addedMessages);
+		this.messages.addAll(addedMessages);
+		
+		for (final BroadcastMessage message : addedMessages)
+			expectedDestinations.addAll(message.getExpectedDestinations());
 	}
 }
