@@ -92,9 +92,16 @@ class CollisionNode {
 			
 		}
 
-		if (!changedParameters.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed " + changedParameters);
-			collisions.addAll(checkParametersCollisions(changedParameters.keySet()));
+		if (!changedParameters.isEmpty()) {			
+			final Map<Parameter, DistanceChange> validChanges = new HashMap<Parameter, DistanceChange>();
+			for (final Entry<Parameter, DistanceChange> changedParameter : changedParameters.entrySet()) {
+				if (changedParameter.getValue().getNewValue() > 0)
+					validChanges.put(changedParameter.getKey(), changedParameter.getValue());
+			}
+			
+			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed " + validChanges);
+			
+			collisions.addAll(checkParametersCollisions(validChanges.keySet()));
 		}
 		
 		processCollisions(sender, inhibitions, collisions);

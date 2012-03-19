@@ -276,7 +276,7 @@ public class ParameterTableTest {
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
 		final UpdateTable newNeighborTable = table.getNewNeighborTable();
-		final UpdateTable updateTable = table2.updateTable(newNeighborTable, host);
+		final UpdateTable updateTable = table2.updateTable(newNeighborTable, host).getUpdateTable();
 
 		// Check that parameters where correctly added
 		final Set<Parameter> parameters = table2.getParameters();
@@ -304,7 +304,7 @@ public class ParameterTableTest {
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
 		final UpdateTable newNeighborTable = table.getNewNeighborTable();
-		final UpdateTable updateTable = table2.updateTable(newNeighborTable, host);
+		final UpdateTable updateTable = table2.updateTable(newNeighborTable, host).getUpdateTable();
 
 		// Check that parameters where correctly added
 		final Set<Parameter> parameters = table2.getParameters();
@@ -334,11 +334,11 @@ public class ParameterTableTest {
 		// Get the table, from peer "host" which is sent to new neighbors and
 		// update peer "otherPeer" with it
 		UpdateTable newNeighborTable = table.getNewNeighborTable();
-		UpdateTable updateTable = table2.updateTable(newNeighborTable, host);
+		UpdateTable updateTable = table2.updateTable(newNeighborTable, host).getUpdateTable();
 
 		// Apply same update again
 		newNeighborTable = table.getNewNeighborTable();
-		updateTable = table2.updateTable(newNeighborTable, host);
+		updateTable = table2.updateTable(newNeighborTable, host).getUpdateTable();
 
 		// Check that parameters where correctly added
 		final Set<Parameter> parameters = table2.getParameters();
@@ -379,7 +379,7 @@ public class ParameterTableTest {
 
 		// This update includes an update with a greater distance and an update
 		// with a smaller one than the values hold currently by table2
-		final UpdateTable updateTable = table2.updateTable(anotherPeerTable, anotherPeer);
+		final UpdateTable updateTable = table2.updateTable(anotherPeerTable, anotherPeer).getUpdateTable();
 
 		// Check that parameter A effective value has changed in table2
 		assertEquals(new EstimatedDistance(5, anotherPeer), table2.getEffectiveDistance(ParameterFactory.createParameter("I-A")));
@@ -419,7 +419,7 @@ public class ParameterTableTest {
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 		removalTable.setDelete(ParameterFactory.createParameter("I-B"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// Check that parameters have been removed
 		assertFalse(table.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -440,7 +440,7 @@ public class ParameterTableTest {
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 		removalTable.setDelete(ParameterFactory.createParameter("I-B"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// Check that table is empty
 		assertTrue(table.isEmpty());
@@ -462,7 +462,7 @@ public class ParameterTableTest {
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 		removalTable.setDelete(ParameterFactory.createParameter("I-B"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// Check parameters
 		assertFalse(table.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -488,7 +488,7 @@ public class ParameterTableTest {
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 		removalTable.setDelete(ParameterFactory.createParameter("I-B"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// Check parameters
 		assertTrue(table.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -514,7 +514,7 @@ public class ParameterTableTest {
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 		removalTable.setDelete(ParameterFactory.createParameter("I-B"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// Check parameters
 		assertTrue(table.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -541,7 +541,7 @@ public class ParameterTableTest {
 		removalTable.setAddition(ParameterFactory.createParameter("I-A"), 4, otherPeer);
 		removalTable.setAddition(ParameterFactory.createParameter("I-B"), 4, otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		// The update table does not contain updates for parameter A but for B.
 		assertFalse(updateTable.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -570,7 +570,7 @@ public class ParameterTableTest {
 		newNeighborTable = table2.getNewNeighborTable();
 
 		// Add table to peer host
-		final UpdateTable updateTable = table.updateTable(newNeighborTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(newNeighborTable, otherPeer).getUpdateTable();
 
 		// Table from host node contains a new entry for parameter C
 		assertTrue(table.getParameters().contains(ParameterFactory.createParameter("I-C")));
@@ -618,7 +618,7 @@ public class ParameterTableTest {
 		final UpdateTable removalTable = new UpdateTable();
 		removalTable.setDelete(ParameterFactory.createParameter("I-A"), otherPeer);
 
-		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer);
+		final UpdateTable updateTable = table.updateTable(removalTable, otherPeer).getUpdateTable();
 
 		assertTrue(updateTable.isEmpty());
 	}
@@ -639,7 +639,7 @@ public class ParameterTableTest {
 		neighborUpdateTable.setAddition(ParameterFactory.createParameter("I-A"), 3, new PeerID("2"));
 		neighborUpdateTable.setAddition(ParameterFactory.createParameter("O-B"), 2, new PeerID("2"));
 
-		final UpdateTable updateTable = table.updateTable(neighborUpdateTable, new PeerID("1"));
+		final UpdateTable updateTable = table.updateTable(neighborUpdateTable, new PeerID("1")).getUpdateTable();
 
 		assertTrue(updateTable.getParameters().contains(ParameterFactory.createParameter("I-A")));
 		assertTrue(updateTable.getParameters().contains(ParameterFactory.createParameter("I-A")));
@@ -662,7 +662,7 @@ public class ParameterTableTest {
 		final UpdateTable neighborUpdateTable = new UpdateTable();
 		neighborUpdateTable.setAddition(ParameterFactory.createParameter("I-A"), 4, anotherPeer);
 
-		final UpdateTable updateTable = table.updateTable(neighborUpdateTable, anotherOnePeer);
+		final UpdateTable updateTable = table.updateTable(neighborUpdateTable, anotherOnePeer).getUpdateTable();
 
 		assertTrue(updateTable.getParameters().contains(ParameterFactory.createParameter("I-A")));
 

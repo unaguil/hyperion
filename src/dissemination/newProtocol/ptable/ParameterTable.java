@@ -324,18 +324,27 @@ public class ParameterTable implements XMLSerializable {
 		return table.isEmpty();
 	}
 
-	/**
-	 * Uses the passed table to update the current one. First it decrements the
-	 * current estimated distance values.
-	 * 
-	 * @param updates
-	 *            table containing updates to the current table.
-	 * @param neighbor
-	 *            the neighbor which the table comes from
-	 * @return an update table which could be sent to neighbors
-	 */
-	public UpdateTable updateTable(final UpdateTable updates, final PeerID neighbor) {
+	public class UpdateResult {
+		private final UpdateTable updateTable;
+		private final Set<Parameter> addedEParameters = new HashSet<Parameter>();
+	
+		public UpdateResult(final UpdateTable updateTable, final Set<Parameter> addedEntries) {
+			this.updateTable = updateTable;
+			this.addedEParameters.addAll(addedEntries);
+		}
+
+		public UpdateTable getUpdateTable() {
+			return updateTable;
+		}
+
+		public Set<Parameter> getAddedParameters() {
+			return addedEParameters;
+		}
+	}
+	
+	public UpdateResult updateTable(final UpdateTable updates, final PeerID neighbor) {
 		final UpdateTable updateTable = new UpdateTable();
+		final Set<Parameter> addedParameters = new HashSet<Parameter>();
 
 		// Add each parameter to the current table
 		for (final Parameter p : updates.getParameters()) {
@@ -381,7 +390,7 @@ public class ParameterTable implements XMLSerializable {
 					}
 				}
 			}
-
+			
 			boolean parameterChanged = false;
 			// Secondly, process the insertion.
 			// Insertion is only processed if information does not
@@ -391,13 +400,19 @@ public class ParameterTable implements XMLSerializable {
 
 			// If the estimated distance list has not changed remove current
 			// parameter from the updateTable
-			if (listBackup.equals(getEffectiveDistanceList(p)) && !parameterChanged) {
-				final ParameterGroup pGroup = findGroup(p);
-				updateTable.removeParameter(pGroup.getCurrentParameter());
+			final ParameterGroup pGroup = findGroup(p);
+			if (pGroup != null) {
+				if (listBackup.equals(getEffectiveDistanceList(p)) && !parameterChanged) {
+					updateTable.removeParameter(pGroup.getCurrentParameter());
+				} else {
+					//only if is not shorter -> not elements were removed
+					if (getEffectiveDistanceList(p).getList().size() >= listBackup.size())
+						addedParameters.add(pGroup.getCurrentParameter());
+				}
 			}
 		}
 
-		return updateTable;
+		return new UpdateResult(updateTable, addedParameters);
 	}
 
 	private boolean insertParameter(final PeerID neighbor, final UpdateTable updateTable, final Parameter p, final EstimatedDistance insert, final boolean local) {

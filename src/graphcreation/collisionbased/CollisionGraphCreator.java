@@ -37,6 +37,7 @@ import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
+import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
@@ -70,6 +71,8 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	private final GraphCreationListener graphCreationListener;
 	
 	private final CollisionNode collisionNode;
+	
+	private final Map<MessageID, Set<Service>> foundServices = new HashMap<MessageID, Set<Service>>();
 
 	// the local service table
 	private SDG sdg;
@@ -165,16 +168,16 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		
 		addedServices.remove(removedServices);
 			
-		final Set<ServiceDistance> remoteConnectedServices = new HashSet<ServiceDistance>();
 		final Set<PeerID> collisionPeers = new HashSet<PeerID>();
 	
 		synchronized (sdg) {			
 			// Obtain those remote services connected with the removed ones
-			for (final Service service : removedServices)
-				remoteConnectedServices.addAll(sdg.getRemoteConnectedServices(service));
-			
-			for (final ServiceDistance sDistance : remoteConnectedServices)
-				collisionPeers.addAll(sdg.getThroughCollisionNodes(sDistance.getService()));
+			for (final Service service : removedServices) {
+				for (final Entry<MessageID, Set<Service>> entry : foundServices.entrySet()) {
+					if (entry.getValue().contains(service))
+						collisionPeers.add(entry.getKey().getPeer());
+				}
+			}
 		}
 
 		try {
@@ -183,7 +186,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			
 		}
 		
-		if (!remoteConnectedServices.isEmpty())
+		if (!collisionPeers.isEmpty())
 			sendRemoveServicesMessage(removedServices, collisionPeers);
 	}
 	
@@ -453,13 +456,19 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 
 	@Override
-	public PayloadMessage searchReceived(final Set<Parameter> foundParameters, final PeerID source) {
+	public PayloadMessage searchReceived(final Set<Parameter> foundParameters, final MessageID routeID) {
 		// only messages containing a collision message as payload are valid
 
 		Set<Service> services;
 		synchronized (sdg) {
 			// obtain those services which provide the searched parameters
 			services = sdg.findLocalCompatibleServices(foundParameters);
+		}
+		
+		if (!services.isEmpty()) {
+			if (!foundServices.containsKey(routeID))
+				foundServices.put(routeID, new HashSet<Service>());
+			foundServices.get(routeID).addAll(services);
 		}
 
 		// initial distance is zero because all services are local
@@ -468,11 +477,16 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			serviceDistanceTable.put(service, Integer.valueOf(0));
 
 		final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
-
-		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + source);
+		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + routeID.getPeer());
 		return collisionResponseMessage;
 	}
 	
+	@Override
+	public void searchCanceled(Set<MessageID> canceledSearches) {
+		for (final MessageID canceledSearch : canceledSearches)
+			foundServices.remove(canceledSearch);
+	}
+
 	@Override
 	public void lostDestinations(Set<PeerID> lostDestinations) {
 		collisionNode.checkCollisions(lostDestinations);
@@ -483,6 +497,12 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		
 		synchronized (sdg) {
 			sdg.checkServices(lostDestinations, lostAncestors, lostSuccessors);
+		}
+		
+		for (final Iterator<MessageID> it = foundServices.keySet().iterator(); it.hasNext(); ) {
+			final MessageID routeID = it.next();
+			if (lostDestinations.contains(routeID.getPeer()))
+				it.remove();
 		}
 
 		if (!lostAncestors.isEmpty())

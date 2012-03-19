@@ -37,7 +37,8 @@ class EstimatedDistanceList implements Serializable {
 	 *            the list to copy.
 	 */
 	public EstimatedDistanceList(final EstimatedDistanceList eDistanceList) {
-		this.estimatedDistances.addAll(eDistanceList.estimatedDistances);
+		if (eDistanceList != null)
+			this.estimatedDistances.addAll(eDistanceList.estimatedDistances);
 	}
 
 	/**

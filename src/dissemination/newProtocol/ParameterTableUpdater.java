@@ -30,6 +30,7 @@ import dissemination.ParameterDisseminator;
 import dissemination.TableChangedListener;
 import dissemination.newProtocol.message.TableMessage;
 import dissemination.newProtocol.ptable.ParameterTable;
+import dissemination.newProtocol.ptable.ParameterTable.UpdateResult;
 import dissemination.newProtocol.ptable.UpdateTable;
 
 /**
@@ -158,20 +159,18 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	@Override
 	public void commit() {
 		final UpdateTable finalUpdateTable = new UpdateTable();
+				
+		final Set<Parameter> addedParameters = new HashSet<Parameter>();
+		final Set<Parameter> newParameters = new HashSet<Parameter>();
+		final Set<Parameter> removedParameters = new HashSet<Parameter>();
 		
-		final Set<Parameter> newLocalParameters = new HashSet<Parameter>();
-		final Set<Parameter> removedLocalParameters = new HashSet<Parameter>();
+		final Set<Parameter> parametersBeforeUpdate = pTable.getParameters();
 		
 		final Map<Parameter, DistanceChange> changedParameters = new HashMap<Parameter, DistanceChange>();
 		
 		synchronized (mutex) {			
 			for (final Parameter parameter : pTable.getParameters())
 				changedParameters.put(parameter, new DistanceChange(pTable.getEstimatedDistance(parameter), 0));
-			
-			for (final Parameter p : addLocalParameters) { 
-				if (!pTable.isLocalParameter(p))
-					newLocalParameters.add(p);
-			}
 				
 			if (!addLocalParameters.isEmpty()) {
 				final UpdateTable updateTable = pTable.addLocalParameters(addLocalParameters);
@@ -182,28 +181,21 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				final UpdateTable updateTable = pTable.removeLocalParameters(removeLocalParameters);
 				finalUpdateTable.add(updateTable);
 			}
-	
-			// obtain distance changes
-			for (final Parameter parameter : pTable.getParameters()) {
-				if (changedParameters.containsKey(parameter)) {
-					final DistanceChange dChange = changedParameters.get(parameter);
-					changedParameters.put(parameter, new DistanceChange(dChange.getPreviousValue(), pTable.getEstimatedDistance(parameter)));
-				} else
-					changedParameters.put(parameter, new DistanceChange(0, pTable.getEstimatedDistance(parameter)));
-			}
 			
-			removedLocalParameters.addAll(removeLocalParameters);
+			addedParameters.addAll(addLocalParameters);
 			
 			// Parameters have been processed. Remove them
 			addLocalParameters.clear();
 			removeLocalParameters.clear();
+			
+			checkParameters(newParameters, removedParameters, changedParameters, parametersBeforeUpdate);
 		}
 		
-		logger.trace("Peer " + peer.getPeerID() + " added new parameters " + newLocalParameters + " to local table");
-		logger.trace("Peer " + peer.getPeerID() + " removed parameters " + removedLocalParameters + " from local table");
+		logger.trace("Peer " + peer.getPeerID() + " added new parameters " + newParameters + " to local table");
+		logger.trace("Peer " + peer.getPeerID() + " removed parameters " + removedParameters + " from local table");
 
 		// Notify added and removed parameters
-		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), newLocalParameters, removedLocalParameters, removedLocalParameters, changedParameters, newLocalParameters, Collections.<PayloadMessage> emptyList());
+		final PayloadMessage payload = notifyTableChangedListener(peer.getPeerID(), addedParameters, removedParameters, removedParameters, changedParameters, newParameters, Collections.<PayloadMessage> emptyList());
 
 		// Send the tables using a table message only if neighbors exist
 		final PeerIDSet currentNeighbors = peer.getDetector().getCurrentNeighbors();
@@ -338,8 +330,8 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 					for (final Parameter p : pTable.getParameters(neighbor)) {
 						final UpdateTable removalTable = new UpdateTable();
 						removalTable.setDelete(p, neighbor);
-						final UpdateTable updateTable = pTable.updateTable(removalTable, neighbor);
-						finalUpdateTable.add(updateTable);
+						final UpdateResult updateResult = pTable.updateTable(removalTable, neighbor);
+						finalUpdateTable.add(updateResult.getUpdateTable());
 					}
 				}
 			}
@@ -422,7 +414,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			
 			final Map<Parameter, DistanceChange> changedParameters = new HashMap<Parameter, DistanceChange>();
 			
-			final UpdateTable updateTable;
+			final UpdateResult updateResult;
 
 			synchronized (mutex) {
 				// Get parameters before update
@@ -431,46 +423,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				for (final Parameter parameter : pTable.getParameters())
 					changedParameters.put(parameter, new DistanceChange(pTable.getEstimatedDistance(parameter), 0));
 	
-				updateTable = pTable.updateTable(tableMessage.getUpdateTable(), tableMessage.getSender());
+				updateResult = pTable.updateTable(tableMessage.getUpdateTable(), tableMessage.getSender());
 	
-				// Get parameters after update
-				final Set<Parameter> parametersAfterUpdate = pTable.getParameters();
-	
-				// obtain distance changes
-				for (final Parameter parameter : parametersBeforeUpdate) {
-					if (changedParameters.containsKey(parameter)) {
-						final DistanceChange dChange = changedParameters.get(parameter);
-						//if estimated distance has incremented
-						if (dChange.getPreviousValue() < pTable.getEstimatedDistance(parameter))
-							changedParameters.put(parameter, new DistanceChange(dChange.getPreviousValue(), pTable.getEstimatedDistance(parameter)));
-						else
-							changedParameters.remove(parameter);
-					} else
-						changedParameters.put(parameter, new DistanceChange(0, pTable.getEstimatedDistance(parameter)));
-				}
-	
-				// If parameters were added or removed
-				if (!parametersAfterUpdate.equals(parametersBeforeUpdate)) {
-					final Set<Parameter> tempAddedParameters = new HashSet<Parameter>(parametersAfterUpdate);
-					final Set<Parameter> tempRemovedParameters = new HashSet<Parameter>(parametersBeforeUpdate);
-	
-					// Obtain added parameters
-					tempAddedParameters.removeAll(parametersBeforeUpdate);
-	
-					// Obtain removed parameters
-					final Set<Parameter> differenceParameters = new HashSet<Parameter>(parametersAfterUpdate);
-					differenceParameters.removeAll(tempAddedParameters);
-					tempRemovedParameters.removeAll(differenceParameters);
-	
-					newParameters.addAll(tempAddedParameters);
-					removedParameters.addAll(tempRemovedParameters);
-				}
-			}
-			
-			final Set<Parameter> addedParameters = new HashSet<Parameter>();
-			for (final Parameter p : tableMessage.getUpdateTable().getParameters()) {
-				if (tableMessage.getUpdateTable().getAddition(p) != null)
-					addedParameters.add(p);
+				checkParameters(newParameters, removedParameters, changedParameters, parametersBeforeUpdate);
 			}
 			
 			String pTableStatus;
@@ -480,12 +435,47 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 			logger.trace("Peer " + peer.getPeerID() + " local table after update " + pTableStatus);
 
 			// Notify table changes to listeners
-			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), newParameters, removedParameters, new HashSet<Parameter>(), changedParameters, addedParameters, tableMessage.getPayloadMessages());
+			final PayloadMessage payload = notifyTableChangedListener(tableMessage.getSender(), newParameters, removedParameters, new HashSet<Parameter>(), changedParameters, updateResult.getAddedParameters(), tableMessage.getPayloadMessages());
 
 			logger.trace("Peer " + peer.getPeerID() + " addedParameters: " + newParameters + " removedParameters: " + removedParameters);
 			logger.trace("Peer " + peer.getPeerID() + " adding payload " + payload + " to table message");
 
-			sendUpdateTableMessage(updateTable, peer.getDetector().getCurrentNeighbors(), payload);
+			sendUpdateTableMessage(updateResult.getUpdateTable(), peer.getDetector().getCurrentNeighbors(), payload);
+		}
+	}
+
+	private void checkParameters(final Set<Parameter> newParameters, final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, final Set<Parameter> parametersBeforeUpdate) {
+		// Get parameters after update
+		final Set<Parameter> parametersAfterUpdate = pTable.getParameters();
+
+		// obtain distance changes
+		for (final Parameter parameter : parametersBeforeUpdate) {
+			if (changedParameters.containsKey(parameter)) {
+				final DistanceChange dChange = changedParameters.get(parameter);
+				//if estimated distance has incremented
+				if (dChange.getPreviousValue() < pTable.getEstimatedDistance(parameter))
+					changedParameters.put(parameter, new DistanceChange(dChange.getPreviousValue(), pTable.getEstimatedDistance(parameter)));
+				else
+					changedParameters.remove(parameter);
+			} else
+				changedParameters.put(parameter, new DistanceChange(0, pTable.getEstimatedDistance(parameter)));
+		}
+
+		// If parameters were added or removed
+		if (!parametersAfterUpdate.equals(parametersBeforeUpdate)) {
+			final Set<Parameter> tempAddedParameters = new HashSet<Parameter>(parametersAfterUpdate);
+			final Set<Parameter> tempRemovedParameters = new HashSet<Parameter>(parametersBeforeUpdate);
+
+			// Obtain added parameters
+			tempAddedParameters.removeAll(parametersBeforeUpdate);
+
+			// Obtain removed parameters
+			final Set<Parameter> differenceParameters = new HashSet<Parameter>(parametersAfterUpdate);
+			differenceParameters.removeAll(tempAddedParameters);
+			tempRemovedParameters.removeAll(differenceParameters);
+
+			newParameters.addAll(tempAddedParameters);
+			removedParameters.addAll(tempRemovedParameters);
 		}
 	}
 

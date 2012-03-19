@@ -74,7 +74,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// Configuration properties
 	private int MAX_TTL = 5; // Default value
 	
-	
 	private static class ReceivedMessageID {
 		
 		private final MessageID remoteMessageID;
@@ -318,7 +317,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		// Notify peers with search response messages
 		for (final Entry<SearchMessage, Set<Parameter>> entry : parametersTable.entrySet()) {
 			final SearchMessage searchMessage = entry.getKey();
-			final PayloadMessage payload = searchListener.searchReceived(entry.getValue(), searchMessage.getSource());
+			final PayloadMessage payload = searchListener.searchReceived(entry.getValue(), searchMessage.getRemoteMessageID());
 			sendSearchResponseMessage(searchMessage.getSource(), entry.getValue(), payload, searchMessage.getRemoteMessageID());
 		}
 	}
@@ -503,7 +502,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getRemoteMessageID() + " distance " + searchMessage.getDistance() + " parameters " + foundParameters);
 
 		// Call listener and get user response payload
-		final PayloadMessage response = searchListener.searchReceived(foundParameters, searchMessage.getSource());
+		final PayloadMessage response = searchListener.searchReceived(foundParameters, searchMessage.getRemoteMessageID());
 		// Send response to source node including payload
 		sendSearchResponseMessage(searchMessage.getSource(), foundParameters, response, searchMessage.getRemoteMessageID());
 	}
@@ -673,6 +672,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		final Set<MessageID> removedRoutes = new HashSet<MessageID>();
 		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
+		
+		final Set<MessageID> canceledSearches = new HashSet<MessageID>();
 
 		boolean notify = false;
 		boolean repropagateSearches = false;
@@ -689,6 +690,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 						
 						if (removeSearchResult.getPropagatedSearch() != null)
 							newActiveSearches.add(removeSearchResult.getPropagatedSearch());
+						
+						canceledSearches.add(routeID);
 					}
 				}
 			
@@ -700,6 +703,8 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 				}
 			}
 		}
+		
+		searchListener.searchCanceled(canceledSearches);
 
 		if (removeRouteMessage.mustRepropagateSearches())
 			repropagateCurrentActiveSearches(peer.getDetector().getCurrentNeighbors());

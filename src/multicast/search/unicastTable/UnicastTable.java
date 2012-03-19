@@ -388,9 +388,10 @@ public class UnicastTable implements XMLSerializable {
 	}
 	
 	private boolean areEqualSearches(final SearchMessage activeSearch, final SearchMessage newSearch) {
-		if (activeSearch.getSearchedParameters().size() == newSearch.getSearchedParameters().size()) {
-			for (final Parameter p : activeSearch.getSearchedParameters()) {
-				if (!newSearch.getSearchedParameters().contains(p) || getTTL(activeSearch, p) != getTTL(newSearch, p))
+		if (activeSearch.getSearchedParameters().size() >= newSearch.getSearchedParameters().size()) {
+			for (final Parameter p : newSearch.getSearchedParameters()) {
+				//TODO taxonomy
+				if (!activeSearch.getSearchedParameters().contains(p) || getTTL(newSearch, p) != getTTL(activeSearch, p))
 					return false;
 			}
 			return true;
@@ -615,6 +616,7 @@ public class UnicastTable implements XMLSerializable {
 					Queue<SearchMessage> retained = retainedSearches.remove(removedActiveSearch);
 					if (!retained.isEmpty())
 						retainedSearches.put(propagatedSearch, retained);
+					logger.trace("Peer " + peerID + " retained search is now propagated " + propagatedSearch);
 				}
 			}
 			return new RemoveSearchResult(true, propagatedSearch);
