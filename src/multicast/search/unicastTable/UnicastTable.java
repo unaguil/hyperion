@@ -372,30 +372,15 @@ public class UnicastTable implements XMLSerializable {
 		}
 	}
 	
-	private SearchMessage getEqualActiveSearch(final SearchMessage searchMessage) {
+	private SearchMessage getRetainingActiveSearch(final SearchMessage searchMessage) {
 		for (final SearchMessage activeSearch : activeSearches) {
-			if (areEqualSearches(activeSearch, searchMessage))
+			if (retains(activeSearch, searchMessage))
 				return activeSearch;
 		}
 		return null;
 	}
 	
-	private int getTTL(final SearchMessage searchMessage, final Parameter p) {
-		if (searchMessage.getSource().equals(peerID))
-			return searchMessage.getTTL(p);
-		
-		return searchMessage.getTTL(p) - 1;
-	}
-	
-	private boolean areEqualSearches(final SearchMessage activeSearch, final SearchMessage newSearch) {
-		if (activeSearch.getSearchedParameters().size() >= newSearch.getSearchedParameters().size()) {
-			for (final Parameter p : newSearch.getSearchedParameters()) {
-				//TODO taxonomy
-				if (!activeSearch.getSearchedParameters().contains(p) || getTTL(newSearch, p) != getTTL(activeSearch, p))
-					return false;
-			}
-			return true;
-		}
+	private boolean retains(final SearchMessage activeSearch, final SearchMessage newSearch) {
 		return false;
 	}
 
@@ -528,7 +513,7 @@ public class UnicastTable implements XMLSerializable {
 		logUTable();
 				
 		if (retainEqualSearches) {
-			final SearchMessage equalActiveSearch = getEqualActiveSearch(searchMessage);
+			final SearchMessage equalActiveSearch = getRetainingActiveSearch(searchMessage);
 			if (equalActiveSearch != null) {
 				if (!retainedSearches.containsKey(equalActiveSearch))
 					retainedSearches.put(equalActiveSearch, new LinkedList<SearchMessage>());
