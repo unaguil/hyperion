@@ -2,9 +2,9 @@ package peer.message;
 
 public class MessageIDGenerator {
 
-	private static long counter = 0;
+	private static int counter = 0;
 
-	public static long getNewID() {
+	public static int getNewID() {
 		return counter++;
 	}
 }
