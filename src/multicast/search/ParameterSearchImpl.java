@@ -25,7 +25,6 @@ import multicast.search.message.SearchMessage;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import multicast.search.unicastTable.UnicastTable;
-import multicast.search.unicastTable.UnicastTable.RemoveSearchResult;
 import peer.BasicPeer;
 import peer.CommunicationLayer;
 import peer.Peer;
@@ -106,8 +105,6 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	private final ConditionRegister<ReceivedMessageID> receivedMessages = new ConditionRegister<ReceivedMessageID>(BasicPeer.CLEAN_REC_MSGS);
 	
 	private boolean enabled = true;
-	
-	private boolean retainEqualSearches = false;
 
 	private final Logger logger = Logger.getLogger(ParameterSearchImpl.class);
 
@@ -121,12 +118,11 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	 * @param tableChangedListener
 	 *            the listener for events related to table changes
 	 */
-	public ParameterSearchImpl(final Peer peer, final ParameterSearchListener searchListener, final TableChangedListener tableChangedListener, final boolean retainEqualSearches) {
+	public ParameterSearchImpl(final Peer peer, final ParameterSearchListener searchListener, final TableChangedListener tableChangedListener) {
 		this.peer = peer;
 		this.tableChangedListener = tableChangedListener;
 		this.pDisseminator = new ParameterTableUpdater(peer, this, this);
 		this.searchListener = searchListener;
-		this.retainEqualSearches = retainEqualSearches;
 
 		final Set<Class<? extends BroadcastMessage>> messageClasses = new HashSet<Class<? extends BroadcastMessage>>();
 		messageClasses.add(SearchMessage.class);
@@ -379,7 +375,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 
-		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector(), retainEqualSearches);
+		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector());
 
 		receivedMessages.start();
 	}
@@ -682,15 +678,12 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		synchronized (uTable) {
 			for (final MessageID routeID : removeRouteMessage.getLostRoutes()) {		
 				if (uTable.isSearchRoute(routeID)) {
-					final RemoveSearchResult removeSearchResult = uTable.cancelSearch(routeID, removeRouteMessage.getSender());
-					if (removeSearchResult.wasActiveRemoved()) {
+					final boolean searchRemoved = uTable.cancelSearch(routeID, removeRouteMessage.getSender());
+					if (searchRemoved) {
 						removedRoutes.add(routeID);
 						notify = true;
 						repropagateSearches = true;
-						
-						if (removeSearchResult.getPropagatedSearch() != null)
-							newActiveSearches.add(removeSearchResult.getPropagatedSearch());
-						
+												
 						canceledSearches.add(routeID);
 					}
 				}
