@@ -8,11 +8,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -75,10 +72,6 @@ public class UnicastTable implements XMLSerializable {
 	// the list contains the active searches for the current node. It is related
 	// with a search route
 	private final List<SearchMessage> activeSearches = new ArrayList<SearchMessage>();
-	private final Map<SearchMessage, Queue<SearchMessage>> retainedSearches = new HashMap<SearchMessage, Queue<SearchMessage>>();
-	
-	//TODO remove foundParameters table
-	private final Map<PeerID, Set<Parameter>> foundParameters = new HashMap<PeerID, Set<Parameter>>();
 
 	// the identification of the peer which hosts the unicast table
 	private final PeerID peerID;
@@ -86,8 +79,6 @@ public class UnicastTable implements XMLSerializable {
 	private final NeighborDetector nDetector;
 	
 	private final MessageID defaultRouteID;
-	
-	private boolean retainEqualSearches = false;
 
 	private final Logger logger = Logger.getLogger(UnicastTable.class);
 
@@ -97,11 +88,10 @@ public class UnicastTable implements XMLSerializable {
 	 * @param peerID
 	 *            the peer which hosts the unicast table
 	 */
-	public UnicastTable(final PeerID peerID, final NeighborDetector nDetector, final boolean retainEqualSearches) {
+	public UnicastTable(final PeerID peerID, final NeighborDetector nDetector) {
 		this.peerID = peerID;
 		this.nDetector = nDetector;
 		this.defaultRouteID = new MessageID(peerID, MessageIDGenerator.getNewID());
-		this.retainEqualSearches = retainEqualSearches;
 	}
 	
 	private Map<PeerID, Set<Parameter>> createActiveSearchesMap(final List<SearchMessage> activeSearchList) {
@@ -371,18 +361,6 @@ public class UnicastTable implements XMLSerializable {
 			addRoute(new MessageID(new PeerID(dest), Integer.parseInt(through)), new PeerID(dest), new PeerID(through), 0);
 		}
 	}
-	
-	private SearchMessage getRetainingActiveSearch(final SearchMessage searchMessage) {
-		for (final SearchMessage activeSearch : activeSearches) {
-			if (retains(activeSearch, searchMessage))
-				return activeSearch;
-		}
-		return null;
-	}
-	
-	private boolean retains(final SearchMessage activeSearch, final SearchMessage newSearch) {
-		return false;
-	}
 
 	public Set<Parameter> removeParameters(final Set<Parameter> parameters, final MessageID routeID) {	
 		final SearchMessage search = getSearch(routeID);
@@ -407,23 +385,17 @@ public class UnicastTable implements XMLSerializable {
 				it.remove();
 				final PeerID dest = route.getDest();
 				logger.trace("Peer " + peerID + " removed route to " + dest);
-				if (!knowsRouteTo(dest))
-					foundParameters.remove(dest);
 				return dest;
 			}
 		}
 		return PeerID.VOID_PEERID;
 	}
 	
-	public Map<PeerID, Set<Parameter>> getAlreadyFoundParameters() {
-		return Collections.unmodifiableMap(foundParameters);
-	}
-	
-	public RemoveSearchResult cancelSearch(final MessageID routeID, final PeerID neighbor) {
+	public boolean cancelSearch(final MessageID routeID, final PeerID neighbor) {
 		SearchMessage activeSearch = getSearch(routeID);
 		if (activeSearch.getSender().equals(neighbor) || neighbor.equals(peerID))
 			return removeSearch(routeID);
-		return new RemoveSearchResult(false, null);
+		return false;
 	}
 
 	private void logUTable() {
@@ -494,34 +466,13 @@ public class UnicastTable implements XMLSerializable {
 		return strBuilder.toString();
 	}
 	
-	private boolean containsSearch(final SearchMessage searchMessage) {
-		if (activeSearches.contains(searchMessage))
-			return true;
-		for (final Queue<SearchMessage> retained : retainedSearches.values()) {
-			if (retained.contains(searchMessage))
-				return true;
-		}
-		return false;
-	}
-	
 	public boolean updateUnicastTable(final SearchMessage searchMessage) {
-		if (containsSearch(searchMessage))
+		if (activeSearches.contains(searchMessage))
 			return false;
 		
 		updateTable(searchMessage);
 		
 		logUTable();
-				
-		if (retainEqualSearches) {
-			final SearchMessage equalActiveSearch = getRetainingActiveSearch(searchMessage);
-			if (equalActiveSearch != null) {
-				if (!retainedSearches.containsKey(equalActiveSearch))
-					retainedSearches.put(equalActiveSearch, new LinkedList<SearchMessage>());
-				retainedSearches.get(equalActiveSearch).add(searchMessage);
-				logger.trace("Peer " + peerID + " searchMessage " + searchMessage.getRemoteMessageID() + " was retained because of equal active search " + equalActiveSearch.getRemoteMessageID());
-				return false;
-			}
-		}
 		
 		activeSearches.add(searchMessage);
 		return true;
@@ -540,12 +491,8 @@ public class UnicastTable implements XMLSerializable {
 	 *            the search response message used to update the unicast table.
 	 */
 	public void updateUnicastTable(final SearchResponseMessage searchResponseMessage) {
-		if (!searchResponseMessage.getSource().equals(peerID)) {
+		if (!searchResponseMessage.getSource().equals(peerID))
 			addRoute(searchResponseMessage.getRemoteMessageID(), searchResponseMessage.getSource(), searchResponseMessage.getSender(), searchResponseMessage.getDistance());
-			if (!foundParameters.containsKey(searchResponseMessage.getSource()))
-				foundParameters.put(searchResponseMessage.getSource(), new HashSet<Parameter>());
-			foundParameters.get(searchResponseMessage.getSource()).addAll(searchResponseMessage.getParameters());
-		}
 		
 		logUTable();
 	}
@@ -562,65 +509,18 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.unmodifiableList(routes);
 	}
 
-	public static class RemoveSearchResult {
-		private final boolean activeRemoved;
-		private final SearchMessage propagate;
-		
-		public RemoveSearchResult(final boolean activeRemoved, final SearchMessage propagate) {
-			this.activeRemoved = activeRemoved;
-			this.propagate = propagate;
-		}
-
-		public boolean wasActiveRemoved() {
-			return activeRemoved;
-		}
-
-		public SearchMessage getPropagatedSearch() {
-			return propagate;
-		}
-	}
-	
-	private RemoveSearchResult removeSearch(final MessageID routeID) {	
-		SearchMessage removedActiveSearch = null; 
+	private boolean removeSearch(final MessageID routeID) {	 
 		//check active searches
 		for (final Iterator<SearchMessage> activeSearchesIterator = activeSearches.iterator(); activeSearchesIterator.hasNext(); ) {
 			final SearchMessage activeSearch = activeSearchesIterator.next();
 			if (activeSearch.getRemoteMessageID().equals(routeID)) {
-				removedActiveSearch = activeSearch;
 				activeSearchesIterator.remove();				
 				logUTable(); 
+				return true;
 			}
 		}
 		
-		if (removedActiveSearch != null) {
-			SearchMessage propagatedSearch = null;
-			if (retainEqualSearches) {
-				if (retainedSearches.containsKey(removedActiveSearch)) {
-					propagatedSearch = retainedSearches.get(removedActiveSearch).poll();
-					activeSearches.add(propagatedSearch);
-					Queue<SearchMessage> retained = retainedSearches.remove(removedActiveSearch);
-					if (!retained.isEmpty())
-						retainedSearches.put(propagatedSearch, retained);
-					logger.trace("Peer " + peerID + " retained search is now propagated " + propagatedSearch);
-				}
-			}
-			return new RemoveSearchResult(true, propagatedSearch);
-		}
-		
-		for (final Iterator<Entry<SearchMessage, Queue<SearchMessage>>> entryIterator = retainedSearches.entrySet().iterator(); entryIterator.hasNext(); ) {
-			final Entry<SearchMessage, Queue<SearchMessage>> entry = entryIterator.next();
-			for (final Iterator<SearchMessage> retainedSearchIterator = entry.getValue().iterator(); retainedSearchIterator.hasNext(); ) {
-				final SearchMessage retainedSearch = retainedSearchIterator.next();
-				if (retainedSearch.getRemoteMessageID().equals(routeID)) {
-					retainedSearchIterator.remove();
-					if (entry.getValue().isEmpty())
-						entryIterator.remove();
-					return new RemoveSearchResult(false, null);
-				}
-			}
-		}
-		
-		return new RemoveSearchResult(false, null);
+		return false;
 	}
 	
 	public boolean isSearchRoute(final MessageID routeID) {
