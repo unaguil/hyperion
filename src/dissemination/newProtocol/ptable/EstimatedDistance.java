@@ -22,8 +22,8 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable
 	 */
 	private static final long serialVersionUID = 1L;
 
-	// the distance estimated for a parameter. It will be transmitted as a byte (127 hops max.)
-	private int distance; 
+	// the distance estimated for a parameter
+	private int distance;
 
 	// the neighbor which propagated this distance estimation
 	private final PeerID neighbor;
@@ -139,13 +139,13 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		distance = in.readByte();
+		distance = in.readInt();
 		UnserializationUtils.setFinalField(EstimatedDistance.class, this, "neighbor", in.readObject());
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeByte(distance);
+		out.writeInt(distance);
 		out.writeObject(neighbor);
 	}
 }

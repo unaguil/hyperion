@@ -42,7 +42,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		// the searched parameter
 		private final Parameter parameter;
 
-		// the TTL of the search for this parameter. It will be transmitted as a byte (127 hops max.)
+		// the TTL of the search for this parameter
 		private final int ttl;
 		
 		@SuppressWarnings("unused")
@@ -84,13 +84,13 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		@Override
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 			UnserializationUtils.setFinalField(ParameterEntry.class, this, "parameter", in.readObject());
-			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readByte());
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readInt());
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			out.writeObject(parameter);
-			out.writeByte(ttl);
+			out.writeInt(ttl);
 		}
 	}
 

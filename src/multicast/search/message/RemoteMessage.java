@@ -29,7 +29,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	// used in near broadcasting)
 	private final MessageID remoteMessageID;
 
-	// the traversed distance (number of hops) of the current message. It will be transmitted as a byte (127 hops max.)
+	// the traversed distance (number of hops) of the current message
 	private final int distance;
 	
 	public RemoteMessage() {
@@ -130,7 +130,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 		super.readExternal(in);
 		
 		UnserializationUtils.setFinalField(RemoteMessage.class, this, "remoteMessageID", in.readObject());
-		UnserializationUtils.setFinalField(RemoteMessage.class, this, "distance", in.readByte());
+		UnserializationUtils.setFinalField(RemoteMessage.class, this, "distance", in.readInt());
 	}
 
 	@Override
@@ -138,6 +138,6 @@ public abstract class RemoteMessage extends BroadcastMessage {
 		super.writeExternal(out);
 		
 		out.writeObject(remoteMessageID);
-		out.writeByte(distance);
+		out.writeInt(distance);
 	}
 }
