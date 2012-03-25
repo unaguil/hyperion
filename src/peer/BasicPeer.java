@@ -303,7 +303,7 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 	@Override
 	public void broadcast(final BroadcastMessage message) {
 		try {
-			logger.debug("Peer " + peerID + " broadcasting " + message);
+			logger.debug("Peer " + peerID + " broadcasting " + message + " " + getSize(message) + " bytes");
 			msgCounter.addBroadcasted(message.getClass());
 
 			// Message is converted to byte array
