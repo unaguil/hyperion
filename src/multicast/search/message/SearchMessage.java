@@ -43,7 +43,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		private final Parameter parameter;
 
 		// the TTL of the search for this parameter
-		private final int ttl;
+		private final byte ttl;
 		
 		@SuppressWarnings("unused")
 		public ParameterEntry() {
@@ -54,7 +54,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		// constructs a entry for a parameter search
 		public ParameterEntry(final Parameter p, final int ttl) {
 			this.parameter = p;
-			this.ttl = ttl;
+			this.ttl = (byte)ttl;
 		}
 
 		// gets the searched parameter
@@ -84,13 +84,13 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		@Override
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 			UnserializationUtils.setFinalField(ParameterEntry.class, this, "parameter", in.readObject());
-			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readInt());
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readByte());
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			out.writeObject(parameter);
-			out.writeInt(ttl);
+			out.writeByte(ttl);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		
 		UnserializationUtils.readMap(parameterEntries, in);
 		
-		SearchType type = SearchType.valueOf(in.readUTF());
+		SearchType type = SearchType.values()[in.readByte()];
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "previousSender", in.readObject());
 		UnserializationUtils.setFinalField(SearchMessage.class, this, "payload", in.readObject());
@@ -293,7 +293,7 @@ public class SearchMessage extends RemoteMessage implements EnvelopeMessage, Pay
 		out.writeObject(parameterEntries.keySet().toArray(new Parameter[0]));
 		out.writeObject(parameterEntries.values().toArray(new ParameterEntry[0]));
 		
-		out.writeUTF(searchType.toString());
+		out.writeByte(searchType.ordinal());
 		out.writeObject(previousSender);
 		out.writeObject(payload);
 		

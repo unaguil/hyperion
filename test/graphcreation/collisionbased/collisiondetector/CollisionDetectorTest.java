@@ -24,23 +24,23 @@ public class CollisionDetectorTest {
 	@Test
 	public void testGetParametersColliding() throws InvalidParameterIDException {
 		final Set<Parameter> allParameters = new HashSet<Parameter>();
-		allParameters.add(ParameterFactory.createParameter("I-A"));
-		allParameters.add(ParameterFactory.createParameter("I-B"));
-		allParameters.add(ParameterFactory.createParameter("I-C"));
+		allParameters.add(ParameterFactory.createParameter("I-1", emptyTaxonomy));
+		allParameters.add(ParameterFactory.createParameter("I-2", emptyTaxonomy));
+		allParameters.add(ParameterFactory.createParameter("I-10", emptyTaxonomy));
 
-		allParameters.add(ParameterFactory.createParameter("O-D"));
-		allParameters.add(ParameterFactory.createParameter("O-E"));
-		allParameters.add(ParameterFactory.createParameter("O-F"));
+		allParameters.add(ParameterFactory.createParameter("O-3", emptyTaxonomy));
+		allParameters.add(ParameterFactory.createParameter("O-4", emptyTaxonomy));
+		allParameters.add(ParameterFactory.createParameter("O-5", emptyTaxonomy));
 
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
-		newParameters.add(ParameterFactory.createParameter("O-A"));
-		newParameters.add(ParameterFactory.createParameter("O-B"));
-		newParameters.add(ParameterFactory.createParameter("O-G"));
-		newParameters.add(ParameterFactory.createParameter("I-D"));
-		newParameters.add(ParameterFactory.createParameter("I-E"));
-		newParameters.add(ParameterFactory.createParameter("I-H"));
-		newParameters.add(ParameterFactory.createParameter("I-I"));
-		newParameters.add(ParameterFactory.createParameter("O-I"));
+		newParameters.add(ParameterFactory.createParameter("O-1", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("O-2", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("O-6", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("I-3", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("I-4", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("I-7", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("I-8", emptyTaxonomy));
+		newParameters.add(ParameterFactory.createParameter("O-8", emptyTaxonomy));
 
 		// New parameters are also in the all parameters when the
 		// getParametersColliding function is called.
@@ -49,11 +49,11 @@ public class CollisionDetectorTest {
 		final Set<Collision> detectedCollisions = CollisionDetector.getParametersColliding(newParameters, allParameters, true, emptyTaxonomy);
 		assertEquals(5, detectedCollisions.size());
 
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A"))));
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B"))));
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-D"), (OutputParameter) ParameterFactory.createParameter("O-D"))));
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-E"), (OutputParameter) ParameterFactory.createParameter("O-E"))));
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-I"), (OutputParameter) ParameterFactory.createParameter("O-I"))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-1", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-1", emptyTaxonomy))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-2", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-2", emptyTaxonomy))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-3", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-3", emptyTaxonomy))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-4", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-4", emptyTaxonomy))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-8", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-8", emptyTaxonomy))));
 	}
 
 	@Test
@@ -65,20 +65,20 @@ public class CollisionDetectorTest {
 		taxonomy.addChild("A", "B");
 
 		final Set<Parameter> allParameters = new HashSet<Parameter>();
-		allParameters.add(ParameterFactory.createParameter("I-A"));
-		allParameters.add(ParameterFactory.createParameter("I-C"));
-		allParameters.add(ParameterFactory.createParameter("I-F"));
+		allParameters.add(ParameterFactory.createParameter("I-A", taxonomy));
+		allParameters.add(ParameterFactory.createParameter("I-C", taxonomy));
+		allParameters.add(ParameterFactory.createParameter("I-1", taxonomy));
 
-		allParameters.add(ParameterFactory.createParameter("O-B"));
-		allParameters.add(ParameterFactory.createParameter("I-D"));
-		allParameters.add(ParameterFactory.createParameter("O-C"));
-		allParameters.add(ParameterFactory.createParameter("O-G"));
+		allParameters.add(ParameterFactory.createParameter("O-B", taxonomy));
+		allParameters.add(ParameterFactory.createParameter("I-3", taxonomy));
+		allParameters.add(ParameterFactory.createParameter("O-C", taxonomy));
+		allParameters.add(ParameterFactory.createParameter("O-2", taxonomy));
 
 		final Set<Parameter> newParameters = new HashSet<Parameter>();
-		newParameters.add(ParameterFactory.createParameter("O-B"));
-		newParameters.add(ParameterFactory.createParameter("I-D"));
-		newParameters.add(ParameterFactory.createParameter("O-C"));
-		newParameters.add(ParameterFactory.createParameter("O-G"));
+		newParameters.add(ParameterFactory.createParameter("O-B", taxonomy));
+		newParameters.add(ParameterFactory.createParameter("I-3", taxonomy));
+		newParameters.add(ParameterFactory.createParameter("O-C", taxonomy));
+		newParameters.add(ParameterFactory.createParameter("O-2", taxonomy));
 
 		// New parameters are also in the all parameters when the
 		// getParametersColliding function is called.
@@ -87,7 +87,7 @@ public class CollisionDetectorTest {
 		final Set<Collision> detectedCollisions = CollisionDetector.getParametersColliding(newParameters, allParameters, true, taxonomy);
 		assertEquals(2, detectedCollisions.size());
 
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B"))));
-		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-C"), (OutputParameter) ParameterFactory.createParameter("O-C"))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-A", taxonomy), (OutputParameter) ParameterFactory.createParameter("O-B", taxonomy))));
+		assertTrue(detectedCollisions.contains(new Collision((InputParameter) ParameterFactory.createParameter("I-C", taxonomy), (OutputParameter) ParameterFactory.createParameter("O-C", taxonomy))));
 	}
 }

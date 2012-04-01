@@ -92,14 +92,14 @@ public class RemoveParametersMessage extends RemoteMessage {
 	
 	private void writeMap(Map<MessageID, Set<Parameter>> map, ObjectOutput out) throws IOException {
 		out.writeObject(map.keySet().toArray(new MessageID[0]));
-		out.writeInt(map.values().size());
+		out.writeShort(map.values().size());
 		for (Set<Parameter> set : map.values())
 			out.writeObject(set.toArray(new Parameter[0]));
 	}
 	
 	private void readMap(Map<MessageID, Set<Parameter>> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		List<MessageID> keys = Arrays.asList((MessageID[])in.readObject());
-		int size = in.readInt();
+		short size = in.readShort();
 		List<Set<Parameter>> values = new ArrayList<Set<Parameter>>();
 		for (int i = 0; i < size; i++) {
 			Set<Parameter> value = new HashSet<Parameter>(Arrays.asList((Parameter[])in.readObject()));

@@ -43,11 +43,11 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 	// the identifier of the current search
 	private final SearchID searchID;
 
-	private final int ttl;
+	private final byte ttl;
 
-	private final long remainingTime;
+	private final short remainingTime;
 	
-	private int hops = 0;
+	private short hops = 0;
 	
 	public FCompositionMessage() {
 		sourceService = null;
@@ -75,8 +75,8 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
-		this.ttl = ttl;
-		this.remainingTime = remainingTime;
+		this.ttl = (byte)ttl;
+		this.remainingTime = (short)remainingTime;
 
 		compositionServices.add(sourceService);
 
@@ -185,9 +185,9 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		readMap(successorDistances, in);
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "sourceService", in.readObject());
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "searchID", in.readObject());
-		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "ttl", in.readInt());
-		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readLong());
-		hops = in.readInt();
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "ttl", in.readByte());
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readShort());
+		hops = in.readShort();
 	}
 
 	@Override
@@ -199,21 +199,21 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		writeMap(successorDistances, out);
 		out.writeObject(sourceService);
 		out.writeObject(searchID);
-		out.writeInt(ttl);
-		out.writeLong(remainingTime);
-		out.writeInt(hops);
+		out.writeByte(ttl);
+		out.writeShort(remainingTime);
+		out.writeShort(hops);
 	}
 	
 	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
 		out.writeObject(map.keySet().toArray(new Service[0]));
-		out.writeInt(map.values().size());
+		out.writeShort(map.values().size());
 		for (Set<ServiceDistance> set : map.values())
 			out.writeObject(set.toArray(new ServiceDistance[0]));
 	}
 	
 	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		List<Service> keys = Arrays.asList((Service[])in.readObject());
-		int size = in.readInt();
+		short size = in.readShort();
 		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
 		for (int i = 0; i < size; i++) {
 			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));

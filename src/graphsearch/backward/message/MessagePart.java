@@ -24,8 +24,8 @@ public class MessagePart implements Externalizable {
 		 */
 		private static final long serialVersionUID = 1L;
 
-		private final int total;
-		private final int pNumber;
+		private final byte total;
+		private final byte pNumber;
 
 		private final MessageID partitionID;
 		
@@ -36,8 +36,8 @@ public class MessagePart implements Externalizable {
 		}
 
 		public Part(final int total, final int pNumber, final MessageID partitionID) {
-			this.total = total;
-			this.pNumber = pNumber;
+			this.total = (byte)total;
+			this.pNumber = (byte)pNumber;
 			this.partitionID = partitionID;
 		}
 
@@ -78,15 +78,15 @@ public class MessagePart implements Externalizable {
 
 		@Override
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-			UnserializationUtils.setFinalField(Part.class, this, "total", in.readInt());
-			UnserializationUtils.setFinalField(Part.class, this, "pNumber", in.readInt());
+			UnserializationUtils.setFinalField(Part.class, this, "total", in.readByte());
+			UnserializationUtils.setFinalField(Part.class, this, "pNumber", in.readByte());
 			UnserializationUtils.setFinalField(Part.class, this, "partitionID", in.readObject());
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
-			out.writeInt(total);
-			out.writeInt(pNumber);
+			out.writeByte(total);
+			out.writeByte(pNumber);
 			out.writeObject(partitionID);
 		}
 	}

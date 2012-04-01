@@ -18,6 +18,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import peer.peerid.PeerID;
+import taxonomy.Taxonomy;
 import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameter.ParameterFactory;
@@ -38,12 +39,12 @@ public class ServiceList implements Iterable<Service> {
 			this.services.add(s);
 	}
 
-	public ServiceList(final String xmlPath, final PeerID peer) throws ParserConfigurationException, SAXException, IOException, InvalidParameterIDException {
+	public ServiceList(final String xmlPath, final PeerID peer, final Taxonomy taxonomy) throws ParserConfigurationException, SAXException, IOException, InvalidParameterIDException {
 		final File f = new File(xmlPath);
-		loadData(f, peer);
+		loadData(f, peer, taxonomy);
 	}
 
-	protected void loadData(final File f, final PeerID peer) throws SAXException, IOException, ParserConfigurationException, InvalidParameterIDException {
+	protected void loadData(final File f, final PeerID peer, final Taxonomy taxonomy) throws SAXException, IOException, ParserConfigurationException, InvalidParameterIDException {
 		if (f.exists()) {
 			final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(f);
 
@@ -58,7 +59,7 @@ public class ServiceList implements Iterable<Service> {
 				for (int j = 0; j < parameterNodeList.getLength(); j++) {
 					final Element parameterElement = (Element) parameterNodeList.item(j);
 					final String parameterID = parameterElement.getAttribute(ID_ATTRIB);
-					s.addParameter(ParameterFactory.createParameter(parameterID));
+					s.addParameter(ParameterFactory.createParameter(parameterID, taxonomy));
 				}
 			}
 		}

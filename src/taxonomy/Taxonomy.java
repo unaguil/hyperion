@@ -12,7 +12,11 @@ public interface Taxonomy extends XMLSerializable {
 
 	public String getParent(String id) throws TaxonomyException;
 
-	public boolean subsumes(String idA, String idB);
+	public boolean subsumes(short idA, short idB);
 
-	public boolean areRelated(String idA, String idB);
+	public boolean areRelated(short idA, short idB);
+	
+	public short encode(String id);
+	
+	public String decode(short value);
 }

@@ -1,5 +1,7 @@
 package taxonomy.parameter;
 
+import taxonomy.Taxonomy;
+
 public class InputParameter extends Parameter {
 
 	/**
@@ -11,8 +13,8 @@ public class InputParameter extends Parameter {
 		
 	}
 
-	public InputParameter(final String id) {
-		super(id);
+	public InputParameter(final short value) {
+		super(value);
 	}
 
 	@Override
@@ -29,7 +31,7 @@ public class InputParameter extends Parameter {
 	}
 
 	@Override
-	public String toString() {
-		return "I-" + getID();
+	public String pretty(final Taxonomy taxonomy) {
+		return "I-" + super.pretty(taxonomy);
 	}
 }

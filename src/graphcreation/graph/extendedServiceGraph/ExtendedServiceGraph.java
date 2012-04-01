@@ -122,7 +122,7 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 		for (final Service service : serviceNodeMap.keySet())
 			for (final OutputParameter output : service.getOutputParams())
 				if (taxonomy.subsumes(input.getID(), output.getID()))
-					put(connections, new ConnectionNode(output, input), service);
+					put(connections, new ConnectionNode(output, input, taxonomy), service);
 		return connections;
 	}
 
@@ -140,7 +140,7 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 		for (final Service service : serviceNodeMap.keySet())
 			for (final InputParameter input : service.getInputParams())
 				if (taxonomy.subsumes(input.getID(), output.getID()))
-					put(connections, new ConnectionNode(output, input), service);
+					put(connections, new ConnectionNode(output, input, taxonomy), service);
 		return connections;
 	}
 
@@ -254,7 +254,7 @@ public class ExtendedServiceGraph extends ANDORGraph<ServiceNode, ConnectionNode
 		final String outputID = connectionID.substring(0, index);
 		final String inputID = connectionID.substring(index + 1, connectionID.length());
 
-		return new ConnectionNode((OutputParameter) ParameterFactory.createParameter(outputID), (InputParameter) ParameterFactory.createParameter(inputID));
+		return new ConnectionNode((OutputParameter) ParameterFactory.createParameter(outputID, taxonomy), (InputParameter) ParameterFactory.createParameter(inputID, taxonomy), taxonomy);
 	}
 	
 	public boolean contains(final Service service) {

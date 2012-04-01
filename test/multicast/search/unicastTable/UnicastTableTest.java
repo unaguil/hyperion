@@ -83,31 +83,31 @@ public class UnicastTableTest {
 
 	@Before
 	public void setUp() throws Exception, InvalidParameterIDException {
-		table1 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
-		searchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-A")), new PeerID("1"), new PeerID("2"));
-		searchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("4"));
+		table1 = new UnicastTable(PeerID.VOID_PEERID, nDetector, taxonomy);
+		searchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-A", taxonomy)), new PeerID("1"), new PeerID("2"));
+		searchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B", taxonomy)), new PeerID("3"), new PeerID("4"));
 		final Set<Parameter> searchParameters = new HashSet<Parameter>();
-		searchParameters.add(ParameterFactory.createParameter("I-H"));
-		searchParameters.add(ParameterFactory.createParameter("I-I"));
+		searchParameters.add(ParameterFactory.createParameter("I-1", taxonomy));
+		searchParameters.add(ParameterFactory.createParameter("I-2", taxonomy));
 		searchMessage3 = createSearchMessage(searchParameters, new PeerID("13"), new PeerID("14"));
-		searchMessage4 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("17"), new PeerID("4"));
-		searchResponseMessage1 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("5"), new PeerID("6"), searchMessage4);
-		searchResponseMessage2 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("7"), new PeerID("6"), searchMessage4);
-		searchResponseMessage3 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("7"), new PeerID("6"), searchMessage4);
+		searchMessage4 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), new PeerID("17"), new PeerID("4"));
+		searchResponseMessage1 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), new PeerID("5"), new PeerID("6"), searchMessage4);
+		searchResponseMessage2 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), new PeerID("7"), new PeerID("6"), searchMessage4);
+		searchResponseMessage3 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), new PeerID("7"), new PeerID("6"), searchMessage4);
 
 		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-E"));
-		parameters.add(ParameterFactory.createParameter("I-F"));
+		parameters.add(ParameterFactory.createParameter("I-E", taxonomy));
+		parameters.add(ParameterFactory.createParameter("I-3", taxonomy));
 		final SearchMessage searchMessage5 = createSearchMessage(parameters, new PeerID("18"), new PeerID("4"));
 		searchResponseMessage4 = createSearchResponseMessage(parameters, new PeerID("8"), new PeerID("9"), searchMessage5);
 
-		final SearchMessage searchMessage6 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("17"), new PeerID("4"));
-		final SearchResponseMessage localSearchResponseMessage1 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), PeerID.VOID_PEERID, PeerID.VOID_PEERID, searchMessage6);
-		final SearchMessage searchMessage7 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("17"), new PeerID("4"));
-		final SearchResponseMessage localSearchResponseMessage2 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), PeerID.VOID_PEERID, PeerID.VOID_PEERID, searchMessage7);
+		final SearchMessage searchMessage6 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D", taxonomy)), new PeerID("17"), new PeerID("4"));
+		final SearchResponseMessage localSearchResponseMessage1 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), PeerID.VOID_PEERID, PeerID.VOID_PEERID, searchMessage6);
+		final SearchMessage searchMessage7 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D", taxonomy)), new PeerID("17"), new PeerID("4"));
+		final SearchResponseMessage localSearchResponseMessage2 = createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-D", taxonomy)), PeerID.VOID_PEERID, PeerID.VOID_PEERID, searchMessage7);
 
-		localSearchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-L")), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
-		localSearchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-M")), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
+		localSearchMessage1 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-4", taxonomy)), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
+		localSearchMessage2 = createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-5", taxonomy)), PeerID.VOID_PEERID, PeerID.VOID_PEERID);
 
 		table1.updateUnicastTable(searchMessage1);
 		table1.updateUnicastTable(searchMessage2);
@@ -123,12 +123,12 @@ public class UnicastTableTest {
 		table1.updateUnicastTable(localSearchMessage1);
 		table1.updateUnicastTable(localSearchMessage2);
 
-		table2 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
-		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D")), new PeerID("1"), new PeerID("2")));
-		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("3"), new PeerID("3")));
-		table2.updateUnicastTable(createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C")), new PeerID("5"), new PeerID("6"), searchMessage4));
+		table2 = new UnicastTable(PeerID.VOID_PEERID, nDetector, taxonomy);
+		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-D", taxonomy)), new PeerID("1"), new PeerID("2")));
+		table2.updateUnicastTable(createSearchMessage(Collections.singleton(ParameterFactory.createParameter("I-B", taxonomy)), new PeerID("3"), new PeerID("3")));
+		table2.updateUnicastTable(createSearchResponseMessage(Collections.singleton(ParameterFactory.createParameter("I-C", taxonomy)), new PeerID("5"), new PeerID("6"), searchMessage4));
 
-		table3 = new UnicastTable(PeerID.VOID_PEERID, nDetector);
+		table3 = new UnicastTable(PeerID.VOID_PEERID, nDetector, taxonomy);
 		table3.updateUnicastTable(searchMessage1);
 		table3.updateUnicastTable(searchMessage2);
 		table3.updateUnicastTable(searchMessage3);
@@ -165,8 +165,8 @@ public class UnicastTableTest {
 		final Set<Parameter> searchedParameters = table1.getSearchedParameters();
 		assertEquals(2, searchedParameters.size());
 
-		assertTrue(searchedParameters.contains(ParameterFactory.createParameter("I-L")));
-		assertTrue(searchedParameters.contains(ParameterFactory.createParameter("I-M")));
+		assertTrue(searchedParameters.contains(ParameterFactory.createParameter("I-4", taxonomy)));
+		assertTrue(searchedParameters.contains(ParameterFactory.createParameter("I-5", taxonomy)));
 	}
 
 	@Test
@@ -220,7 +220,7 @@ public class UnicastTableTest {
 
 		assertFalse(table1.equals(table2));
 
-		assertEquals(new UnicastTable(PeerID.VOID_PEERID, nDetector), new UnicastTable(PeerID.VOID_PEERID, nDetector));
+		assertEquals(new UnicastTable(PeerID.VOID_PEERID, nDetector, taxonomy), new UnicastTable(PeerID.VOID_PEERID, nDetector, taxonomy));
 	}
 
 	@Test
@@ -249,13 +249,13 @@ public class UnicastTableTest {
 
 	@Test
 	public void testGetPeersSearching() throws InvalidParameterIDException {
-		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-A"), taxonomy).size());
-		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-A"), taxonomy).contains(searchMessage1));
-		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-H"), taxonomy).size());
-		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-I"), taxonomy).size());
-		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-H"), taxonomy).contains(searchMessage3));
-		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-I"), taxonomy).contains(searchMessage3));
-		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-W"), taxonomy).isEmpty());
+		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-A", taxonomy)).size());
+		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-A", taxonomy)).contains(searchMessage1));
+		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-1", taxonomy)).size());
+		assertEquals(1, table1.getSearches(ParameterFactory.createParameter("I-2", taxonomy)).size());
+		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-1", taxonomy)).contains(searchMessage3));
+		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-2", taxonomy)).contains(searchMessage3));
+		assertTrue(table1.getSearches(ParameterFactory.createParameter("I-6", taxonomy)).isEmpty());
 	}
 
 	@Test
@@ -317,19 +317,19 @@ public class UnicastTableTest {
 	public void testRemoveParameters() throws InvalidParameterIDException {
 		assertEquals(7, table1.getActiveSearches().size());
 
-		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-H")));
-		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-I")));
+		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-1", taxonomy)));
+		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-2", taxonomy)));
 
-		table1.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-H")), searchMessage3.getRemoteMessageID());
+		table1.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-1", taxonomy)), searchMessage3.getRemoteMessageID());
 
 		assertTrue(table1.knowsRouteTo(new PeerID("13")));
 
 		assertEquals(7, table1.getActiveSearches().size());
 
-		assertFalse(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-H")));
-		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-I")));
+		assertFalse(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-1", taxonomy)));
+		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-2", taxonomy)));
 
-		table1.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-I")), searchMessage3.getRemoteMessageID());
+		table1.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-2", taxonomy)), searchMessage3.getRemoteMessageID());
 
 		assertTrue(table1.knowsRouteTo(new PeerID("13")));
 
@@ -342,19 +342,19 @@ public class UnicastTableTest {
 	@Test
 	public void testRemoveParametersAtOnce() throws InvalidParameterIDException {
 		Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-E"));
-		parameters.add(ParameterFactory.createParameter("I-F"));
+		parameters.add(ParameterFactory.createParameter("I-E", taxonomy));
+		parameters.add(ParameterFactory.createParameter("I-3", taxonomy));
 
 		assertTrue(table1.knowsRouteTo(new PeerID("8")));
 
 		parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("I-H"));
-		parameters.add(ParameterFactory.createParameter("I-I"));
+		parameters.add(ParameterFactory.createParameter("I-1", taxonomy));
+		parameters.add(ParameterFactory.createParameter("I-2", taxonomy));
 
 		assertEquals(7, table1.getActiveSearches().size());
 
-		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-H")));
-		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-I")));
+		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-1", taxonomy)));
+		assertTrue(table1.getSearch(searchMessage3.getRemoteMessageID()).getSearchedParameters().contains(ParameterFactory.createParameter("I-2", taxonomy)));
 
 		table1.removeParameters(parameters, searchMessage3.getRemoteMessageID());
 

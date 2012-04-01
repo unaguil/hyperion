@@ -29,6 +29,7 @@ import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
 import peer.message.BroadcastMessage;
+import taxonomy.Taxonomy;
 import util.logger.Logger;
 import config.Configuration;
 
@@ -86,7 +87,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		// create the extended service graph using the received services
 		// TODO when the composition graph is created there could appear more
 		// connections. Indirect paths exists among some services/nodes.
-		final ExtendedServiceGraph composition = new ExtendedServiceGraph(gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+		final ExtendedServiceGraph composition = new ExtendedServiceGraph(getTaxonomy());
 		for (final Service service : services)
 			composition.merge(service);
 
@@ -94,8 +95,13 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		compositionListener.compositionFound(composition, searchID, hops);
 	}
 
+	@Override
+	public Taxonomy getTaxonomy() {
+		return gCreator.getPSearch().getDisseminationLayer().getTaxonomy();
+	}
+
 	public void notifyCompositionsLost(final SearchID searchID, final Set<Service> services) {
-		final ExtendedServiceGraph invalidComposition = new ExtendedServiceGraph(gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+		final ExtendedServiceGraph invalidComposition = new ExtendedServiceGraph(getTaxonomy());
 		for (final Service service : services)
 			invalidComposition.merge(service);
 

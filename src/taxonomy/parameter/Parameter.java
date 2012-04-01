@@ -6,6 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import serialization.binary.UnserializationUtils;
+import taxonomy.Taxonomy;
 
 public abstract class Parameter implements Externalizable {
 
@@ -13,18 +14,22 @@ public abstract class Parameter implements Externalizable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private final String id;
+	private final short value;
 
 	public Parameter() {
-		id = null;
+		value = 0;
 	}
 	
-	public Parameter(final String id) {
-		this.id = id;
+	public Parameter(final short value) {
+		this.value = value;
 	}
 
-	public String getID() {
-		return id;
+	public short getID() {
+		return value;
+	}
+	
+	public String pretty(final Taxonomy taxonomy) {
+		return taxonomy.decode(value);
 	}
 
 	@Override
@@ -33,26 +38,26 @@ public abstract class Parameter implements Externalizable {
 			return false;
 
 		final Parameter p = (Parameter) o;
-		return this.id.equals(p.id);
+		return this.value == p.value;
 	}
 
 	@Override
 	public int hashCode() {
-		return id.hashCode();
+		return value;
 	}
-
+	
 	@Override
 	public String toString() {
-		return id;
+		return "" + value;
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(Parameter.class, this, "id", in.readUTF());
+		UnserializationUtils.setFinalField(Parameter.class, this, "value", in.readShort());
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeUTF(id);		
+		out.writeShort(value);		
 	}
 }

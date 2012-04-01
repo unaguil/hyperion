@@ -33,31 +33,31 @@ public class ShortestPathCalculatorTest {
 		serviceDistances = new HashMap<Service, Set<ServiceDistance>>();
 
 		init = new Service("Composition-INIT", new PeerID("6"));
-		init.addParameter(ParameterFactory.createParameter("O-Z"));
+		init.addParameter(ParameterFactory.createParameter("O-7", taxonomy));
 
 		s1 = new Service("S1", new PeerID("1"));
-		s1.addParameter(ParameterFactory.createParameter("I-Z"));
-		s1.addParameter(ParameterFactory.createParameter("O-A"));
-		s1.addParameter(ParameterFactory.createParameter("O-B"));
+		s1.addParameter(ParameterFactory.createParameter("I-7", taxonomy));
+		s1.addParameter(ParameterFactory.createParameter("O-1", taxonomy));
+		s1.addParameter(ParameterFactory.createParameter("O-2", taxonomy));
 
 		s2 = new Service("S2", new PeerID("2"));
-		s2.addParameter(ParameterFactory.createParameter("I-A"));
-		s2.addParameter(ParameterFactory.createParameter("O-D"));
+		s2.addParameter(ParameterFactory.createParameter("I-1", taxonomy));
+		s2.addParameter(ParameterFactory.createParameter("O-4", taxonomy));
 
 		s3 = new Service("S3", new PeerID("3"));
-		s3.addParameter(ParameterFactory.createParameter("I-B"));
-		s3.addParameter(ParameterFactory.createParameter("O-C"));
+		s3.addParameter(ParameterFactory.createParameter("I-2", taxonomy));
+		s3.addParameter(ParameterFactory.createParameter("O-3", taxonomy));
 
 		s4 = new Service("S4", new PeerID("4"));
-		s4.addParameter(ParameterFactory.createParameter("I-C"));
-		s4.addParameter(ParameterFactory.createParameter("O-E"));
+		s4.addParameter(ParameterFactory.createParameter("I-3", taxonomy));
+		s4.addParameter(ParameterFactory.createParameter("O-5", taxonomy));
 
 		s5 = new Service("S5", new PeerID("2"));
-		s5.addParameter(ParameterFactory.createParameter("I-E"));
-		s5.addParameter(ParameterFactory.createParameter("O-W"));
+		s5.addParameter(ParameterFactory.createParameter("I-5", taxonomy));
+		s5.addParameter(ParameterFactory.createParameter("O-6", taxonomy));
 
 		goal = new Service("Composition-GOAL", new PeerID("6"));
-		goal.addParameter(ParameterFactory.createParameter("I-W"));
+		goal.addParameter(ParameterFactory.createParameter("I-6", taxonomy));
 
 		serviceDistances.put(init, new HashSet<ServiceDistance>());
 		serviceDistances.get(init).add(new ServiceDistance(s1, Integer.valueOf(0)));
@@ -65,9 +65,6 @@ public class ShortestPathCalculatorTest {
 		serviceDistances.put(s1, new HashSet<ServiceDistance>());
 		serviceDistances.get(s1).add(new ServiceDistance(s2, Integer.valueOf(5)));
 		serviceDistances.get(s1).add(new ServiceDistance(s3, Integer.valueOf(3)));
-
-		serviceDistances.put(s2, new HashSet<ServiceDistance>());
-		serviceDistances.get(s2).add(new ServiceDistance(s5, Integer.valueOf(4)));
 
 		serviceDistances.put(s3, new HashSet<ServiceDistance>());
 		serviceDistances.get(s3).add(new ServiceDistance(s4, Integer.valueOf(3)));
@@ -112,7 +109,7 @@ public class ShortestPathCalculatorTest {
 		foundPath = ShortestPathCalculator.findShortestPath(serviceDistances, new PeerID("6"), taxonomy);
 
 		expected = new ArrayList<Service>();
-		expected.add(init);
+		expected.add(goal);
 
 		assertEquals(expected, foundPath);
 	}

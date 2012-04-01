@@ -33,15 +33,15 @@ public class UpdateTableTest {
 		taxonomy.addChild("A", "B");
 		
 		updateTable1 = new UpdateTable();
-		updateTable1.setAddition(ParameterFactory.createParameter("I-A"), 5, new PeerID("0"));
+		updateTable1.setAddition(ParameterFactory.createParameter("I-A", taxonomy), 5, new PeerID("0"));
 	}
 
 	@Test
 	public void testSerialization() throws IOException, ClassNotFoundException, InvalidParameterIDException {
 		final UpdateTable updateTable = new UpdateTable();
-		updateTable.setAddition(ParameterFactory.createParameter("I-A"), 3, new PeerID("0"));
-		updateTable.setAddition(ParameterFactory.createParameter("I-B"), 3, new PeerID("0"));
-		updateTable.setDelete(ParameterFactory.createParameter("I-B"), new PeerID("0"));
+		updateTable.setAddition(ParameterFactory.createParameter("I-A", taxonomy), 3, new PeerID("0"));
+		updateTable.setAddition(ParameterFactory.createParameter("I-B", taxonomy), 3, new PeerID("0"));
+		updateTable.setDelete(ParameterFactory.createParameter("I-B", taxonomy), new PeerID("0"));
 
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ObjectOutputStream os = new ObjectOutputStream(baos);
@@ -62,88 +62,88 @@ public class UpdateTableTest {
 	@Test
 	public void testMergeEqualMinorValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-A"), 3, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-A", taxonomy), 3, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
+		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
 	}
 	
 	@Test
 	public void testMergeNotRelatedMinorValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-C"), 3, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-C", taxonomy), 3, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
-		assertEquals(3, updateTable1.getAddition(ParameterFactory.createParameter("I-C")).getDistance());
+		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
+		assertEquals(3, updateTable1.getAddition(ParameterFactory.createParameter("I-C", taxonomy)).getDistance());
 	}
 	
 	@Test
 	public void testMergeNotRelatedGreaterValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-C"), 7, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-C", taxonomy), 7, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
-		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-C")).getDistance());
+		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
+		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-C", taxonomy)).getDistance());
 	}
 	
 	@Test
 	public void testMergeEqualGreaterValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-A"), 7, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-A", taxonomy), 7, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
+		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
 	}
 	
 	@Test
 	public void testMergeSubsumedMinorValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-B"), 3, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-B", taxonomy), 3, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
+		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
 		
-		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-B")));
+		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-B", taxonomy)));
 	}
 	
 	@Test
 	public void testMergeSubsumedGreaterValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-B"), 7, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-B", taxonomy), 7, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-A")).getDistance());
+		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)).getDistance());
 		
-		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-B")));
+		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-B", taxonomy)));
 	}
 	
 	@Test
 	public void testMergeSubsumeMinorValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-Z"), 3, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-Z", taxonomy), 3, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-Z")).getDistance());
-		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-A")));
+		assertEquals(5, updateTable1.getAddition(ParameterFactory.createParameter("I-Z", taxonomy)).getDistance());
+		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)));
 	}
 	
 	@Test
 	public void testMergeSubsumeGreaterValue() throws InvalidParameterIDException {		
 		final UpdateTable updateTable2 = new UpdateTable();
-		updateTable2.setAddition(ParameterFactory.createParameter("I-Z"), 7, new PeerID("0"));
+		updateTable2.setAddition(ParameterFactory.createParameter("I-Z", taxonomy), 7, new PeerID("0"));
 		
 		updateTable1.merge(updateTable2, taxonomy);
 		
-		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-Z")).getDistance());
-		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-A")));
+		assertEquals(7, updateTable1.getAddition(ParameterFactory.createParameter("I-Z", taxonomy)).getDistance());
+		assertNull(updateTable1.getAddition(ParameterFactory.createParameter("I-A", taxonomy)));
 	}
 }

@@ -17,17 +17,17 @@ public class EstimatedDistanceListTest {
 
 		assertTrue(list.isEmpty());
 
-		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("A")));
+		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("1")));
 
 		assertFalse(list.isEmpty());
 
 		assertEquals(1, list.getList().size());
 
-		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("B")));
+		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("2")));
 
 		assertEquals(2, list.getList().size());
 
-		list.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
+		list.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
 
 		assertEquals(2, list.getList().size());
 	}
@@ -35,20 +35,20 @@ public class EstimatedDistanceListTest {
 	@Test
 	public void testRemoveEstimatedDistancesFrom() {
 		final EstimatedDistanceList list = new EstimatedDistanceList();
-		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("A")));
-		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("B")));
+		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("1")));
+		list.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("2")));
 
-		EstimatedDistance previousEstimatedDistance = list.removeEstimatedDistanceFrom(new PeerID("A"));
+		EstimatedDistance previousEstimatedDistance = list.removeEstimatedDistanceFrom(new PeerID("1"));
 
-		assertNull(list.removeEstimatedDistanceFrom(new PeerID("C")));
+		assertNull(list.removeEstimatedDistanceFrom(new PeerID("3")));
 
-		assertEquals(new EstimatedDistance(4, new PeerID("A")), previousEstimatedDistance);
+		assertEquals(new EstimatedDistance(4, new PeerID("1")), previousEstimatedDistance);
 
 		assertEquals(1, list.getList().size());
 
-		previousEstimatedDistance = list.removeEstimatedDistanceFrom(new PeerID("B"));
+		previousEstimatedDistance = list.removeEstimatedDistanceFrom(new PeerID("2"));
 
-		assertEquals(new EstimatedDistance(4, new PeerID("B")), previousEstimatedDistance);
+		assertEquals(new EstimatedDistance(4, new PeerID("2")), previousEstimatedDistance);
 
 		assertTrue(list.isEmpty());
 	}
@@ -57,37 +57,37 @@ public class EstimatedDistanceListTest {
 	public void testGetEffectiveDistance() {
 		final EstimatedDistanceList list = new EstimatedDistanceList();
 
-		list.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
+		list.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
 
-		list.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
-		assertEquals(new EstimatedDistance(5, new PeerID("A")), list.getEffectiveDistance());
+		assertEquals(new EstimatedDistance(5, new PeerID("1")), list.getEffectiveDistance());
 	}
 
 	@Test
 	public void testSearch() {
 		final EstimatedDistanceList list = new EstimatedDistanceList();
 
-		list.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("B")));
+		list.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("2")));
 
-		assertEquals(new EstimatedDistance(5, new PeerID("B")), list.search(new PeerID("B")));
+		assertEquals(new EstimatedDistance(5, new PeerID("2")), list.search(new PeerID("2")));
 
-		assertNull(list.search(new PeerID("A")));
+		assertNull(list.search(new PeerID("1")));
 	}
 
 	@Test
 	public void testEquals() {
 		final EstimatedDistanceList list1 = new EstimatedDistanceList();
-		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		final EstimatedDistanceList list2 = new EstimatedDistanceList();
-		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		final EstimatedDistanceList list3 = new EstimatedDistanceList();
-		list3.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list3.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("B")));
+		list3.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list3.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("2")));
 
 		assertEquals(list1, list1);
 		assertEquals(list1, list2);
@@ -98,23 +98,23 @@ public class EstimatedDistanceListTest {
 	@Test
 	public void testEqualsWithOptionalEntries() {
 		final EstimatedDistanceList list1 = new EstimatedDistanceList();
-		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		final EstimatedDistanceList list2 = new EstimatedDistanceList();
-		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		final EstimatedDistanceList list3 = new EstimatedDistanceList();
-		list3.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list3.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("B")));
+		list3.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list3.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("2")));
 
 		final EstimatedDistanceList list4 = new EstimatedDistanceList();
-		list4.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("B"), true));
-		list4.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list4.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("2"), true));
+		list4.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		final EstimatedDistanceList list5 = new EstimatedDistanceList();
-		list5.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("A")));
+		list5.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("1")));
 
 		assertEquals(list1, list1);
 		assertEquals(list1, list2);
@@ -128,16 +128,16 @@ public class EstimatedDistanceListTest {
 	@Test
 	public void testGetOptionalEntriesSize() {
 		final EstimatedDistanceList list1 = new EstimatedDistanceList();
-		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("B")));
-		list1.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("C")));
+		list1.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list1.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("2")));
+		list1.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("3")));
 
 		assertEquals(0, list1.getOptionalEntriesSize());
 
 		final EstimatedDistanceList list2 = new EstimatedDistanceList();
-		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("A")));
-		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("B"), true));
-		list2.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("C")));
+		list2.updateEstimatedDistance(new EstimatedDistance(3, new PeerID("1")));
+		list2.updateEstimatedDistance(new EstimatedDistance(5, new PeerID("2"), true));
+		list2.updateEstimatedDistance(new EstimatedDistance(4, new PeerID("3")));
 
 		assertEquals(1, list2.getOptionalEntriesSize());
 	}

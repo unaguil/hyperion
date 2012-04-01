@@ -499,7 +499,7 @@ public class ParameterTable implements XMLSerializable {
 
 		for (final ParameterGroup pGroup : table.keySet()) {
 			final Element parameter = doc.createElement(PARAMETER);
-			parameter.setAttribute(PARAMETER_ID_ATTRIB, pGroup.getCurrentParameter().toString());
+			parameter.setAttribute(PARAMETER_ID_ATTRIB, pGroup.getCurrentParameter().pretty(taxonomy));
 
 			for (final EstimatedDistance eDistance : table.get(pGroup).getList()) {
 				final Element parameterEntry = doc.createElement(PARAMETER_ENTRY);
@@ -556,9 +556,9 @@ public class ParameterTable implements XMLSerializable {
 				// By default entries are not optional
 				try {
 					if (optional.isEmpty() || optional.equals("false"))
-						addEntry(ParameterFactory.createParameter(parameterID), new EstimatedDistance(Integer.parseInt(distance), new PeerID(neighbor), false));
+						addEntry(ParameterFactory.createParameter(parameterID, taxonomy), new EstimatedDistance(Integer.parseInt(distance), new PeerID(neighbor), false));
 					else
-						addEntry(ParameterFactory.createParameter(parameterID), new EstimatedDistance(Integer.parseInt(distance), new PeerID(neighbor), true));
+						addEntry(ParameterFactory.createParameter(parameterID, taxonomy), new EstimatedDistance(Integer.parseInt(distance), new PeerID(neighbor), true));
 				} catch (final InvalidParameterIDException ie) {
 					throw new IOException(ie);
 				}

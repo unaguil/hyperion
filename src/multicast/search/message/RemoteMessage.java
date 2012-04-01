@@ -30,7 +30,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	private final MessageID remoteMessageID;
 
 	// the traversed distance (number of hops) of the current message
-	private final int distance;
+	private final byte distance;
 	
 	public RemoteMessage() {
 		remoteMessageID = null;
@@ -48,6 +48,12 @@ public abstract class RemoteMessage extends BroadcastMessage {
 		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
 		this.distance = 0;
 	}
+	
+	protected RemoteMessage(final RemoteMessage remoteMessage) {
+		super(remoteMessage.getSource(), remoteMessage.getExpectedDestinations());
+		this.remoteMessageID = remoteMessage.getRemoteMessageID();
+		this.distance = (byte) remoteMessage.getDistance();
+	}
 
 	/**
 	 * Constructs a remote message with a given initial traversed distance.
@@ -60,7 +66,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	public RemoteMessage(final PeerID source, final Set<PeerID> expectedDestinations, final int distance) {
 		super(source, expectedDestinations);
 		this.remoteMessageID = new MessageID(source, MessageIDGenerator.getNewID());
-		this.distance = distance;
+		this.distance = (byte)distance;
 	}
 
 	/**
@@ -76,7 +82,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 	public RemoteMessage(final RemoteMessage remoteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final int newDistance) {
 		super(sender, expectedDestinations);
 		this.remoteMessageID = remoteMessage.getRemoteMessageID();
-		this.distance = newDistance;
+		this.distance = (byte)newDistance;
 	}
 
 	/**
@@ -130,7 +136,7 @@ public abstract class RemoteMessage extends BroadcastMessage {
 		super.readExternal(in);
 		
 		UnserializationUtils.setFinalField(RemoteMessage.class, this, "remoteMessageID", in.readObject());
-		UnserializationUtils.setFinalField(RemoteMessage.class, this, "distance", in.readInt());
+		UnserializationUtils.setFinalField(RemoteMessage.class, this, "distance", in.readByte());
 	}
 
 	@Override
@@ -138,6 +144,6 @@ public abstract class RemoteMessage extends BroadcastMessage {
 		super.writeExternal(out);
 		
 		out.writeObject(remoteMessageID);
-		out.writeInt(distance);
+		out.writeByte(distance);
 	}
 }

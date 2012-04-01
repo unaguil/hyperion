@@ -24,13 +24,13 @@ public class MessageTreeTest {
 
 	@Test
 	public void testAddMessage() {
-		final BCompositionMessage message = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
+		final BCompositionMessage message = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("20")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
 
 		final MessageTree messageTree = new MessageTree(message.getRootID());
 
 		assertTrue(messageTree.addMessage(message));
 
-		final BCompositionMessage message2 = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
+		final BCompositionMessage message2 = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("20")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
 
 		assertFalse(messageTree.addMessage(message2));
 
@@ -50,7 +50,7 @@ public class MessageTreeTest {
 
 	@Test
 	public void testIsComplete() {
-		final BCompositionMessage message = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
+		final BCompositionMessage message = new BCompositionMessage(new SearchID(new PeerID("0")), new Service("1", new PeerID("20")), new HashSet<ServiceDistance>(), TTL, TIME, new PeerID("0"));
 
 		final MessageTree messageTree = new MessageTree(message.getRootID());
 

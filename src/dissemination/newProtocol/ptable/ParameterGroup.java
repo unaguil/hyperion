@@ -66,9 +66,9 @@ public class ParameterGroup {
 	public int hashCode() {
 		return currentParameter.hashCode();
 	}
-
+	
 	@Override
 	public String toString() {
-		return currentParameter.toString();
+		return currentParameter.pretty(taxonomy);
 	}
 }

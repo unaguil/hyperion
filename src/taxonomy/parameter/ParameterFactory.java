@@ -1,14 +1,16 @@
 package taxonomy.parameter;
 
+import taxonomy.Taxonomy;
+
 public class ParameterFactory {
 
-	public static Parameter createParameter(final String fullID) throws InvalidParameterIDException {
+	public static Parameter createParameter(final String fullID, Taxonomy taxonomy) throws InvalidParameterIDException {
 		checkID(fullID);
 
 		if (isInput(fullID))
-			return new InputParameter(getID(fullID));
+			return new InputParameter(taxonomy.encode(getID(fullID)));
 		else if (isOutput(fullID))
-			return new OutputParameter(getID(fullID));
+			return new OutputParameter(taxonomy.encode(getID(fullID)));
 		else
 			throw new InvalidParameterIDException("Parameter should have the following format: I-id or O-id. " + fullID + " received.");
 	}

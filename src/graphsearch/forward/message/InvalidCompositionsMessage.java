@@ -110,14 +110,14 @@ public class InvalidCompositionsMessage extends RemoteMessage implements Payload
 	
 	private void writeMap(Map<SearchID, Set<Service>> map, ObjectOutput out) throws IOException {
 		out.writeObject(map.keySet().toArray(new SearchID[0]));
-		out.writeInt(map.values().size());
+		out.writeShort(map.values().size());
 		for (Set<Service> set : map.values())
 			out.writeObject(set.toArray(new Service[0]));
 	}
 	
 	private void readMap(Map<SearchID, Set<Service>> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		List<SearchID> keys = Arrays.asList((SearchID[])in.readObject());
-		int size = in.readInt();
+		short size = in.readShort();
 		List<Set<Service>> values = new ArrayList<Set<Service>>();
 		for (int i = 0; i < size; i++) {
 			Set<Service> value = new HashSet<Service>(Arrays.asList((Service[])in.readObject()));

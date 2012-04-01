@@ -9,6 +9,7 @@ import java.util.Set;
 import multicast.ParameterSearch;
 import peer.message.PayloadMessage;
 import serialization.xml.XMLSerializable;
+import taxonomy.Taxonomy;
 
 public interface GraphCreator extends XMLSerializable {
 	
@@ -40,4 +41,6 @@ public interface GraphCreator extends XMLSerializable {
 	public Set<ServiceDistance> getSuccessors(Service service);
 
 	public boolean containsLocalService(Service service);
+
+	public Taxonomy getTaxonomy();
 }

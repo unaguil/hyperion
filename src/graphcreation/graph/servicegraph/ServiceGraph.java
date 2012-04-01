@@ -30,7 +30,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import serialization.xml.XMLSerializable;
+import taxonomy.Taxonomy;
+import taxonomy.parameter.InvalidParameterIDException;
 import taxonomy.parameter.Parameter;
+import taxonomy.parameter.ParameterFactory;
 
 public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> implements XMLSerializable {
 
@@ -44,9 +47,15 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 	private final static String SERVICE_NODE_MARK = "Service:";
 
 	private final Map<Service, ServiceNode> serviceNodeMap = new HashMap<Service, ServiceNode>();
+	
+	private final Taxonomy taxonomy;
+	
+	public ServiceGraph(final Taxonomy taxonomy) {
+		this.taxonomy = taxonomy;
+	}
 
-	protected static ServiceGraph createServiceGraphFromService(final Service s) {
-		final ServiceGraph g = new ServiceGraph();
+	protected static ServiceGraph createServiceGraphFromService(final Service s, final Taxonomy taxonomy) {
+		final ServiceGraph g = new ServiceGraph(taxonomy);
 
 		final ServiceNode sNode = new ServiceNode(s);
 		g.addNode(sNode);
@@ -73,7 +82,7 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 	}
 
 	public ServiceNode merge(final Service s) {
-		final ServiceGraph serviceGraph = createServiceGraphFromService(s);
+		final ServiceGraph serviceGraph = createServiceGraphFromService(s, taxonomy);
 		this.merge(serviceGraph);
 
 		final ServiceNode sNode = serviceGraph.andNodeSet().iterator().next();
@@ -94,7 +103,7 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 
 	@Override
 	public ServiceGraph copy() {
-		final ServiceGraph copy = new ServiceGraph();
+		final ServiceGraph copy = new ServiceGraph(taxonomy);
 
 		copy.merge(this);
 
@@ -134,20 +143,28 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 	}
 
 	private static class GraphNodeNameProvider implements VertexNameProvider<GraphNode> {
+		
+		private final Taxonomy taxonomy;
+		
+		public GraphNodeNameProvider(final Taxonomy taxonomy) {
+			this.taxonomy = taxonomy;
+		}
 
 		@Override
 		public String getVertexName(final GraphNode node) {
 			if (node instanceof ServiceNode)
 				return "Service:" + node.getNodeID();
-			if (node instanceof ParameterNode)
-				return "Parameter:" + node.getNodeID();
+			if (node instanceof ParameterNode) {
+				ParameterNode pNode = (ParameterNode)node;
+				return "Parameter:" + pNode.pretty(taxonomy);
+			}
 			return "INVALID_NODE";
 		}
 	}
 
 	@Override
 	public void saveToXML(final OutputStream os) throws IOException {
-		final GraphMLExporter<GraphNode, EqualsEdge> exporter = new GraphMLExporter<GraphNode, EqualsEdge>(new GraphNodeNameProvider(), new GraphNodeNameProvider(), new IntegerEdgeNameProvider<EqualsEdge>(), new IntegerEdgeNameProvider<EqualsEdge>());
+		final GraphMLExporter<GraphNode, EqualsEdge> exporter = new GraphMLExporter<GraphNode, EqualsEdge>(new GraphNodeNameProvider(taxonomy), new GraphNodeNameProvider(taxonomy), new IntegerEdgeNameProvider<EqualsEdge>(), new IntegerEdgeNameProvider<EqualsEdge>());
 		try {
 			exporter.export(new OutputStreamWriter(os), this.getGraph());
 		} catch (final SAXException saxe) {
@@ -182,9 +199,14 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 
 			if (!idNodeMap.containsKey(id))
 				if (id.contains(PARAMETER_NODE_MARK)) {
-					final ParameterNode node = new ParameterNode(id.substring(PARAMETER_NODE_MARK.length(), id.length()));
-					addNode(node);
-					idNodeMap.put(id, node);
+					try {
+						final String nodeID = id.substring(PARAMETER_NODE_MARK.length(), id.length());
+						final ParameterNode node = new ParameterNode(ParameterFactory.createParameter(nodeID, taxonomy));
+						addNode(node);
+						idNodeMap.put(id, node);
+					} catch (InvalidParameterIDException ipide) {
+						throw new IOException(ipide);
+					}
 				} else if (id.contains(SERVICE_NODE_MARK)) {
 					final ServiceNode node = new ServiceNode(id.substring(SERVICE_NODE_MARK.length(), id.length()));
 					addNode(node);

@@ -79,6 +79,8 @@ public class UnicastTable implements XMLSerializable {
 	private final NeighborDetector nDetector;
 	
 	private final MessageID defaultRouteID;
+	
+	private final Taxonomy taxonomy;
 
 	private final Logger logger = Logger.getLogger(UnicastTable.class);
 
@@ -88,9 +90,11 @@ public class UnicastTable implements XMLSerializable {
 	 * @param peerID
 	 *            the peer which hosts the unicast table
 	 */
-	public UnicastTable(final PeerID peerID, final NeighborDetector nDetector) {
+	public UnicastTable(final PeerID peerID, final NeighborDetector nDetector, final Taxonomy taxonomy) {
 		this.peerID = peerID;
 		this.nDetector = nDetector;
+		this.taxonomy = taxonomy;
+		
 		this.defaultRouteID = new MessageID(peerID, MessageIDGenerator.getNewID());
 	}
 	
@@ -144,11 +148,9 @@ public class UnicastTable implements XMLSerializable {
 	 *            the parameters to generalize
 	 * @param routeID
 	 *            the route to generalize
-	 * @param taxonomy
-	 *            the taxonomy used to check the generalizations
 	 * @return the map of performed generalizations
 	 */
-	public Map<Parameter, Parameter> generalizeSearch(final Set<Parameter> generalizations, final MessageID routeID, final Taxonomy taxonomy) {
+	public Map<Parameter, Parameter> generalizeSearch(final Set<Parameter> generalizations, final MessageID routeID) {
 		if (isSearchRoute(routeID)) {
 			final SearchMessage searchMessage = getSearch(routeID);
 			if (searchMessage != null && searchMessage.getSearchType().equals(SearchType.Generic)) {
@@ -170,7 +172,7 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.unmodifiableList(activeSearches);
 	}
 
-	public Set<SearchMessage> getSearches(final Parameter parameter, final Taxonomy taxonomy) {
+	public Set<SearchMessage> getSearches(final Parameter parameter) {
 		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
 		for (final SearchMessage searchMessage : getSearches()) {
 			for (final Parameter searchedParameter : searchMessage.getSearchedParameters()) {
@@ -270,7 +272,7 @@ public class UnicastTable implements XMLSerializable {
 		return activeSearch.getSearchedParameters();
 	}
 
-	public Set<SearchMessage> getSubsumedSearches(final Parameter parameter, final PeerID peer, final Taxonomy taxonomy) {
+	public Set<SearchMessage> getSubsumedSearches(final Parameter parameter, final PeerID peer) {
 		final Set<SearchMessage> searchMessages = new HashSet<SearchMessage>();
 		for (final SearchMessage searchMessage : getSearches())
 			if (searchMessage.getSource().equals(peer))
@@ -343,7 +345,7 @@ public class UnicastTable implements XMLSerializable {
 				final Element parameterElement = (Element) parameterList.item(j);
 				final String parameter = parameterElement.getAttribute(PARAMETER_VALUE_ATTRIB);
 				try {
-					searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter(parameter), 0));
+					searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter(parameter, taxonomy), 0));
 				} catch (final InvalidParameterIDException ipe) {
 					throw new IOException(ipe);
 				}
@@ -358,7 +360,7 @@ public class UnicastTable implements XMLSerializable {
 			final Element e = (Element) routeList.item(i);
 			final String dest = e.getAttribute(ROUTE_DEST_ATTRIB);
 			final String through = e.getAttribute(ROUTE_NEIGHBOR_ATTRIB);
-			addRoute(new MessageID(new PeerID(dest), Integer.parseInt(through)), new PeerID(dest), new PeerID(through), 0);
+			addRoute(new MessageID(new PeerID(dest), Short.parseShort(through)), new PeerID(dest), new PeerID(through), 0);
 		}
 	}
 
@@ -422,7 +424,7 @@ public class UnicastTable implements XMLSerializable {
 			searchElement.setAttribute(SEARCH_PEER_ATTRIB, knownSearches.getSource().toString());
 			for (final Parameter p : knownSearches.getSearchedParameters()) {
 				final Element parameterElement = doc.createElement(PARAMETER_TAG);
-				parameterElement.setAttribute(PARAMETER_VALUE_ATTRIB, p.toString());
+				parameterElement.setAttribute(PARAMETER_VALUE_ATTRIB, p.pretty(taxonomy));
 				searchElement.appendChild(parameterElement);
 			}
 			root.appendChild(searchElement);

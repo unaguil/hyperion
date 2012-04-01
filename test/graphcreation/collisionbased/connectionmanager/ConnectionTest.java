@@ -10,7 +10,6 @@ import graphcreation.collisionbased.connectionManager.Connection;
 import graphcreation.collisionbased.message.CollisionResponseMessage;
 import graphcreation.services.Service;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,66 +37,68 @@ public class ConnectionTest {
 
 	private Connection connection1, connection2, connection3;
 
-	private SearchResponseMessage searchResponseMessage, searchResponseMessage2, searchResponseMessage3, searchResponseMessage4, searchResponseMessage5;
+	private SearchResponseMessage searchResponseMessage1, searchResponseMessage2, searchResponseMessage3, searchResponseMessage4, searchResponseMessage5;
+	
+	private Taxonomy emptyTaxonomy = new BasicTaxonomy();
 
 	@Before
 	public void setUp() throws Exception {
-		connection1 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")), GraphType.BIDIRECTIONAL);
-		connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
-		connection3 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")), GraphType.BIDIRECTIONAL);
+		connection1 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-1", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-1", emptyTaxonomy)), emptyTaxonomy, GraphType.BIDIRECTIONAL);
+		connection2 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-2", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-2", emptyTaxonomy)), emptyTaxonomy, GraphType.BIDIRECTIONAL);
+		connection3 = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-1", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-1", emptyTaxonomy)), emptyTaxonomy, GraphType.BIDIRECTIONAL);
 
 		Set<Parameter> foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("I-B"));
+		foundParameters.add(ParameterFactory.createParameter("I-2", emptyTaxonomy));
 		Set<Service> services = new HashSet<Service>();
 		final Service s1 = new Service("S1", new PeerID("1"));
-		s1.addParameter(ParameterFactory.createParameter("I-B"));
+		s1.addParameter(ParameterFactory.createParameter("I-2", emptyTaxonomy));
 		services.add(s1);
-		searchResponseMessage = new SearchResponseMessage(new PeerID("1"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("1")), new MessageID(new PeerID("1"), MessageIDGenerator.getNewID()));
-		connection2.addSearchResponse(searchResponseMessage);
+		searchResponseMessage1 = new SearchResponseMessage(new PeerID("1"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("1")), new MessageID(new PeerID("1"), MessageIDGenerator.getNewID()));
+		connection2.addSearchResponse(searchResponseMessage1);
 
 		foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("O-B"));
-		foundParameters.add(ParameterFactory.createParameter("O-C"));
+		foundParameters.add(ParameterFactory.createParameter("O-2", emptyTaxonomy));
+		foundParameters.add(ParameterFactory.createParameter("O-3", emptyTaxonomy));
 		services = new HashSet<Service>();
 		final Service s2 = new Service("S2", new PeerID("2"));
-		s2.addParameter(ParameterFactory.createParameter("O-B"));
-		s2.addParameter(ParameterFactory.createParameter("O-C"));
+		s2.addParameter(ParameterFactory.createParameter("O-2", emptyTaxonomy));
+		s2.addParameter(ParameterFactory.createParameter("O-3", emptyTaxonomy));
 		services.add(s2);
 		searchResponseMessage2 = new SearchResponseMessage(new PeerID("2"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 		connection2.addSearchResponse(searchResponseMessage2);
 
 		foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("O-B"));
+		foundParameters.add(ParameterFactory.createParameter("O-2", emptyTaxonomy));
 		services = new HashSet<Service>();
 		final Service s3 = new Service("S3", new PeerID("3"));
-		s3.addParameter(ParameterFactory.createParameter("O-B"));
+		s3.addParameter(ParameterFactory.createParameter("O-2", emptyTaxonomy));
 		services.add(s3);
 		searchResponseMessage3 = new SearchResponseMessage(new PeerID("3"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("3")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 		connection2.addSearchResponse(searchResponseMessage3);
 
 		foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("O-A"));
+		foundParameters.add(ParameterFactory.createParameter("O-1", emptyTaxonomy));
 		services = new HashSet<Service>();
 		final Service s4 = new Service("S4", new PeerID("2"));
-		s4.addParameter(ParameterFactory.createParameter("O-A"));
+		s4.addParameter(ParameterFactory.createParameter("O-1", emptyTaxonomy));
 		services.add(s4);
 		searchResponseMessage4 = new SearchResponseMessage(new PeerID("2"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 		connection3.addSearchResponse(searchResponseMessage4);
 
 		foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("O-D"));
+		foundParameters.add(ParameterFactory.createParameter("O-4", emptyTaxonomy));
 		services = new HashSet<Service>();
 		final Service s5 = new Service("S5", new PeerID("5"));
-		s5.addParameter(ParameterFactory.createParameter("O-D"));
+		s5.addParameter(ParameterFactory.createParameter("O-4", emptyTaxonomy));
 		services.add(s5);
 		searchResponseMessage5 = new SearchResponseMessage(new PeerID("2"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 		connection3.addSearchResponse(searchResponseMessage5);
 	}
 
 	private CollisionResponseMessage createCollisionResponseMessage(final Set<Service> services, final PeerID source) {
-		final Map<Service, Integer> serviceTable = new HashMap<Service, Integer>();
+		final Map<Service, Byte> serviceTable = new HashMap<Service, Byte>();
 		for (final Service service : services)
-			serviceTable.put(service, Integer.valueOf(0));
+			serviceTable.put(service, Byte.valueOf((byte)0));
 
 		return new CollisionResponseMessage(source, serviceTable);
 	}
@@ -111,9 +112,9 @@ public class ConnectionTest {
 
 	@Test
 	public void testAddSearchResponse() throws InvalidParameterIDException {
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B"), (OutputParameter) ParameterFactory.createParameter("O-B")), GraphType.BIDIRECTIONAL);
+		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-2", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-2", emptyTaxonomy)), emptyTaxonomy, GraphType.BIDIRECTIONAL);
 
-		assertTrue(connection.addSearchResponse(searchResponseMessage).isEmpty());
+		assertTrue(connection.addSearchResponse(searchResponseMessage1).isEmpty());
 
 		PeerIDSet notifiedPeers = connection.addSearchResponse(searchResponseMessage2);
 		assertEquals(2, notifiedPeers.size());
@@ -129,9 +130,11 @@ public class ConnectionTest {
 		assertTrue(connection.addSearchResponse(searchResponseMessage3).isEmpty());
 
 		final Set<Parameter> foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("I-B"));
+		foundParameters.add(ParameterFactory.createParameter("I-2", emptyTaxonomy));
 		final Set<Service> services = new HashSet<Service>();
-		services.add(new Service("S6", new PeerID("6")));
+		final Service s6 = new Service("S6", new PeerID("6"));
+		s6.addParameter(ParameterFactory.createParameter("I-2", emptyTaxonomy));
+		services.add(s6);
 		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("6"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
 		notifiedPeers = connection2.addSearchResponse(searchResponseMessage6);
 		assertEquals(3, notifiedPeers.size());
@@ -142,7 +145,7 @@ public class ConnectionTest {
 
 	@Test
 	public void testGetCollision() throws InvalidParameterIDException {
-		assertEquals(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-A")), connection1.getCollision());
+		assertEquals(new Collision((InputParameter) ParameterFactory.createParameter("I-1", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-1", emptyTaxonomy)), connection1.getCollision());
 	}
 
 	@Test
@@ -154,7 +157,7 @@ public class ConnectionTest {
 		assertFalse(connection3.isConnected());
 
 		final Set<Parameter> foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("I-A"));
+		foundParameters.add(ParameterFactory.createParameter("I-1", emptyTaxonomy));
 		final Set<Service> services = new HashSet<Service>();
 		services.add(new Service("S3", new PeerID("2")));
 		final SearchResponseMessage newSearchResponseMessage = new SearchResponseMessage(new PeerID("2"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
@@ -210,51 +213,9 @@ public class ConnectionTest {
 	}
 
 	@Test
-	public void testRemoveParameters() throws InvalidParameterIDException {
-		Map<PeerIDSet, Set<Service>> notifiedPeers = connection2.removeParameters(Collections.singleton(ParameterFactory.createParameter("I-B")), new PeerID("1"));
-		assertTrue(connection2.getInputPeers().isEmpty());
-		assertEquals(1, notifiedPeers.size());
-
-		assertTrue(connection2.getInputPeers().isEmpty());
-
-		final PeerIDSet peers = new PeerIDSet();
-		peers.addPeer(new PeerID("2"));
-		peers.addPeer(new PeerID("3"));
-		assertTrue(notifiedPeers.containsKey(peers));
-		assertEquals(notifiedPeers.get(peers), Collections.singleton(new Service("S1", new PeerID("1"))));
-
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("O-B"));
-		parameters.add(ParameterFactory.createParameter("O-C"));
-		notifiedPeers = connection2.removeParameters(parameters, new PeerID("2"));
-		assertTrue(notifiedPeers.isEmpty());
-
-		assertEquals(1, connection2.getOutputPeers().size());
-	}
-
-	@Test
-	public void testRemoveParameters2() throws InvalidParameterIDException {
-		final Set<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(ParameterFactory.createParameter("O-B"));
-		parameters.add(ParameterFactory.createParameter("O-C"));
-		final Map<PeerIDSet, Set<Service>> notifiedPeers = connection2.removeParameters(parameters, new PeerID("2"));
-
-		assertEquals(1, notifiedPeers.size());
-		final PeerIDSet peers = new PeerIDSet();
-		peers.addPeer(new PeerID("1"));
-		assertTrue(notifiedPeers.containsKey(peers));
-
-		assertTrue(notifiedPeers.get(peers).contains(new Service("S2", new PeerID("2"))));
-
-		assertEquals(1, connection2.getInputPeers().size());
-
-		assertEquals(1, connection2.getOutputPeers().size());
-	}
-
-	@Test
 	public void testRemoveResponses() {
 		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
-		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage1.getSource());
 
 		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostDestinations);
 
@@ -272,7 +233,7 @@ public class ConnectionTest {
 	@Test
 	public void testRemoveResponses2() {
 		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
-		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage1.getSource());
 		lostDestinations.add(searchResponseMessage2.getSource());
 
 		final Map<PeerIDSet, Set<Service>> notifications = connection2.removeResponses(lostDestinations);
@@ -290,7 +251,7 @@ public class ConnectionTest {
 	@Test
 	public void testRemoveResponses3() {
 		final Set<PeerID> lostDestinations = new HashSet<PeerID>();
-		lostDestinations.add(searchResponseMessage.getSource());
+		lostDestinations.add(searchResponseMessage1.getSource());
 		lostDestinations.add(searchResponseMessage2.getSource());
 		lostDestinations.add(searchResponseMessage3.getSource());
 
@@ -340,32 +301,74 @@ public class ConnectionTest {
 		taxonomy.addChild("Z", "C");
 		taxonomy.addChild("A", "B");
 
-		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A"), (OutputParameter) ParameterFactory.createParameter("O-B")), taxonomy, GraphType.BIDIRECTIONAL);
+		final Connection connectionA = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A", taxonomy), (OutputParameter) ParameterFactory.createParameter("O-B", taxonomy)), taxonomy, GraphType.BIDIRECTIONAL);
 
-		assertTrue(connection.addSearchResponse(searchResponseMessage).isEmpty());
+		assertTrue(connectionA.addSearchResponse(createSearchMessage(taxonomy)).isEmpty());
 
-		PeerIDSet notifiedPeers = connection.addSearchResponse(searchResponseMessage2);
+		final SearchResponseMessage searchResponseMessageA = createSearchResponseMessageA(taxonomy);
+		PeerIDSet notifiedPeers = connectionA.addSearchResponse(searchResponseMessageA);
 		assertEquals(2, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("1")));
 		assertTrue(notifiedPeers.contains(new PeerID("2")));
 
-		notifiedPeers = connection.addSearchResponse(searchResponseMessage3);
+		final SearchResponseMessage searchResponseMessageB = createSearchResponseMessageB(taxonomy);
+		notifiedPeers = connectionA.addSearchResponse(searchResponseMessageB);
 		assertEquals(2, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("1")));
 		assertTrue(notifiedPeers.contains(new PeerID("3")));
 
-		assertTrue(connection.addSearchResponse(searchResponseMessage2).isEmpty());
-		assertTrue(connection.addSearchResponse(searchResponseMessage3).isEmpty());
+		assertTrue(connectionA.addSearchResponse(searchResponseMessageA).isEmpty());
+		assertTrue(connectionA.addSearchResponse(searchResponseMessageB).isEmpty());
 
-		final Set<Parameter> foundParameters = new HashSet<Parameter>();
-		foundParameters.add(ParameterFactory.createParameter("I-B"));
-		final Set<Service> services = new HashSet<Service>();
-		services.add(new Service("S6", new PeerID("6")));
-		final SearchResponseMessage searchResponseMessage6 = new SearchResponseMessage(new PeerID("6"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
-		notifiedPeers = connection2.addSearchResponse(searchResponseMessage6);
+		final Connection connectionB = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-B", taxonomy), (OutputParameter) ParameterFactory.createParameter("O-B", taxonomy)), taxonomy, GraphType.BIDIRECTIONAL);
+		connectionB.addSearchResponse(searchResponseMessageA);
+		connectionB.addSearchResponse(searchResponseMessageB);
+		notifiedPeers = connectionB.addSearchResponse(createSearchResponseMessageC(taxonomy));
 		assertEquals(3, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("2")));
 		assertTrue(notifiedPeers.contains(new PeerID("3")));
 		assertTrue(notifiedPeers.contains(new PeerID("6")));
+	}
+
+	private SearchResponseMessage createSearchResponseMessageC(final Taxonomy taxonomy) throws InvalidParameterIDException {
+		final Set<Parameter> foundParameters = new HashSet<Parameter>();
+		foundParameters.add(ParameterFactory.createParameter("I-B", taxonomy));
+		final Set<Service> services = new HashSet<Service>();
+		final Service s6 = new Service("S6", new PeerID("6"));
+		s6.addParameter(ParameterFactory.createParameter("I-B", taxonomy));
+		services.add(s6);
+		return new SearchResponseMessage(new PeerID("6"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("6"), MessageIDGenerator.getNewID()));
+	}
+	
+	private SearchResponseMessage createSearchResponseMessageB(final Taxonomy taxonomy) throws InvalidParameterIDException {
+		final Set<Parameter> foundParameters = new HashSet<Parameter>();
+		foundParameters.add(ParameterFactory.createParameter("O-B", taxonomy));
+		final Set<Service> services = new HashSet<Service>();
+		final Service service = new Service("S3", new PeerID("3"));
+		service.addParameter(ParameterFactory.createParameter("O-B", taxonomy));
+		services.add(service);
+		return new SearchResponseMessage(new PeerID("3"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("3")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
+	}
+	
+	private SearchResponseMessage createSearchMessage(final Taxonomy taxonomy) throws InvalidParameterIDException {
+		Set<Parameter> foundParameters = new HashSet<Parameter>();
+		foundParameters.add(ParameterFactory.createParameter("I-B", taxonomy));
+		Set<Service> services = new HashSet<Service>();
+		final Service s1 = new Service("S1", new PeerID("1"));
+		s1.addParameter(ParameterFactory.createParameter("I-B", taxonomy));
+		services.add(s1);
+		return new SearchResponseMessage(new PeerID("1"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("1")), new MessageID(new PeerID("1"), MessageIDGenerator.getNewID()));
+	}
+	
+	private SearchResponseMessage createSearchResponseMessageA(final Taxonomy taxonomy) throws InvalidParameterIDException {
+		final Set<Parameter>  foundParameters = new HashSet<Parameter>();
+		foundParameters.add(ParameterFactory.createParameter("O-B", taxonomy));
+		foundParameters.add(ParameterFactory.createParameter("O-C", taxonomy));
+		final Set<Service> services = new HashSet<Service>();
+		final Service service = new Service("S2", new PeerID("2"));
+		service.addParameter(ParameterFactory.createParameter("O-B", taxonomy));
+		service.addParameter(ParameterFactory.createParameter("O-C", taxonomy));
+		services.add(service);
+		return new SearchResponseMessage(new PeerID("2"), new PeerID("0"), foundParameters, createCollisionResponseMessage(services, new PeerID("2")), new MessageID(new PeerID("2"), MessageIDGenerator.getNewID()));
 	}
 }

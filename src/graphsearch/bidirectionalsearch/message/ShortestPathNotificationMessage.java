@@ -141,14 +141,14 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	
 	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
 		out.writeObject(map.keySet().toArray(new Service[0]));
-		out.writeInt(map.values().size());
+		out.writeShort(map.values().size());
 		for (Set<ServiceDistance> set : map.values())
 			out.writeObject(set.toArray(new ServiceDistance[0]));
 	}
 	
 	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		List<Service> keys = Arrays.asList((Service[])in.readObject());
-		int size = in.readInt();
+		short size = in.readShort();
 		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
 		for (int i = 0; i < size; i++) {
 			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));

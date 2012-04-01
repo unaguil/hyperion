@@ -41,6 +41,7 @@ import peer.message.MessageID;
 import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 import util.logger.Logger;
 import dissemination.DistanceChange;
@@ -472,9 +473,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		}
 
 		// initial distance is zero because all services are local
-		final Map<Service, Integer> serviceDistanceTable = new HashMap<Service, Integer>();
+		final Map<Service, Byte> serviceDistanceTable = new HashMap<Service, Byte>();
 		for (final Service service : services)
-			serviceDistanceTable.put(service, Integer.valueOf(0));
+			serviceDistanceTable.put(service, Byte.valueOf((byte)0));
 
 		final CollisionResponseMessage collisionResponseMessage = new CollisionResponseMessage(peer.getPeerID(), serviceDistanceTable);
 		logger.trace("Peer " + peer.getPeerID() + " sending collision response with services " + serviceDistanceTable + " to " + routeID.getPeer());
@@ -566,5 +567,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	@Override
 	public boolean containsLocalService(Service service) {
 		return service.isLocal(peer.getPeerID()) && sdg.contains(service);
+	}
+
+	@Override
+	public Taxonomy getTaxonomy() {
+		return pSearch.getDisseminationLayer().getTaxonomy();
 	}
 }

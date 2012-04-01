@@ -7,20 +7,25 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import taxonomy.BasicTaxonomy;
+import taxonomy.Taxonomy;
+
 public class ParametersTest {
 
 	Parameter i1, i2, i3;
 	Parameter o1, o2, o3;
+	
+	final Taxonomy taxonomy = new BasicTaxonomy();
 
 	@Before
 	public void setUp() throws Exception {
-		i1 = ParameterFactory.createParameter("I-A");
-		i2 = ParameterFactory.createParameter("I-B");
-		i3 = ParameterFactory.createParameter("I-C");
+		i1 = ParameterFactory.createParameter("I-1", taxonomy);
+		i2 = ParameterFactory.createParameter("I-2", taxonomy);
+		i3 = ParameterFactory.createParameter("I-3", taxonomy);
 
-		o1 = ParameterFactory.createParameter("O-A");
-		o2 = ParameterFactory.createParameter("O-B");
-		o3 = ParameterFactory.createParameter("O-C");
+		o1 = ParameterFactory.createParameter("O-1", taxonomy);
+		o2 = ParameterFactory.createParameter("O-2", taxonomy);
+		o3 = ParameterFactory.createParameter("O-3", taxonomy);
 	}
 
 	@Test

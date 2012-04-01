@@ -48,33 +48,33 @@ public class TaxonomyTest {
 
 	@Test
 	public void testSubsume() {
-		assertTrue(taxonomy.subsumes("B", "B"));
-		assertTrue(taxonomy.subsumes("A", "B"));
-		assertTrue(taxonomy.subsumes("A", "C"));
-		assertTrue(taxonomy.subsumes("B", "D"));
-		assertTrue(taxonomy.subsumes("B", "E"));
-		assertTrue(taxonomy.subsumes("C", "F"));
-		assertTrue(taxonomy.subsumes("C", "G"));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("B"), taxonomy.encode("B")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("A"), taxonomy.encode("B")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("A"), taxonomy.encode("C")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("B"), taxonomy.encode("D")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("B"), taxonomy.encode("E")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("C"), taxonomy.encode("F")));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("C"), taxonomy.encode("G")));
 
-		assertTrue(taxonomy.subsumes("A", "G"));
+		assertTrue(taxonomy.subsumes(taxonomy.encode("A"), taxonomy.encode("G")));
 
-		assertFalse(taxonomy.subsumes("B", "F"));
-		assertFalse(taxonomy.subsumes("B", "A"));
+		assertFalse(taxonomy.subsumes(taxonomy.encode("B"), taxonomy.encode("F")));
+		assertFalse(taxonomy.subsumes(taxonomy.encode("B"), taxonomy.encode("A")));
 
-		assertFalse(taxonomy.subsumes("G", "A"));
+		assertFalse(taxonomy.subsumes(taxonomy.encode("G"), taxonomy.encode("A")));
 
 		final Taxonomy emptyTaxonomy = new BasicTaxonomy();
-		assertFalse(emptyTaxonomy.subsumes("A", "B"));
+		assertFalse(emptyTaxonomy.subsumes(taxonomy.encode("A"), taxonomy.encode("B")));
 	}
 
 	@Test
 	public void testAreRelated() {
-		assertTrue(taxonomy.areRelated("A", "A"));
-		assertTrue(taxonomy.areRelated("A", "E"));
-		assertTrue(taxonomy.areRelated("E", "A"));
+		assertTrue(taxonomy.areRelated(taxonomy.encode("A"), taxonomy.encode("A")));
+		assertTrue(taxonomy.areRelated(taxonomy.encode("A"), taxonomy.encode("E")));
+		assertTrue(taxonomy.areRelated(taxonomy.encode("E"), taxonomy.encode("A")));
 
-		assertFalse(taxonomy.areRelated("B", "F"));
-		assertFalse(taxonomy.areRelated("F", "B"));
+		assertFalse(taxonomy.areRelated(taxonomy.encode("B"), taxonomy.encode("F")));
+		assertFalse(taxonomy.areRelated(taxonomy.encode("F"), taxonomy.encode("B")));
 	}
 
 	@Test(expected=TaxonomyException.class)
@@ -117,5 +117,43 @@ public class TaxonomyTest {
 		otherTaxonomy.readFromXML(bais);
 
 		assertEquals(taxonomy, otherTaxonomy);
+	}
+	
+	@Test
+	public void testEncode() {
+		assertEquals(1, taxonomy.encode("A"));
+		assertEquals(2, taxonomy.encode("B"));
+		assertEquals(3, taxonomy.encode("C"));
+		assertEquals(4, taxonomy.encode("D"));
+		assertEquals(5, taxonomy.encode("E"));
+		assertEquals(6, taxonomy.encode("F"));
+		assertEquals(7, taxonomy.encode("G"));
+		
+		assertEquals(0, taxonomy.encode("0"));
+		assertEquals(-1, taxonomy.encode("1"));
+		assertEquals(-2, taxonomy.encode("2"));
+		assertEquals(-3, taxonomy.encode("3"));
+		assertEquals(-4, taxonomy.encode("4"));
+		assertEquals(-5, taxonomy.encode("5"));
+		assertEquals(-6, taxonomy.encode("6"));
+	}
+	
+	@Test
+	public void testDecode() {
+		assertEquals("A", taxonomy.decode((short)1));
+		assertEquals("B", taxonomy.decode((short)2));
+		assertEquals("C", taxonomy.decode((short)3));
+		assertEquals("D", taxonomy.decode((short)4));
+		assertEquals("E", taxonomy.decode((short)5));
+		assertEquals("F", taxonomy.decode((short)6));
+		assertEquals("G", taxonomy.decode((short)7));
+		
+		assertEquals("0", taxonomy.decode((short)-0));
+		assertEquals("1", taxonomy.decode((short)-1));
+		assertEquals("2", taxonomy.decode((short)-2));
+		assertEquals("3", taxonomy.decode((short)-3));
+		assertEquals("4", taxonomy.decode((short)-4));
+		assertEquals("5", taxonomy.decode((short)-5));
+		assertEquals("6", taxonomy.decode((short)-6));
 	}
 }

@@ -33,6 +33,7 @@ import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
+import taxonomy.parameterList.ParameterList;
 import util.logger.Logger;
 import dissemination.DistanceChange;
 import dissemination.ParameterDisseminator;
@@ -167,7 +168,11 @@ class CollisionNode {
 			searchedParameters.add(new SearchedParameter(collision.getOutput(), gCreator.getPSearch().getDisseminationLayer().getMaxDistance()));
 		}
 		
-		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + searchedParameters);
+		final Set<Parameter> parameters = new HashSet<Parameter>();
+		for (final SearchedParameter searchedParameter : searchedParameters)
+			parameters.add(searchedParameter.getParameter());
+		
+		logger.debug("Peer " + peer.getPeerID() + " starting collision message while searching for parameters " + (new ParameterList(parameters)).pretty(gCreator.getTaxonomy()));
 		gCreator.getPSearch().sendSearchMessage(searchedParameters, null, SearchType.Generic);
 	}	
 

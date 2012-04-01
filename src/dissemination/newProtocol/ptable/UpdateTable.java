@@ -152,6 +152,24 @@ public class UpdateTable implements Externalizable {
 	public String toString() {
 		return "Deletions: " + deletions.toString() + " Additions: " + additions.toString();
 	}
+	
+	private String prettyMap(final Map<Parameter, EstimatedDistance> map, final Taxonomy taxonomy) {
+		final StringBuffer strBuffer = new StringBuffer();
+		strBuffer.append("{");
+		int counter = 0;
+		for (final Entry<Parameter, EstimatedDistance> entry : map.entrySet()) {
+			if (counter > 0)
+				strBuffer.append(" ,");
+			strBuffer.append(entry.getKey().pretty(taxonomy) + "=" + entry.getValue());
+			counter++;
+		}
+		strBuffer.append("}");
+		return strBuffer.toString();
+	}
+	
+	public String pretty(final Taxonomy taxonomy) {
+		return "Deletions: " + prettyMap(deletions, taxonomy) + " Additions: " + prettyMap(additions, taxonomy); 
+	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {

@@ -17,16 +17,16 @@ public class ServiceDistance implements Externalizable {
 	private static final long serialVersionUID = 1L;
 
 	private final Service service;
-	private final Integer distance;
+	private final byte distance;
 	
 	public ServiceDistance() {
 		service = null;
-		distance = null;
+		distance = 0;
 	}
 
 	public ServiceDistance(final Service service, final Integer distance) {
 		this.service = service;
-		this.distance = distance;
+		this.distance = (byte)distance.intValue();
 	}
 
 	public Service getService() {
@@ -34,7 +34,7 @@ public class ServiceDistance implements Externalizable {
 	}
 
 	public Integer getDistance() {
-		return distance;
+		return new Integer(distance);
 	}
 
 	@Override
@@ -59,12 +59,12 @@ public class ServiceDistance implements Externalizable {
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		UnserializationUtils.setFinalField(ServiceDistance.class, this, "service", in.readObject());
-		UnserializationUtils.setFinalField(ServiceDistance.class, this, "distance", new Integer(in.readInt()));
+		UnserializationUtils.setFinalField(ServiceDistance.class, this, "distance", in.readByte());
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeObject(service);
-		out.writeInt(distance.intValue());
+		out.writeByte(distance);
 	}
 }

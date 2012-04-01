@@ -48,9 +48,9 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 	// the message partition
 	private final MessagePart messagePart;
 
-	private final int ttl;
+	private final byte ttl;
 
-	private final long remainingTime;
+	private final short remainingTime;
 	
 	public BCompositionMessage() {
 		sourceService = null;
@@ -81,8 +81,8 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
-		this.ttl = ttl;
-		this.remainingTime = remainingTime;
+		this.ttl = (byte)ttl;
+		this.remainingTime = (short)remainingTime;
 		this.messagePart = new MessagePart(peerID);
 
 		compositionServices.add(sourceService);
@@ -95,8 +95,8 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
-		this.ttl = ttl;
-		this.remainingTime = remainingTime;
+		this.ttl = (byte)ttl;
+		this.remainingTime = (short)remainingTime;
 		this.messagePart = newMessagePart;
 
 		compositionServices.add(sourceService);
@@ -226,9 +226,9 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 		readMap(ancestorDistances, in);
 		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "sourceService", in.readObject());
 		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "searchID", in.readObject());
-		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "ttl", in.readInt());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "ttl", in.readByte());
 		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "messagePart", in.readObject());
-		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "remainingTime", in.readLong());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "remainingTime", in.readShort());
 	}
 
 	@Override
@@ -240,21 +240,21 @@ public class BCompositionMessage extends RemoteMessage implements PayloadMessage
 		writeMap(ancestorDistances, out);
 		out.writeObject(sourceService);
 		out.writeObject(searchID);
-		out.writeInt(ttl);
+		out.writeByte(ttl);
 		out.writeObject(messagePart);
-		out.writeLong(remainingTime);
+		out.writeShort(remainingTime);
 	}
 	
 	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
 		out.writeObject(map.keySet().toArray(new Service[0]));
-		out.writeInt(map.values().size());
+		out.writeShort(map.values().size());
 		for (Set<ServiceDistance> set : map.values())
 			out.writeObject(set.toArray(new ServiceDistance[0]));
 	}
 	
 	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
 		List<Service> keys = Arrays.asList((Service[])in.readObject());
-		int size = in.readInt();
+		short size = in.readShort();
 		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
 		for (int i = 0; i < size; i++) {
 			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));

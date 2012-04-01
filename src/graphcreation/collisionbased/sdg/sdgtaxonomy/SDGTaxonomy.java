@@ -203,7 +203,7 @@ public class SDGTaxonomy implements SDG {
 		final Set<ServiceDistance> inaccesibleServices = new HashSet<ServiceDistance>();
 		for (final Service service : eServiceGraph.getServices()) {
 			if (!knowsRouteTo(service.getPeerID()))
-				inaccesibleServices.add(new ServiceDistance(service, null));
+				inaccesibleServices.add(new ServiceDistance(service, new Integer(Integer.MAX_VALUE)));
 		}
 		
 		return inaccesibleServices;

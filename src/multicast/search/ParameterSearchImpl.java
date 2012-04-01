@@ -36,6 +36,7 @@ import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
+import taxonomy.parameterList.ParameterList;
 import util.logger.Logger;
 import config.Configuration;
 import detection.NeighborEventsListener;
@@ -284,7 +285,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		synchronized (uTable) {
 			for (final Parameter generalizedParameter : generalizedParameters) {
-				final Set<SearchMessage> activeSearches = uTable.getSubsumedSearches(generalizedParameter, peer.getPeerID(), pDisseminator.getTaxonomy());
+				final Set<SearchMessage> activeSearches = uTable.getSubsumedSearches(generalizedParameter, peer.getPeerID());
 				for (final SearchMessage activeSearch : activeSearches) {
 					if (activeSearch.getSearchType().equals(SearchType.Generic))
 						routeIDs.add(activeSearch.getRemoteMessageID());
@@ -301,7 +302,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		synchronized (uTable) {
 			for (final Parameter localParameter : localAddedParameters) {
 				// Get active searches searching for this parameter
-				final Set<SearchMessage> activeSearches = uTable.getSearches(localParameter, pDisseminator.getTaxonomy());
+				final Set<SearchMessage> activeSearches = uTable.getSearches(localParameter);
 				for (final SearchMessage activeSearch : activeSearches) {
 					if (!parametersTable.containsKey(activeSearch))
 						parametersTable.put(activeSearch, new HashSet<Parameter>());
@@ -375,7 +376,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 			}
 		}
 
-		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector());
+		uTable = new UnicastTable(peer.getPeerID(), peer.getDetector(), pDisseminator.getTaxonomy());
 
 		receivedMessages.start();
 	}
@@ -495,7 +496,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	// this method is called when a search message is accepted by the current
 	// node
 	private void acceptSearchMessage(final SearchMessage searchMessage, final Set<Parameter> foundParameters) {
-		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getRemoteMessageID() + " distance " + searchMessage.getDistance() + " parameters " + foundParameters);
+		logger.debug("Peer " + peer.getPeerID() + " accepted " + searchMessage.getType() + " " + searchMessage.getRemoteMessageID() + " distance " + searchMessage.getDistance() + " parameters " + (new ParameterList(foundParameters)).pretty(pDisseminator.getTaxonomy()));
 
 		// Call listener and get user response payload
 		final PayloadMessage response = searchListener.searchReceived(foundParameters, searchMessage.getRemoteMessageID());
@@ -504,7 +505,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 	}
 
 	private void acceptSearchResponseMessage(final SearchResponseMessage searchResponseMessage) {
-		logger.debug("Peer " + peer.getPeerID() + " found parameters " + searchResponseMessage.getParameters() + " in node " + searchResponseMessage.getSource() + " searchID " + searchResponseMessage.getRespondedRouteID() + " distance " + searchResponseMessage.getDistance());
+		logger.debug("Peer " + peer.getPeerID() + " found parameters " + (new ParameterList(searchResponseMessage.getParameters())).pretty(pDisseminator.getTaxonomy()) + " in node " + searchResponseMessage.getSource() + " searchID " + searchResponseMessage.getRespondedRouteID() + " distance " + searchResponseMessage.getDistance());
 		searchListener.parametersFound(searchResponseMessage);
 	}
 
@@ -622,7 +623,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 
 		synchronized (uTable) {
 			for (final MessageID routeID : generalizeSearchMessage.getRouteIDs()) {
-				final Map<Parameter, Parameter> generalizations = uTable.generalizeSearch(generalizeSearchMessage.getParameters(), routeID, pDisseminator.getTaxonomy());
+				final Map<Parameter, Parameter> generalizations = uTable.generalizeSearch(generalizeSearchMessage.getParameters(), routeID);
 				// If parameters were affected, propagate message
 				if (!generalizations.isEmpty()) {
 					notifyNeighbors = true;
@@ -769,7 +770,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), searchedParameters, payload, 0, searchType);
 		final String payloadType = (payload == null)?"null":payload.getType();
-		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + parameters + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
+		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + (new ParameterList(searchMessage.getSearchedParameters())).pretty(pDisseminator.getTaxonomy()) + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
 		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
 		
@@ -783,7 +784,7 @@ public class ParameterSearchImpl implements CommunicationLayer, NeighborEventsLi
 		
 		final SearchMessage searchMessage = new SearchMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet(), searchedParameters, payload, 0, searchType);
 		final String payloadType = (payload == null)?"null":payload.getType();
-		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + searchMessage.getSearchedParameters() + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
+		logger.debug("Peer " + peer.getPeerID() + " started search for parameters " + (new ParameterList(searchMessage.getSearchedParameters())).pretty(pDisseminator.getTaxonomy()) + " searchID " + searchMessage.getRemoteMessageID() + " with payload type of " + payloadType);
 
 		logger.trace("Peer " + peer.getPeerID() + " searching parameters with message " + searchMessage);
 		

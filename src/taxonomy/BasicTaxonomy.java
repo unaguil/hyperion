@@ -3,9 +3,10 @@ package taxonomy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,8 +33,8 @@ public class BasicTaxonomy implements Taxonomy {
 
 	private TaxonomyElement root = null;
 
-	private final Map<String, TaxonomyElement> allTElements = new HashMap<String, TaxonomyElement>();
-
+	private final Map<String, TaxonomyElement> allTElements = new TreeMap<String, TaxonomyElement>();
+	
 	public static final String NONE = "NONE";
 	private static final TaxonomyElement NONE_ELEMENT = new TaxonomyElement(NONE, null);
 
@@ -65,7 +66,13 @@ public class BasicTaxonomy implements Taxonomy {
 	}
 
 	@Override
-	public boolean subsumes(final String idA, final String idB) {
+	public boolean subsumes(final short valueA, final short valueB) {
+		final String idA = decode(valueA);
+		final String idB = decode(valueB);
+		
+		if (idA.equals("") || idB.equals(""))
+			return false;
+		
 		if (idA.equals(idB))
 			return true;
 
@@ -82,8 +89,8 @@ public class BasicTaxonomy implements Taxonomy {
 	}
 
 	@Override
-	public boolean areRelated(final String idA, final String idB) {
-		return subsumes(idA, idB) || subsumes(idB, idA);
+	public boolean areRelated(final short valueA, final short valueB) {
+		return subsumes(valueA, valueB) || subsumes(valueB, valueA);
 	}
 
 	@Override
@@ -224,5 +231,29 @@ public class BasicTaxonomy implements Taxonomy {
 	@Override
 	public int hashCode() {
 		return allTElements.hashCode();
+	}
+
+	@Override
+	public short encode(final String id) {
+		 short counter = 1;
+		 for (final String key : allTElements.keySet()) {
+			 if (key.equals(id))
+				 return counter;
+			 counter++;
+		 }
+		 
+		 return (short)(-1 * Short.parseShort(id));
+	}
+
+	@Override
+	public String decode(final short value) {
+		if (value > 0) {
+			final Vector<String> keys = new Vector<String>(allTElements.keySet());
+			if (keys.isEmpty())
+				return "";
+			return keys.elementAt(value - 1);
+		}
+		
+		return String.valueOf(-1 * value);
 	}
 }

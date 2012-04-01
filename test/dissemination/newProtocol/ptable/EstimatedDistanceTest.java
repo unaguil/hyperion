@@ -15,10 +15,10 @@ public class EstimatedDistanceTest {
 
 	@Before
 	public void setUp() throws Exception {
-		eDistance1 = new EstimatedDistance(5, new PeerID("A"));
-		eDistance2 = new EstimatedDistance(3, new PeerID("B"));
-		eDistance3 = new EstimatedDistance(5, new PeerID("A"));
-		eDistance4 = new EstimatedDistance(5, new PeerID("B"));
+		eDistance1 = new EstimatedDistance(5, new PeerID("1"));
+		eDistance2 = new EstimatedDistance(3, new PeerID("2"));
+		eDistance3 = new EstimatedDistance(5, new PeerID("1"));
+		eDistance4 = new EstimatedDistance(5, new PeerID("2"));
 	}
 
 	@Test

@@ -16,7 +16,6 @@ import java.util.Set;
 import multicast.search.message.SearchResponseMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
-import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
@@ -29,28 +28,16 @@ public class Connection {
 
 	// the responses received from those peers with inputs compatible with the
 	// collision input
-	private final Set<SearchResponseMessage> inputResponses = new HashSet<SearchResponseMessage>();
+	private final Set<CollisionResponseMessage> inputResponses = new HashSet<CollisionResponseMessage>();
 
 	// the responses received from those peers with outputs compatible with the
 	// collision output
-	private final Set<SearchResponseMessage> outputResponses = new HashSet<SearchResponseMessage>();
+	private final Set<CollisionResponseMessage> outputResponses = new HashSet<CollisionResponseMessage>();
 
 	// the taxonomy used during management
 	private final Taxonomy taxonomy;
 	
 	private final GraphType graphType;
-
-	/**
-	 * Constructor of the connection. A default empty taxonomy is used.
-	 * 
-	 * @param collision
-	 *            the collision represented by this connection
-	 */
-	public Connection(final Collision collision, final GraphType graphType) {
-		this.collision = collision;
-		this.taxonomy = new BasicTaxonomy();
-		this.graphType = graphType;
-	}
 
 	/**
 	 * Constructor of the connection.
@@ -131,11 +118,11 @@ public class Connection {
 				// If response contains any parameter which is subsumed by the
 				// input of the collision add it as input response
 				if (p instanceof InputParameter && taxonomy.subsumes(collision.getInput().getID(), p.getID())) {
-					final boolean added = inputResponses.add(searchResponseMessage);
+					final boolean added = inputResponses.add((CollisionResponseMessage) searchResponseMessage.getPayload().copy());
 					if (added && isConnected()) {
 						if (notifyOutputs()) {
 							// Notify output peers if it is connected
-							for (final SearchResponseMessage outputResponse : getConnectedOutputResponses(searchResponseMessage))
+							for (final CollisionResponseMessage outputResponse : getConnectedOutputResponses((CollisionResponseMessage)searchResponseMessage.getPayload()))
 								notifiedPeers.addPeer(outputResponse.getSource());
 						}
 						// And the added input peer
@@ -145,11 +132,11 @@ public class Connection {
 					// if response contains any parameter which is subsumed by
 					// the output of the collision add it as output response
 				} else if (p instanceof OutputParameter && taxonomy.subsumes(collision.getOutput().getID(), p.getID())) {
-					final boolean added = outputResponses.add(searchResponseMessage);
+					final boolean added = outputResponses.add((CollisionResponseMessage) searchResponseMessage.getPayload().copy());
 					if (added && isConnected()) {
 						if (notifyInputs()) {
 							// Notify input peers if it is connected
-							for (final SearchResponseMessage inputResponse : getConnectedInputResponses(searchResponseMessage))
+							for (final CollisionResponseMessage inputResponse : getConnectedInputResponses((CollisionResponseMessage)searchResponseMessage.getPayload()))
 								notifiedPeers.addPeer(inputResponse.getSource());
 						}
 						// And the added output peer
@@ -169,53 +156,29 @@ public class Connection {
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public boolean isConnected() {
-		if (inputResponses.isEmpty() || outputResponses.isEmpty())
-			return false;
-
-		for (final SearchResponseMessage inputResponse : inputResponses) {
-			final Set<SearchResponseMessage> outputConnectedResponses = getConnectedOutputResponses(inputResponse);
-			if (!outputConnectedResponses.isEmpty())
-				return true;
-		}
-		return false;
+		return !inputResponses.isEmpty() && !outputResponses.isEmpty();
 	}
 
-	private Set<SearchResponseMessage> getConnectedOutputResponses(final SearchResponseMessage inputResponse) {
-		final Set<SearchResponseMessage> connectedOutputResponses = new HashSet<SearchResponseMessage>();
-		for (final SearchResponseMessage outputResponse : outputResponses)
-			for (final OutputParameter p : getOutputParameters(outputResponse))
-				if (isSubsumedByAny(p, getInputParameters(inputResponse))) {
+	private Set<CollisionResponseMessage> getConnectedOutputResponses(final CollisionResponseMessage inputResponse) {
+		final Set<CollisionResponseMessage> connectedOutputResponses = new HashSet<CollisionResponseMessage>();
+		for (final CollisionResponseMessage outputResponse : outputResponses)
+			for (final OutputParameter p : outputResponse.getOutputParameters())
+				if (isSubsumedByAny(p, inputResponse.getInputParameters())) {
 					connectedOutputResponses.add(outputResponse);
 					break;
 				}
 		return connectedOutputResponses;
 	}
 
-	private Set<SearchResponseMessage> getConnectedInputResponses(final SearchResponseMessage outputResponse) {
-		final Set<SearchResponseMessage> connectedInputResponses = new HashSet<SearchResponseMessage>();
-		for (final SearchResponseMessage inputResponse : inputResponses)
-			for (final OutputParameter p : getOutputParameters(outputResponse))
-				if (isSubsumedByAny(p, getInputParameters(inputResponse))) {
+	private Set<CollisionResponseMessage> getConnectedInputResponses(final CollisionResponseMessage outputResponse) {
+		final Set<CollisionResponseMessage> connectedInputResponses = new HashSet<CollisionResponseMessage>();
+		for (final CollisionResponseMessage inputResponse : inputResponses)
+			for (final OutputParameter p : outputResponse.getOutputParameters())
+				if (isSubsumedByAny(p, inputResponse.getInputParameters())) {
 					connectedInputResponses.add(inputResponse);
 					break;
 				}
 		return connectedInputResponses;
-	}
-
-	private Set<InputParameter> getInputParameters(final SearchResponseMessage inputResponse) {
-		final Set<InputParameter> inputParameters = new HashSet<InputParameter>();
-		for (final Parameter p : inputResponse.getParameters())
-			if (p instanceof InputParameter)
-				inputParameters.add((InputParameter) p);
-		return inputParameters;
-	}
-
-	private Set<OutputParameter> getOutputParameters(final SearchResponseMessage outputResponse) {
-		final Set<OutputParameter> outputParameters = new HashSet<OutputParameter>();
-		for (final Parameter p : outputResponse.getParameters())
-			if (p instanceof OutputParameter)
-				outputParameters.add((OutputParameter) p);
-		return outputParameters;
 	}
 
 	private boolean isSubsumedByAny(final OutputParameter outputParameter, final Set<InputParameter> inputParameters) {
@@ -243,8 +206,7 @@ public class Connection {
 	public Set<ServiceDistance> getInputServicesTable() {
 		final Set<ServiceDistance> inputServicesTable = new HashSet<ServiceDistance>();
 
-		for (final SearchResponseMessage searchResponseMessage : inputResponses) {
-			final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) searchResponseMessage.getPayload();
+		for (final CollisionResponseMessage collisionResponseMessage : inputResponses) {
 			for (final Service s : collisionResponseMessage.getServices())
 				inputServicesTable.add(new ServiceDistance(s, collisionResponseMessage.getDistance(s)));
 		}
@@ -261,42 +223,12 @@ public class Connection {
 	public Set<ServiceDistance> getOutputServicesTable() {
 		final Set<ServiceDistance> outputServicesTable = new HashSet<ServiceDistance>();
 
-		for (final SearchResponseMessage searchResponseMessage : outputResponses) {
-			final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) searchResponseMessage.getPayload();
+		for (final CollisionResponseMessage collisionResponseMessage : outputResponses) {
 			for (final Service s : collisionResponseMessage.getServices())
 				outputServicesTable.add(new ServiceDistance(s, collisionResponseMessage.getDistance(s)));
 		}
 
 		return outputServicesTable;
-	}
-
-	/**
-	 * Removes the specified parameters from those responses coming from the
-	 * passed peers
-	 * 
-	 * @param the
-	 *            removed parameters
-	 * @param the
-	 *            peers whose parameters are removed from
-	 * @return a map containing the peers which must notified and the lost
-	 *         services to notify
-	 */
-	public Map<PeerIDSet, Set<Service>> removeParameters(final Set<Parameter> parameters, final PeerID source) {
-		final Map<PeerIDSet, Set<Service>> notifications = new HashMap<PeerIDSet, Set<Service>>();
-
-		// Check input services
-		final Set<Service> lostInputServices = removeInputParameters(parameters, source);
-		final PeerIDSet outputPeers = getOutputPeers();
-		if (!lostInputServices.isEmpty() && !outputPeers.isEmpty())
-			notifications.put(outputPeers, lostInputServices);
-
-		// Check output services
-		final Set<Service> lostOutputServices = removeOutputParameters(parameters, source);
-		final PeerIDSet inputPeers = getInputPeers();
-		if (!lostOutputServices.isEmpty() && !inputPeers.isEmpty())
-			notifications.put(inputPeers, lostOutputServices);
-
-		return notifications;
 	}
 
 	/**
@@ -360,14 +292,13 @@ public class Connection {
 
 	// removes the specified parameters from responses coming from the passed
 	// source. Only for input responses.
-	private boolean removeServices(final Set<Service> services, final PeerID source, final Set<SearchResponseMessage> responses) {
+	private boolean removeServices(final Set<Service> services, final PeerID source, final Set<CollisionResponseMessage> responses) {
 		boolean removed = false;
-		for (final Iterator<SearchResponseMessage> it = responses.iterator(); it.hasNext();) {
-			final SearchResponseMessage response = it.next();
+		for (final Iterator<CollisionResponseMessage> it = responses.iterator(); it.hasNext();) {
+			final CollisionResponseMessage response = it.next();
 			if (response.getSource().equals(source)) {
-				final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) response.getPayload();
-				removed = collisionResponseMessage.removeServices(services);
-				if (collisionResponseMessage.getServices().isEmpty())
+				removed = response.removeServices(services);
+				if (response.getServices().isEmpty())
 					it.remove();
 			}
 		}
@@ -375,74 +306,15 @@ public class Connection {
 	}
 
 	// removes the responses identified by the passed routes
-	private Set<Service> removeResponses(final Set<PeerID> fromPeers, final Set<SearchResponseMessage> responses) {
+	private Set<Service> removeResponses(final Set<PeerID> fromPeers, final Set<CollisionResponseMessage> responses) {
 		final Set<Service> lostServices = new HashSet<Service>();
-		for (final Iterator<SearchResponseMessage> it = responses.iterator(); it.hasNext();) {
-			final SearchResponseMessage response = it.next();
+		for (final Iterator<CollisionResponseMessage> it = responses.iterator(); it.hasNext();) {
+			final CollisionResponseMessage response = it.next();
 			if (fromPeers.contains(response.getSource())) {
-				final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) response.getPayload();
 				it.remove();
 
 				// Add invalid services
-				lostServices.addAll(collisionResponseMessage.getServices());
-			}
-		}
-		return lostServices;
-	}
-
-	// removes the specified parameters from responses coming from the passed
-	// source. Only for input responses.
-	private Set<Service> removeInputParameters(final Set<Parameter> parameters, final PeerID source) {
-		final Set<Service> lostServices = new HashSet<Service>();
-		for (final Iterator<SearchResponseMessage> it = inputResponses.iterator(); it.hasNext();) {
-			final SearchResponseMessage inputResponse = it.next();
-			if (inputResponse.getSource().equals(source)) {
-				final Set<Service> invalidServices = removeParameters(inputResponse, parameters);
-				if (!invalidServices.isEmpty()) {
-					if (inputResponse.getParameters().isEmpty())
-						it.remove();
-
-					// Add invalid services
-					lostServices.addAll(invalidServices);
-				}
-			}
-		}
-		return lostServices;
-	}
-
-	// removes the specified parameters from the passed response message and
-	// returns the services which are now invalid.
-	// it also removes the invalid services from the associated collision
-	// message
-	private Set<Service> removeParameters(final SearchResponseMessage responseMessage, final Set<Parameter> parameters) {
-		final Set<Service> invalidServices = new HashSet<Service>();
-		final boolean removed = responseMessage.getParameters().removeAll(parameters);
-		if (removed) {
-			final CollisionResponseMessage collisionResponseMessage = (CollisionResponseMessage) responseMessage.getPayload();
-			for (final Service service : collisionResponseMessage.getServices()) {
-				final Set<Parameter> sParams = new HashSet<Parameter>(service.getParameters());
-				if (sParams.removeAll(parameters))
-					invalidServices.add(service);
-			}
-		}
-		return invalidServices;
-	}
-
-	// removes the specified parameters from responses coming from the passed
-	// source. Only for output responses
-	private Set<Service> removeOutputParameters(final Set<Parameter> parameters, final PeerID source) {
-		final Set<Service> lostServices = new HashSet<Service>();
-		for (final Iterator<SearchResponseMessage> it = outputResponses.iterator(); it.hasNext();) {
-			final SearchResponseMessage outputResponse = it.next();
-			if (outputResponse.getSource().equals(source)) {
-				final Set<Service> invalidServices = removeParameters(outputResponse, parameters);
-				if (!invalidServices.isEmpty()) {
-					if (outputResponse.getParameters().isEmpty())
-						it.remove();
-
-					// Add invalid services
-					lostServices.addAll(invalidServices);
-				}
+				lostServices.addAll(response.getServices());
 			}
 		}
 		return lostServices;

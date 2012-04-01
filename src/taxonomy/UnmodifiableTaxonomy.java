@@ -43,12 +43,22 @@ public class UnmodifiableTaxonomy implements Taxonomy {
 	}
 
 	@Override
-	public boolean subsumes(final String idA, final String idB) {
-		return taxonomy.subsumes(idA, idB);
+	public boolean subsumes(final short valueA, final short valueB) {
+		return taxonomy.subsumes(valueA, valueB);
 	}
 
 	@Override
-	public boolean areRelated(final String idA, final String idB) {
-		return taxonomy.areRelated(idA, idB);
+	public boolean areRelated(final short valueA, final short valueB) {
+		return taxonomy.areRelated(valueA, valueB);
+	}
+
+	@Override
+	public short encode(String id) {
+		return taxonomy.encode(id);
+	}
+
+	@Override
+	public String decode(short value) {
+		return taxonomy.decode(value);
 	}
 }

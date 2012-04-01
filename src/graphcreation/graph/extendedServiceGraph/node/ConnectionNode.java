@@ -3,6 +3,7 @@ package graphcreation.graph.extendedServiceGraph.node;
 import graphcreation.graph.andorgraph.node.GraphNode;
 import graphcreation.graph.andorgraph.node.ORNode;
 import graphcreation.graph.servicegraph.node.ParameterNode;
+import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 
@@ -16,12 +17,15 @@ public class ConnectionNode implements ORNode {
 	private final ParameterNode output;
 	private final ParameterNode input;
 
-	private final String parameterID;
+	private final String nodeID;
+	
+	private final Taxonomy taxonomy;
 
-	public ConnectionNode(final OutputParameter output, final InputParameter input) {
+	public ConnectionNode(final OutputParameter output, final InputParameter input, final Taxonomy taxonomy) {
 		this.output = new ParameterNode(output);
 		this.input = new ParameterNode(input);
-		this.parameterID = createID(output.toString(), input.toString());
+		this.nodeID = createID(output.pretty(taxonomy), input.pretty(taxonomy));
+		this.taxonomy = taxonomy;
 	}
 
 	private String createID(final String outputID, final String inputID) {
@@ -46,12 +50,12 @@ public class ConnectionNode implements ORNode {
 
 	@Override
 	public int hashCode() {
-		return parameterID.hashCode();
+		return nodeID.hashCode();
 	}
 
 	@Override
 	public String getNodeID() {
-		return parameterID;
+		return nodeID;
 	}
 
 	@Override
@@ -61,6 +65,6 @@ public class ConnectionNode implements ORNode {
 
 	@Override
 	public GraphNode copy() {
-		return new ConnectionNode(this.getOutput(), this.getInput());
+		return new ConnectionNode(this.getOutput(), this.getInput(), taxonomy);
 	}
 }

@@ -407,7 +407,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 
 	private void processTableMessage(final TableMessage tableMessage) {
 		if (!tableMessage.getUpdateTable().isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " updating table " + pTable + " with update table " + tableMessage.getUpdateTable() + " from neighbor " + tableMessage.getSender());
+			logger.trace("Peer " + peer.getPeerID() + " updating table " + pTable + " with update table " + tableMessage.getUpdateTable().pretty(taxonomy) + " from neighbor " + tableMessage.getSender());
 			
 			final Set<Parameter> newParameters = new HashSet<Parameter>();
 			final Set<Parameter> removedParameters = new HashSet<Parameter>();

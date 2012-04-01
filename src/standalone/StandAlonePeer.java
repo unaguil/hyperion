@@ -143,7 +143,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	public void loadData() {
 		try {
 			final String xmlPath = getServicesFilePath(peer.getPeerID());
-			final ServiceList sList = new ServiceList(xmlPath, peer.getPeerID());
+			final ServiceList sList = new ServiceList(xmlPath, peer.getPeerID(), compositionSearch.getTaxonomy());
 			logger.info("Peer " + peer.getPeerID() + " adding " + sList.size() + " local services");
 			compositionSearch.manageLocalServices(sList, new ServiceList());
 
