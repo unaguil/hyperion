@@ -45,7 +45,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 
 	private final byte ttl;
 
-	private final short remainingTime;
+	private final long remainingTime;
 	
 	private short hops = 0;
 	
@@ -76,7 +76,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
 		this.ttl = (byte)ttl;
-		this.remainingTime = (short)remainingTime;
+		this.remainingTime = remainingTime;
 
 		compositionServices.add(sourceService);
 
@@ -186,7 +186,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "sourceService", in.readObject());
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "searchID", in.readObject());
 		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "ttl", in.readByte());
-		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readShort());
+		UnserializationUtils.setFinalField(FCompositionMessage.class, this, "remainingTime", in.readLong());
 		hops = in.readShort();
 	}
 
@@ -200,7 +200,7 @@ public class FCompositionMessage extends RemoteMessage implements PayloadMessage
 		out.writeObject(sourceService);
 		out.writeObject(searchID);
 		out.writeByte(ttl);
-		out.writeShort(remainingTime);
+		out.writeLong(remainingTime);
 		out.writeShort(hops);
 	}
 	
