@@ -51,11 +51,11 @@ public class ForwardComposer implements TimerTask {
 	}
 	
 	public void init() {
-		forwardTimer.start();
+		//forwardTimer.start();
 	}
 	
 	public void stop() {
-		forwardTimer.stopAndWait();
+		//forwardTimer.stopAndWait();
 	}
 
 	public void newSuccessors(final Map<Service, Set<ServiceDistance>> newSuccessors) {
