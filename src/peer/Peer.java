@@ -19,6 +19,8 @@ public interface Peer {
 
 	public void addSentListener(MessageSentListener sentListener);
 
+	public void directBroadcast(BroadcastMessage message);
+	
 	public void broadcast(BroadcastMessage message);
 
 	public void enqueueBroadcast(BroadcastMessage message, CommunicationLayer layer);

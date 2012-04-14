@@ -299,6 +299,18 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 		// Get the compressed data
 		return bos.toByteArray();
 	}
+	
+	@Override
+	public void directBroadcast(final BroadcastMessage message) {
+		try {
+			final int messageSize = getSize(message);
+			logger.debug("Peer " + peerID + " sending " + message.getType() + " " + message.getMessageID() + " " + messageSize + " bytes");
+			msgCounter.addSent(message.getClass());
+			broadcast(message);
+		} catch (IOException e) {
+			logger.error("Peer " + peerID + " unable to obtain message size");
+		}
+	}
 
 	@Override
 	public void broadcast(final BroadcastMessage message) {
@@ -488,6 +500,8 @@ public final class BasicPeer implements Peer, NeighborEventsListener {
 
 		if (message instanceof BundleMessage)
 			processBundleMessage((BundleMessage) message);
+		else if (!(message instanceof BeaconMessage) && !(message instanceof ACKMessage))
+			messageReceived(message);			
 	}
 
 	private void notifyHearListener(final BroadcastMessage message, final long receptionTime) {
