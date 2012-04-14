@@ -36,6 +36,13 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 		compositionData.start();
 
 		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this);
+		forwardComposer.init();
+	}
+	
+	@Override
+	public void stop() {
+		super.stop();
+		forwardComposer.stop();
 	}
 
 	@Override

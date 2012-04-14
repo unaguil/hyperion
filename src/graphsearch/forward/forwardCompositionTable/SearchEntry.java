@@ -8,6 +8,7 @@ import graphcreation.services.Service;
 import graphsearch.forward.message.FCompositionMessage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,6 +24,8 @@ class SearchEntry {
 	// specified service
 	private final Map<Service, List<FCompositionMessage>> receivedMessagesPerService = new HashMap<Service, List<FCompositionMessage>>();
 	private final Map<Service, Map<InputParameter, Boolean>> inputsTablePerService = new HashMap<Service, Map<InputParameter, Boolean>>();
+	
+	private final Set<Service> coveredServices = new HashSet<Service>();
 
 	private final long timestamp;
 	private final long firstReceivedMessageRemainingTime;
@@ -151,5 +154,13 @@ class SearchEntry {
 			calculateCovers(service);
 
 		return removed;
+	}
+	
+	public void addCoveredService(final Service service){
+		coveredServices.add(service);
+	}
+	
+	public Set<Service> getCoveredServices() {
+		return Collections.unmodifiableSet(coveredServices);
 	}
 }

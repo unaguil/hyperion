@@ -25,8 +25,10 @@ import java.util.Set;
 import peer.Peer;
 import peer.peerid.PeerID;
 import util.logger.Logger;
+import util.timer.Timer;
+import util.timer.TimerTask;
 
-public class ForwardComposer {
+public class ForwardComposer implements TimerTask {
 
 	protected final ForwardCompositionData fCompositionData;
 
@@ -35,6 +37,9 @@ public class ForwardComposer {
 	protected final GraphCreator gCreator;
 
 	protected final Peer peer;
+	
+	private static final long REPEAT_FORWARD_TIME = 3000;
+	protected final Timer forwardTimer = new Timer(REPEAT_FORWARD_TIME, this);
 
 	private final Logger logger = Logger.getLogger(ForwardComposer.class);
 
@@ -43,6 +48,14 @@ public class ForwardComposer {
 		this.commonCompositionSearch = commonCompositionSearch;
 		this.gCreator = commonCompositionSearch.getGraphCreator();
 		this.peer = commonCompositionSearch.getPeer();
+	}
+	
+	public void init() {
+		forwardTimer.start();
+	}
+	
+	public void stop() {
+		forwardTimer.stopAndWait();
 	}
 
 	public void newSuccessors(final Map<Service, Set<ServiceDistance>> newSuccessors) {
@@ -94,26 +107,28 @@ public class ForwardComposer {
 	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
 		logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
-
 			logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
-
-			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
-
-			if (Utility.isGoalService(service)) {
-				logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
-				notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition(), mergedForwardMessage.getHops());
-			} else // send the forward composition message if TTL and search
-			// remaining time is greater than 0
-			if (mergedForwardMessage.getTTL() > 0 && mergedForwardMessage.getRemainingTime() > 0) {
-				// Remove those successors which are GOAL services not
-				// compatible with the current search
-				final Set<Service> services = Utility.getServices(successors);
-				final Set<Service> validSuccessors = getValidSuccessors(services, mergedForwardMessage.getComposition());
-				forwardCompositionMessage(mergedForwardMessage, validSuccessors);
-			} else
-				logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
+			fCompositionData.addCoveredService(searchID, service);
+			forwardMergedComposition(successors, service, searchID);
 		} else
 			logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
+	}
+
+	private void forwardMergedComposition(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
+		final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
+		if (Utility.isGoalService(service)) {
+			logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
+			notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition(), mergedForwardMessage.getHops());
+		} else // send the forward composition message if TTL and search
+		// remaining time is greater than 0
+		if (mergedForwardMessage.getTTL() > 0 && mergedForwardMessage.getRemainingTime() > 0) {
+			// Remove those successors which are GOAL services not
+			// compatible with the current search
+			final Set<Service> services = Utility.getServices(successors);
+			final Set<Service> validSuccessors = getValidSuccessors(services, mergedForwardMessage.getComposition());
+			forwardCompositionMessage(mergedForwardMessage, validSuccessors);
+		} else
+			logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
 	}
 
 	public static FCompositionMessage mergeReceivedMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID, final PeerID peerID, final ForwardCompositionData fCompositionData, final Logger logger) {
@@ -250,5 +265,15 @@ public class ForwardComposer {
 
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
 		logger.debug("Peer " + peer.getPeerID() + " detected new ancestors " + newAncestors);
+	}
+
+	@Override
+	public void perform() throws InterruptedException {
+		for (Entry<SearchID, Set<Service>> coveredServices : fCompositionData.getCoveredServices().entrySet()) {
+			for (final Service coveredService : coveredServices.getValue()) {
+				final Set<ServiceDistance> successors = gCreator.getSuccessors(coveredService);
+				forwardMergedComposition(successors, coveredService, coveredServices.getKey());
+			}
+		}
 	}
 }

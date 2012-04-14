@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class ForwardCompositionData extends CompositionData {
@@ -51,6 +52,12 @@ public class ForwardCompositionData extends CompositionData {
 				entries.put(fCompositionMessage.getSearchID(), new SearchEntry(fCompositionMessage.getRemainingTime(), gCreator));
 
 			entries.get(fCompositionMessage.getSearchID()).addReceivedMessage(service, fCompositionMessage);
+		}
+	}
+	
+	public void addCoveredService(final SearchID searchID, final Service service) {
+		synchronized (entries) {
+			entries.get(searchID).addCoveredService(service);
 		}
 	}
 
@@ -104,5 +111,14 @@ public class ForwardCompositionData extends CompositionData {
 		if (entries.containsKey(searchID))
 			return entries.get(searchID).getServicesReceivingMessagesFrom(ancestor);
 		return new HashSet<Service>();
+	}
+	
+	public Map<SearchID, Set<Service>> getCoveredServices() {
+		final Map<SearchID, Set<Service>> coveredServices = new HashMap<SearchID, Set<Service>>();
+		synchronized (entries) {
+			for (final Entry<SearchID, SearchEntry> entry : entries.entrySet())
+				coveredServices.put(entry.getKey(), entry.getValue().getCoveredServices());
+		}
+		return coveredServices;
 	}
 }
