@@ -9,7 +9,6 @@ import java.util.Set;
 
 import peer.message.MessageID;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
 
 /**
  * This class defines a message which is used to remove invalid routes
