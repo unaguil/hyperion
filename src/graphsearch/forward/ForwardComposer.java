@@ -76,7 +76,7 @@ public class ForwardComposer {
 			
 			Set<ServiceDistance> notForwardedSuccessors = notForwardedSuccessors(searchID, successors);
 			final FCompositionMessage fCompositionMessage = new FCompositionMessage(searchID, startService, notForwardedSuccessors, maxTTL, searchTime);
-			final Set<Service> services = Utility.getServices(successors);
+			final Set<Service> services = Utility.getServices(notForwardedSuccessors);
 			forwardCompositionMessage(fCompositionMessage, services);
 			addAllForwardedSuccessors(searchID, notForwardedSuccessors);
 		}
