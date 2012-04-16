@@ -12,13 +12,13 @@ import graphsearch.CompositionListener;
 import graphsearch.CompositionSearch;
 import graphsearch.SearchID;
 import graphsearch.compositionData.CompositionData;
+import graphsearch.compositionData.ExpiredSearch;
 import graphsearch.compositionData.localSearchesTable.LocalSearchesTable.SearchStatus;
 import graphsearch.compositionData.localSearchesTable.SearchExpiredListener;
 import graphsearch.connectionsFilter.ConnectionsFilter;
 import graphsearch.shortestpathnotificator.ShortestPathListener;
 import graphsearch.shortestpathnotificator.ShortestPathNotificator;
 import graphsearch.util.Utility;
-import graphsearch.compositionData.ExpiredSearch;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -83,7 +83,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		ConnectionsFilter.filter(foundRemoteSuccessors, foundRemoteAncestors);
 	}
 
-	public void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops) {
+	public void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops, final long startingTime) {
 		// create the extended service graph using the received services
 		// TODO when the composition graph is created there could appear more
 		// connections. Indirect paths exists among some services/nodes.
@@ -91,7 +91,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Sea
 		for (final Service service : services)
 			composition.merge(service);
 
-		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID + " hops: " + hops);
+		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID + " hops: " + hops + " time: " + (System.currentTimeMillis() - startingTime));
 		compositionListener.compositionFound(composition, searchID, hops);
 	}
 

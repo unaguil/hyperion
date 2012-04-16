@@ -126,7 +126,7 @@ public class ForwardComposer {
 		final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
 		if (Utility.isGoalService(service)) {
 			logger.trace("Peer " + peer.getPeerID() + " reached GOAL service " + service + " for search: " + searchID + " composition : " + mergedForwardMessage.getComposition());
-			notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition(), mergedForwardMessage.getHops());
+			notifyComposition(mergedForwardMessage.getSearchID(), mergedForwardMessage.getComposition(), mergedForwardMessage.getHops(), fCompositionData.getStartingTime(searchID));
 		} else // send the forward composition message if TTL and search
 		// remaining time is greater than 0
 		if (mergedForwardMessage.getTTL() > 0 && mergedForwardMessage.getRemainingTime() > 0) {
@@ -150,8 +150,8 @@ public class ForwardComposer {
 		return fCompositionMessage;
 	}
 
-	protected void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops) {
-		commonCompositionSearch.notifyComposition(searchID, services, hops);
+	protected void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops, final long searchTime) {
+		commonCompositionSearch.notifyComposition(searchID, services, hops, searchTime);
 	}
 
 	protected Set<Service> getValidSuccessors(final Set<Service> successors, final Set<Service> composition) {

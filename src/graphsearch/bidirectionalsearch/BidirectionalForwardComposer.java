@@ -147,6 +147,6 @@ class BidirectionalForwardComposer extends ForwardComposer {
 	}
 
 	@Override
-	protected void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops) {
+	protected void notifyComposition(final SearchID searchID, final Set<Service> services, final int hops, final long searchTime) {
 	}
 }

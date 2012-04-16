@@ -71,6 +71,12 @@ public abstract class CompositionData implements TimerTask {
 			return 0;
 		return localSearchesTable.getRelatedData(searchID).getRemainingTime();
 	}
+	
+	public long getStartingTime(final SearchID searchID) {
+		if (!localSearchesTable.getStatus(searchID).equals(SearchStatus.RUNNING))
+			return 0;
+		return localSearchesTable.getRelatedData(searchID).getStartingTime();
+	}
 
 	public SearchID getGoalRelatedSearch(final Service goal) {
 		for (final SearchID searchID : localSearchesTable.getRunningSearches()) {

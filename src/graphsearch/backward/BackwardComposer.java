@@ -153,6 +153,6 @@ public class BackwardComposer {
 	}
 
 	protected void notifyComposition(final SearchID searchID, final Set<Service> services) {
-		commonCompositionSearch.notifyComposition(searchID, services, 0);
+		commonCompositionSearch.notifyComposition(searchID, services, 0, bCompositionData.getStartingTime(searchID));
 	}
 }

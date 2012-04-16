@@ -40,4 +40,8 @@ public class RelatedData {
 
 		return remainingTime;
 	}
+	
+	public long getStartingTime() {
+		return timestamp;
+	}
 }
