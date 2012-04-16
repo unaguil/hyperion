@@ -34,8 +34,7 @@ class BidirectionalForwardComposer extends ForwardComposer {
 	}
 
 	@Override
-	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
-
+	protected boolean processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
 		logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
 
@@ -58,11 +57,13 @@ class BidirectionalForwardComposer extends ForwardComposer {
 					validSuccessors.removeAll(exploredSuccessors);
 
 					forwardCompositionMessage(mergedForwardMessage, validSuccessors);
-				} else
-					logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
+					return true;
+				}
+				logger.trace("Peer " + peer.getPeerID() + " discarded search message due to TTL or search expiration");
 			}
-		} else
-			logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
+		}
+		logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
+		return false;
 	}
 
 	private Set<Service> checkBackwardMessages(final FCompositionMessage fCompositionMessage, final Set<ServiceDistance> successors) {

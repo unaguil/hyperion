@@ -25,10 +25,8 @@ import java.util.Set;
 import peer.Peer;
 import peer.peerid.PeerID;
 import util.logger.Logger;
-import util.timer.Timer;
-import util.timer.TimerTask;
 
-public class ForwardComposer implements TimerTask {
+public class ForwardComposer {
 
 	protected final ForwardCompositionData fCompositionData;
 
@@ -37,9 +35,6 @@ public class ForwardComposer implements TimerTask {
 	protected final GraphCreator gCreator;
 
 	protected final Peer peer;
-	
-	private static final long REPEAT_FORWARD_TIME = 3000;
-	protected final Timer forwardTimer = new Timer(REPEAT_FORWARD_TIME, this);
 
 	private final Logger logger = Logger.getLogger(ForwardComposer.class);
 
@@ -48,14 +43,6 @@ public class ForwardComposer implements TimerTask {
 		this.commonCompositionSearch = commonCompositionSearch;
 		this.gCreator = commonCompositionSearch.getGraphCreator();
 		this.peer = commonCompositionSearch.getPeer();
-	}
-	
-	public void init() {
-		//forwardTimer.start();
-	}
-	
-	public void stop() {
-		//forwardTimer.stopAndWait();
 	}
 
 	public void newSuccessors(final Map<Service, Set<ServiceDistance>> newSuccessors) {
@@ -72,8 +59,11 @@ public class ForwardComposer implements TimerTask {
 				// the service is a not an INIT service -> check if the
 				// service is covered and forward its composition message
 				final Map<SearchID, List<FCompositionMessage>> receivedMessages = fCompositionData.getReceivedMessages(service);
-				for (final SearchID searchID : receivedMessages.keySet())
-					processForwardCompositionMessages(entry.getValue(), service, searchID);
+				for (final SearchID searchID : receivedMessages.keySet()) {
+					Set<ServiceDistance> notForwardedSuccessors = notForwardedSuccessors(searchID, entry.getValue());
+					if (processForwardCompositionMessages(notForwardedSuccessors, service, searchID))
+						addAllForwardedSuccessors(searchID, notForwardedSuccessors);
+				}
 			}
 		}
 	}
@@ -83,11 +73,28 @@ public class ForwardComposer implements TimerTask {
 		if (searchID != null) {
 			final int maxTTL = fCompositionData.getMaxTTL(searchID);
 			final long searchTime = fCompositionData.getRemainingInitTime(searchID);
-
-			final FCompositionMessage fCompositionMessage = new FCompositionMessage(searchID, startService, successors, maxTTL, searchTime);
+			
+			Set<ServiceDistance> notForwardedSuccessors = notForwardedSuccessors(searchID, successors);
+			final FCompositionMessage fCompositionMessage = new FCompositionMessage(searchID, startService, notForwardedSuccessors, maxTTL, searchTime);
 			final Set<Service> services = Utility.getServices(successors);
 			forwardCompositionMessage(fCompositionMessage, services);
+			addAllForwardedSuccessors(searchID, notForwardedSuccessors);
 		}
+	}
+	
+	private void addAllForwardedSuccessors(final SearchID searchID, final Set<ServiceDistance> successors) {
+		for (final ServiceDistance successor : successors)
+			fCompositionData.addForwardedSuccessor(searchID, successor.getService());
+	}
+	
+	private Set<ServiceDistance> notForwardedSuccessors(final SearchID searchID, final Set<ServiceDistance> successors) {
+		final Set<ServiceDistance> notForwardedSuccessors = new HashSet<ServiceDistance>();
+		for (final ServiceDistance successor : successors) {
+			if (!fCompositionData.wasAlreadyForwarded(searchID, successor.getService())) {
+				notForwardedSuccessors.add(successor);
+			}
+		}
+		return notForwardedSuccessors;
 	}
 
 	public void forwardCompositionMessage(final FCompositionMessage fCompositionMessage, final Set<Service> services) {
@@ -104,14 +111,15 @@ public class ForwardComposer implements TimerTask {
 		return Collections.max(values).intValue();
 	}
 
-	protected void processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
+	protected boolean processForwardCompositionMessages(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
 		logger.trace("Peer " + peer.getPeerID() + " processing messages for active search: " + searchID + " service: " + service);
 		if (fCompositionData.areAllInputsCovered(searchID, service)) {
 			logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
-			fCompositionData.addCoveredService(searchID, service);
 			forwardMergedComposition(successors, service, searchID);
-		} else
-			logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
+			return true;
+		}
+		logger.trace("Peer " + peer.getPeerID() + " not fully covered service " + service);
+		return false;
 	}
 
 	private void forwardMergedComposition(final Set<ServiceDistance> successors, final Service service, final SearchID searchID) {
@@ -265,15 +273,5 @@ public class ForwardComposer implements TimerTask {
 
 	public void newAncestors(final Map<Service, Set<ServiceDistance>> newAncestors) {
 		logger.debug("Peer " + peer.getPeerID() + " detected new ancestors " + newAncestors);
-	}
-
-	@Override
-	public void perform() throws InterruptedException {
-		for (Entry<SearchID, Set<Service>> coveredServices : fCompositionData.getCoveredServices().entrySet()) {
-			for (final Service coveredService : coveredServices.getValue()) {
-				final Set<ServiceDistance> successors = gCreator.getSuccessors(coveredService);
-				forwardMergedComposition(successors, coveredService, coveredServices.getKey());
-			}
-		}
 	}
 }
