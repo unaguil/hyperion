@@ -20,16 +20,19 @@ public class RunningSearches implements TimerTask {
 	
 	private final Map<SearchID, RunningSearch> runningSearches = new HashMap<SearchID, RunningSearch>();
 	
+	private final boolean notFirstTime;
+	
 	private final long searchExpiration;
 	
-	public RunningSearches(final long searchExpiration) {
+	public RunningSearches(final long searchExpiration, final boolean notFirstTime) {
 		this.searchExpiration = searchExpiration;
+		this.notFirstTime = notFirstTime;
 	}
 	
 	public void addRunningSearch(final SearchID searchID, final Service service, final Service initService,
 			final Service goalService, final InitCompositionListener initCompositionListener, final long msgInterval) {
 		synchronized(runningSearches) {
-			runningSearches.put(searchID, new RunningSearch(searchID, service, initService, goalService, System.currentTimeMillis(), initCompositionListener, msgInterval));
+			runningSearches.put(searchID, new RunningSearch(searchID, service, initService, goalService, System.currentTimeMillis(), initCompositionListener, msgInterval, notFirstTime));
 		}
 	}
 	

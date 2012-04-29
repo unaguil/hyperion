@@ -187,7 +187,7 @@ public class FloodCompositionSearch implements CommunicationLayer, CompositionSe
 			logger.error("Peer " + peer.getPeerID() + " had problem loading TTL: " + e.getMessage());
 		}
 		
-		runningSearches = new RunningSearches(SEARCH_EXPIRATION);
+		runningSearches = new RunningSearches(SEARCH_EXPIRATION, false);
 		
 		runningSearches.start();
 	}

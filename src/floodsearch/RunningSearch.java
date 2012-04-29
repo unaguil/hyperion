@@ -21,12 +21,12 @@ public class RunningSearch implements TimerTask {
 	private boolean disabled = false;
 	
 	public RunningSearch(final SearchID searchID, final Service service, final Service initService, final Service goalService, 
-			final long startTime, InitCompositionListener initCompositionListener, final long msgInterval) {
+			final long startTime, InitCompositionListener initCompositionListener, final long msgInterval, final boolean notFirstTime) {
 		this.searchID = searchID;
 		this.service = service;
 		this.initCompositionListener = initCompositionListener;
 		this.startTime = startTime;
-		this.msgTimer = new Timer(msgInterval, this, true);
+		this.msgTimer = new Timer(msgInterval, this, notFirstTime);
 		
 		this.initService = initService;
 		this.goalService = goalService;

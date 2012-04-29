@@ -210,7 +210,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 		
 		shortestPathNotificator = new ShortestPathNotificator(peer.getPeerID(), gCreator, this, DIRECT_BROADCAST);
 		
-		runningSearches = new RunningSearches(SEARCH_EXPIRATION);
+		runningSearches = new RunningSearches(SEARCH_EXPIRATION, true);
 		runningSearches.start();
 	}
 
