@@ -16,7 +16,7 @@ public interface BigEnvelopeMessage {
 	 * 
 	 * @return the payload of the message
 	 */
-	public List<PayloadMessage> getPayloadMessages();
+	public List<BroadcastMessage> getPayloadMessages();
 
 	/**
 	 * Checks if the message contains a payload

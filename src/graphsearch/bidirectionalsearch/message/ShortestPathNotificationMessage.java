@@ -5,28 +5,20 @@ import graphcreation.services.Service;
 import graphsearch.SearchID;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.SerializationUtils;
 
-public abstract class ShortestPathNotificationMessage extends RemoteMessage implements PayloadMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public abstract class ShortestPathNotificationMessage extends RemoteMessage {
 
 	private final SearchID searchID;
 
@@ -36,32 +28,27 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 
 	protected final Service destination;
 	
-	public ShortestPathNotificationMessage() {
-		searchID = null;
-		destination = null;
+	public ShortestPathNotificationMessage(final byte mType) {
+		super(mType);
+		searchID = new SearchID();
+		destination = new Service();
 	}
 
-	public ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
-		super(source, Collections.<PeerID> emptySet());
+	public ShortestPathNotificationMessage(final byte mType, final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath) {
+		super(mType, source, null, Collections.<PeerID> emptySet());
 
 		this.searchID = searchID;
-
 		this.serviceDistances.putAll(serviceDistances);
-
 		this.notificationPath.addAll(notificationPath);
-
 		this.destination = notificationPath.get(notificationPath.size() - 1);
 	}
 
-	protected ShortestPathNotificationMessage(final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath, final Service destination) {
-		super(source, Collections.<PeerID> emptySet());
+	protected ShortestPathNotificationMessage(final byte mType, final PeerID source, final SearchID searchID, final Map<Service, Set<ServiceDistance>> serviceDistances, final List<Service> notificationPath, final Service destination) {
+		super(mType, source, null, Collections.<PeerID> emptySet());
 
 		this.searchID = searchID;
-
 		this.serviceDistances.putAll(serviceDistances);
-
 		this.notificationPath.addAll(notificationPath);
-
 		this.destination = destination;
 	}
 
@@ -120,41 +107,22 @@ public abstract class ShortestPathNotificationMessage extends RemoteMessage impl
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
 		
-		UnserializationUtils.setFinalField(ShortestPathNotificationMessage.class, this, "searchID", in.readObject());
-		readMap(serviceDistances, in);
-		notificationPath.addAll(Arrays.asList((Service[])in.readObject()));
-		UnserializationUtils.setFinalField(ShortestPathNotificationMessage.class, this, "destination", in.readObject());
+		searchID.read(in);
+		SerializationUtils.readServiceMap(serviceDistances, in);
+		SerializationUtils.readServices(notificationPath, in);		
+		destination.read(in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
 		out.writeObject(searchID);
-		writeMap(serviceDistances, out);
-		out.writeObject(notificationPath.toArray(new Service[0]));
-		out.writeObject(destination);
-	}
-	
-	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
-		out.writeObject(map.keySet().toArray(new Service[0]));
-		out.writeShort(map.values().size());
-		for (Set<ServiceDistance> set : map.values())
-			out.writeObject(set.toArray(new ServiceDistance[0]));
-	}
-	
-	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
-		List<Service> keys = Arrays.asList((Service[])in.readObject());
-		short size = in.readShort();
-		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
-		for (int i = 0; i < size; i++) {
-			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));
-			values.add(value);
-		}
-		
-		UnserializationUtils.fillMap(map, keys, values);
+		SerializationUtils.writeServiceMap(serviceDistances, out);
+		SerializationUtils.writeCollection(notificationPath, out);
+		destination.write(out);
 	}
 }

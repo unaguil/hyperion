@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import peer.message.PayloadMessage;
+import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
 import taxonomy.parameter.Parameter;
 
@@ -34,7 +34,7 @@ public interface TableChangedListener {
 	 * @return the payload will be included in the table message by the
 	 *         dissemination layer
 	 */
-	public PayloadMessage parametersChanged(PeerID neighbor, Set<Parameter> newParameters, Set<Parameter> removedParameters, 
+	public BroadcastMessage parametersChanged(PeerID neighbor, Set<Parameter> newParameters, Set<Parameter> removedParameters, 
 											Set<Parameter> removedLocalParameters, Map<Parameter, DistanceChange> changedParameters,
-											Set<Parameter> addedParameters, List<PayloadMessage> payloadMessages);
+											Set<Parameter> addedParameters, List<BroadcastMessage> payloadMessages);
 }

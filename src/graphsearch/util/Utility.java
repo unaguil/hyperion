@@ -2,11 +2,11 @@ package graphsearch.util;
 
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
+import graphsearch.SearchID;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.peerid.PeerID;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 
@@ -16,15 +16,15 @@ public class Utility {
 	public static final String INIT = "INIT";
 	public static final String GOAL = "GOAL";
 
-	public static Service createInitService(final Service s, final PeerID peerID) {
-		final Service init = new Service(s.getName() + SEPARATOR + INIT, peerID);
+	public static Service createInitService(final Service s, final SearchID searchID) {
+		final Service init = new Service(s.getName() + SEPARATOR + INIT + SEPARATOR + searchID.getID(), searchID.getPeer());
 		for (final InputParameter input : s.getInputParams())
 			init.addParameter(new OutputParameter(input.getID()));
 		return init;
 	}
 
-	public static Service createGoalService(final Service s, final PeerID peerID) {
-		final Service goal = new Service(s.getName() + SEPARATOR + GOAL, peerID);
+	public static Service createGoalService(final Service s, final SearchID searchID) {
+		final Service goal = new Service(s.getName() + SEPARATOR + GOAL + SEPARATOR + searchID.getID(), searchID.getPeer());
 		for (final OutputParameter output : s.getOutputParams())
 			goal.addParameter(new InputParameter(output.getID()));
 		return goal;
@@ -33,14 +33,22 @@ public class Utility {
 	private static String getOriginalName(final Service service) {
 		return service.getName().substring(0, service.getName().indexOf(SEPARATOR));
 	}
+	
+	public static SearchID getSearchID(final Service service) {
+		final int firstSeparator = service.getName().indexOf(SEPARATOR);
+		final String substr = service.getName().substring(firstSeparator + 1, service.getName().length());
+		final int secondSeparator = substr.indexOf(SEPARATOR);
+		return new SearchID(service.getPeerID(), Short.parseShort(substr.substring(secondSeparator + 1, substr.length())));
+	}
 
 	public static boolean connected(final Service initService, final Service goalService) {
 		if (!isINITService(initService))
 			return false;
 		if (!isGoalService(goalService))
 			return false;
-
-		return getOriginalName(initService).equals(getOriginalName(goalService)) && initService.getPeerID().equals(goalService.getPeerID());
+		return getOriginalName(initService).equals(getOriginalName(goalService)) 
+				&& initService.getPeerID().equals(goalService.getPeerID())
+				&& getSearchID(initService).equals(getSearchID(goalService));
 	}
 
 	public static boolean isINITService(final Service service) {

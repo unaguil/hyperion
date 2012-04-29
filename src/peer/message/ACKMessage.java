@@ -1,28 +1,23 @@
 package peer.message;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
 
 public class ACKMessage extends BroadcastMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 
 	private final MessageID respondingTo;
 	
 	public ACKMessage() {
-		respondingTo = null;
+		super(MessageTypes.ACK_MESSAGE);
+		respondingTo = new MessageID();
 	}
 
 	public ACKMessage(final PeerID sender, final MessageID respondingTo) {
-		super(sender, Collections.<PeerID> emptySet());
+		super(MessageTypes.ACK_MESSAGE, sender, Collections.<PeerID> emptySet());
 		this.respondingTo = respondingTo;
 	}
 
@@ -36,17 +31,15 @@ public class ACKMessage extends BroadcastMessage {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
-		
-		UnserializationUtils.setFinalField(ACKMessage.class, this, "respondingTo", in.readObject());
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
+		respondingTo.read(in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
-		
-		out.writeObject(respondingTo);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
+		respondingTo.write(out);
 	}
 	
 	@Override
@@ -55,7 +48,6 @@ public class ACKMessage extends BroadcastMessage {
 			return false;
 		
 		final ACKMessage ackMessage = (ACKMessage)o;
-		
 		return ackMessage.respondingTo.equals(this.respondingTo);
 	}
 	

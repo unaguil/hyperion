@@ -58,10 +58,10 @@ public class ConnectionsManager {
 	 * @return a map which contains the updated connections with those peers
 	 *         which must be notified for each connection
 	 */
-	public Map<Connection, PeerIDSet> updateConnections(final SearchResponseMessage searchResponseMessage) {
-		final Map<Connection, PeerIDSet> updatedConnections = new HashMap<Connection, PeerIDSet>();
+	public Map<Connection, Set<PeerID>> updateConnections(final SearchResponseMessage searchResponseMessage) {
+		final Map<Connection, Set<PeerID>> updatedConnections = new HashMap<Connection, Set<PeerID>>();
 		for (final Connection connection : detectedConnections) {
-			final PeerIDSet notifiedPeers = connection.addSearchResponse(searchResponseMessage);
+			final Set<PeerID> notifiedPeers = connection.addSearchResponse(searchResponseMessage);
 			if (!notifiedPeers.isEmpty())
 				updatedConnections.put(connection, notifiedPeers);
 		}

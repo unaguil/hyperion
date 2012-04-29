@@ -1,12 +1,11 @@
 package dissemination.newProtocol.ptable;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.BSerializable;
 
 /**
  * This class represents an element in the estimated distance list of each
@@ -15,12 +14,8 @@ import serialization.binary.UnserializationUtils;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable {
+class EstimatedDistance implements Comparable<EstimatedDistance>, BSerializable {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 
 	// the distance estimated for a parameter
 	private byte distance;
@@ -33,7 +28,7 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable
 	private final boolean optional;
 	
 	public EstimatedDistance() {
-		neighbor = null;
+		neighbor = new PeerID();
 		optional = false;
 	}
 
@@ -138,14 +133,14 @@ class EstimatedDistance implements Comparable<EstimatedDistance>, Externalizable
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	public void read(ObjectInputStream in) throws IOException {
 		distance = in.readByte();
-		UnserializationUtils.setFinalField(EstimatedDistance.class, this, "neighbor", in.readObject());
+		neighbor.read(in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
+	public void write(ObjectOutputStream out) throws IOException {
 		out.writeByte(distance);
-		out.writeObject(neighbor);
+		neighbor.write(out);
 	}
 }

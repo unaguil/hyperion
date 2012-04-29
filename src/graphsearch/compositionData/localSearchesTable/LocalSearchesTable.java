@@ -51,10 +51,10 @@ public class LocalSearchesTable {
 	 * @param remainingTime
 	 *            the remaining time for this search to expire
 	 */
-	public void addRunningSearch(final SearchID searchID, final Service init, final Service goal, final int maxTTL, final long remainingTime) {
+	public void addRunningSearch(final SearchID searchID, final Service init, final Service goal, final int maxTTL, final long remainingTime, final boolean wasPrepared) {
 		waitingSearches.remove(searchID);
 		synchronized (runningSearches) {
-			runningSearches.put(searchID, new RelatedData(init, goal, maxTTL, remainingTime));
+			runningSearches.put(searchID, new RelatedData(init, goal, maxTTL, remainingTime, wasPrepared));
 		}
 	}
 
@@ -149,11 +149,12 @@ public class LocalSearchesTable {
 		synchronized (runningSearches) {
 			for (final Iterator<SearchID> it = runningSearches.keySet().iterator(); it.hasNext();) {
 				final SearchID searchID = it.next();
-				if (getRelatedData(searchID).getRemainingTime() == 0) {
+				final RelatedData relatedData = getRelatedData(searchID);
+				if (relatedData.getRemainingTime() == 0) {
 					final Service initService = getInitService(searchID);
 					final Service goalService = getGoalService(searchID);
 					it.remove();
-					expiredSearches.add(new ExpiredSearch(searchID, initService, goalService));
+					expiredSearches.add(new ExpiredSearch(searchID, initService, goalService, relatedData.wasPrepared()));
 				}
 			}
 		}

@@ -2,22 +2,21 @@ package graphcreation.collisionbased.message;
 
 import graphcreation.collisionbased.collisiondetector.Collision;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.BSerializable;
 
-public class Inhibition implements Externalizable {
+public class Inhibition implements BSerializable {
 	
 	private final Collision collision;
 	private final PeerID notApplied;
 	
 	public Inhibition() {
-		this.collision = null;
-		this.notApplied = null;
+		this.collision = new Collision();
+		this.notApplied = new PeerID();
 	}
 	
 	public Inhibition(final Collision collision, PeerID notApplied) {
@@ -34,15 +33,15 @@ public class Inhibition implements Externalizable {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(Inhibition.class, this, "collision", in.readObject());
-		UnserializationUtils.setFinalField(Inhibition.class, this, "notApplied", in.readObject());
+	public void read(ObjectInputStream in) throws IOException {
+		collision.read(in);
+		notApplied.read(in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeObject(collision);
-		out.writeObject(notApplied);
+	public void write(ObjectOutputStream out) throws IOException {
+		collision.write(out);
+		notApplied.write(out);
 	}
 	
 	@Override

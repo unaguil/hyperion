@@ -1,35 +1,29 @@
 package graphcreation.services;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashSet;
 import java.util.Set;
 
+import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.BSerializable;
+import serialization.binary.SerializationUtils;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
 
-public class Service implements Externalizable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
+public class Service implements BSerializable {
+	
 	private final String id;
-
 	private final PeerID peer;
 
 	private final Set<Parameter> params = new HashSet<Parameter>();
 	
 	public Service() {
-		id = null;
-		peer = null;
+		id = new String();
+		peer = new PeerID();
 	}
 
 	public Service(final String id, final PeerID peer) {
@@ -100,16 +94,25 @@ public class Service implements Externalizable {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(Service.class, this, "id", in.readUTF());
-		UnserializationUtils.setFinalField(Service.class, this, "peer", in.readObject());
-		params.addAll(Arrays.asList((Parameter[])in.readObject()));
+	public void read(ObjectInputStream in) throws IOException {
+		SerializationUtils.setFinalField(Service.class, this, "id", in.readUTF());
+		peer.read(in);
+		
+		try {
+			final byte nParameters = in.readByte();
+			for (int i = 0; i < nParameters; i++) {
+				final Parameter p = Parameter.readParameter(in);
+				params.add(p);
+			}		
+		} catch (UnsupportedTypeException e) {
+			throw new IOException(e);
+		}
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
+	public void write(ObjectOutputStream out) throws IOException {
 		out.writeUTF(id);
-		out.writeObject(peer);
-		out.writeObject(params.toArray(new Parameter[0]));
+		peer.write(out);
+		SerializationUtils.writeCollection(params, out);
 	}
 }

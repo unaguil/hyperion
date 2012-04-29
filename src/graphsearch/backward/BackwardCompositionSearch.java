@@ -4,6 +4,7 @@ import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.CompositionListener;
+import graphsearch.SearchID;
 import graphsearch.backward.backwardCompositionTable.BackwardCompositionData;
 import graphsearch.backward.message.BCompositionMessage;
 import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
@@ -13,16 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import peer.Peer;
+import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
-import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 
 public class BackwardCompositionSearch extends CommonCompositionSearch {
 
 	private BackwardComposer backwardComposer;
 
-	public BackwardCompositionSearch(final Peer peer, final CompositionListener compositionListener) {
+	public BackwardCompositionSearch(final ReliableBroadcastPeer peer, final CompositionListener compositionListener) {
 		super(peer, compositionListener, GraphType.BACKWARD);
 	}
 
@@ -54,7 +54,7 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
+	public void multicastMessageAccepted(final PeerID source, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
 		if (payload instanceof BCompositionMessage)
 			backwardComposer.receivedBComposition((BCompositionMessage) payload);
 	}
@@ -70,5 +70,9 @@ public class BackwardCompositionSearch extends CommonCompositionSearch {
 	@Override
 	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		return false;
+	}
+
+	@Override
+	public void initFComposition(final Service initService, final SearchID searchID) {
 	}
 }

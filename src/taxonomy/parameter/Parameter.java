@@ -1,26 +1,30 @@
 package taxonomy.parameter;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import serialization.binary.UnserializationUtils;
+import peer.message.UnsupportedTypeException;
+
+import serialization.binary.BSerializable;
+import serialization.binary.SerializationUtils;
 import taxonomy.Taxonomy;
 
-public abstract class Parameter implements Externalizable {
+public abstract class Parameter implements BSerializable {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+	private final byte type;
 	private final short value;
+	
+	public static final byte INPUT_PARAMETER = 0x01;
+	public static final byte OUTPUT_PARAMETER = 0x02;
 
-	public Parameter() {
-		value = 0;
+	public Parameter(final byte type) {
+		this.type = type;
+		this.value = 0;
 	}
 	
-	public Parameter(final short value) {
+	public Parameter(final byte type, final short value) {
+		this.type = type;
 		this.value = value;
 	}
 
@@ -52,12 +56,28 @@ public abstract class Parameter implements Externalizable {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(Parameter.class, this, "value", in.readShort());
+	public void read(final ObjectInputStream in) throws IOException {
+		SerializationUtils.setFinalField(Parameter.class, this, "value", in.readShort());
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
+	public void write(final ObjectOutputStream out) throws IOException {
+		out.writeByte(type);
 		out.writeShort(value);		
+	}
+	
+	private static Parameter getInstance(final ObjectInputStream in) throws UnsupportedTypeException, IOException {
+		final byte type = in.readByte();
+		if (type == INPUT_PARAMETER)
+			return  new InputParameter();
+		if (type == OUTPUT_PARAMETER)
+			return new OutputParameter();
+		throw new UnsupportedTypeException();
+	}
+	
+	public static Parameter readParameter(final ObjectInputStream in) throws UnsupportedTypeException, IOException {
+		final Parameter p = getInstance(in);
+		p.read(in);
+		return p;
 	}
 }

@@ -1,11 +1,9 @@
 package graphsearch.backward.message;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,16 +11,12 @@ import java.util.Set;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.BSerializable;
+import serialization.binary.SerializationUtils;
 
-public class MessagePart implements Externalizable {
+public class MessagePart implements BSerializable {
 
-	public static class Part implements Externalizable {
-
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
+	public static class Part implements BSerializable {
 
 		private final byte total;
 		private final byte pNumber;
@@ -32,7 +26,7 @@ public class MessagePart implements Externalizable {
 		public Part() {
 			total = 0;
 			pNumber = 0;
-			partitionID = null;
+			partitionID = new MessageID();
 		}
 
 		public Part(final int total, final int pNumber, final MessageID partitionID) {
@@ -77,24 +71,19 @@ public class MessagePart implements Externalizable {
 		}
 
 		@Override
-		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-			UnserializationUtils.setFinalField(Part.class, this, "total", in.readByte());
-			UnserializationUtils.setFinalField(Part.class, this, "pNumber", in.readByte());
-			UnserializationUtils.setFinalField(Part.class, this, "partitionID", in.readObject());
+		public void read(ObjectInputStream in) throws IOException {
+			SerializationUtils.setFinalField(Part.class, this, "total", in.readByte());
+			SerializationUtils.setFinalField(Part.class, this, "pNumber", in.readByte());
+			partitionID.read(in);
 		}
 
 		@Override
-		public void writeExternal(ObjectOutput out) throws IOException {
+		public void write(ObjectOutputStream out) throws IOException {
 			out.writeByte(total);
 			out.writeByte(pNumber);
-			out.writeObject(partitionID);
+			partitionID.write(out);
 		}
 	}
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 
 	// the string which represents the message partitions
 	private final List<Part> parts = new ArrayList<Part>();
@@ -102,7 +91,7 @@ public class MessagePart implements Externalizable {
 	private final MessageID rootID;
 	
 	public MessagePart() {
-		rootID = null;
+		rootID = new MessageID();
 	}
 
 	public MessagePart(final PeerID peerID) {
@@ -167,14 +156,20 @@ public class MessagePart implements Externalizable {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(MessagePart.class, this, "rootID", in.readObject());
-		parts.addAll(Arrays.asList((Part[])in.readObject()));
+	public void read(ObjectInputStream in) throws IOException {
+		rootID.read(in);
+		
+		final byte size = in.readByte();
+		for (int i = 0; i < size; i++) {
+			final Part part = new Part();
+			part.read(in);
+			parts.add(part);
+		}
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeObject(rootID);
-		out.writeObject(parts.toArray(new Part[0]));
+	public void write(ObjectOutputStream out) throws IOException {
+		rootID.write(out);
+		SerializationUtils.writeCollection(parts, out);
 	}
 }

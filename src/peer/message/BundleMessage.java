@@ -1,10 +1,9 @@
 package peer.message;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,28 +11,30 @@ import java.util.List;
 import java.util.Set;
 
 import peer.peerid.PeerID;
+import serialization.binary.SerializationUtils;
 
-public class BundleMessage extends BroadcastMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class BundleMessage extends BroadcastMessage implements BigEnvelopeMessage {
 
 	private final List<BroadcastMessage> messages = new ArrayList<BroadcastMessage>();
 	
 	public BundleMessage() {
-		
+		super(MessageTypes.BUNDLE_MESSAGE);
 	}
 
 	public BundleMessage(final PeerID sender, final List<BroadcastMessage> messages) {
-		super(sender, Collections.<PeerID> emptySet());
+		super(MessageTypes.BUNDLE_MESSAGE, sender, Collections.<PeerID> emptySet());
 		
 		addMessages(messages);
 	}
 
-	public List<BroadcastMessage> getMessages() {
+	@Override
+	public List<BroadcastMessage> getPayloadMessages() {
 		return messages;
+	}
+	
+	@Override
+	public boolean hasPayload() {
+		return !messages.isEmpty();
 	}
 
 	@Override
@@ -62,26 +63,35 @@ public class BundleMessage extends BroadcastMessage {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
+		 
+		final byte nDest = in.readByte();
+		for (int i = 0; i < nDest; i++) {
+			final PeerID peerID = new PeerID();
+			peerID.read(in);
+			expectedDestinations.add(peerID);
+		}
 		
-		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
-		messages.addAll(Arrays.asList((BroadcastMessage[])in.readObject()));
+		try {
+			final byte nMessages = in.readByte();
+			for (int i = 0; i < nMessages; i++) {
+				final BroadcastMessage message = MessageTypes.readBroadcastMessage(in);
+				messages.add(message);
+			}
+		} catch (UnsupportedTypeException e) {
+			throw new IOException(e);
+		}
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
-		out.writeObject(messages.toArray(new BroadcastMessage[0]));
+		SerializationUtils.writeCollection(expectedDestinations, out);
+		SerializationUtils.writeCollection(messages, out);
 	}
-
-	public void merge(BundleMessage bundleMessage) {
-		expectedDestinations.addAll(bundleMessage.expectedDestinations);
-		messages.addAll(bundleMessage.messages);
-	}
-
+	
 	public Set<BroadcastMessage> removeACKMessages() {
 		final Set<BroadcastMessage> removedACKMessages = new HashSet<BroadcastMessage>();
 		for (final Iterator<BroadcastMessage> it = messages.iterator(); it.hasNext();) {

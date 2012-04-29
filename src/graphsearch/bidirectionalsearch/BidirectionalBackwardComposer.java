@@ -72,7 +72,7 @@ public class BidirectionalBackwardComposer extends BackwardComposer {
 						it.remove();
 				}
 
-				final FCompositionMessage mergedForwardComposition = ForwardComposer.mergeReceivedMessages(successors, service, searchID, peerID, fCompositionData, logger);
+				final FCompositionMessage mergedForwardComposition = ForwardComposer.mergeReceivedMessages(service, searchID, peerID, successors, fCompositionData, logger);
 
 				// add forward composition
 				exploredAncestors.addAll(mergedForwardComposition.getComposition());

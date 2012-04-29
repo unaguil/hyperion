@@ -23,7 +23,6 @@ import peer.message.BroadcastMessage;
 import peer.message.MessageID;
 import peer.message.MessageIDGenerator;
 import peer.peerid.PeerID;
-import peer.peerid.PeerIDSet;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.TaxonomyException;
@@ -58,8 +57,8 @@ public class UnicastTableTest {
 		public void messageReceived(BroadcastMessage message, long receptionTime) {}
 
 		@Override
-		public PeerIDSet getCurrentNeighbors() {
-			return new PeerIDSet();
+		public Set<PeerID> getCurrentNeighbors() {
+			return Collections.emptySet();
 		}
 
 		@Override

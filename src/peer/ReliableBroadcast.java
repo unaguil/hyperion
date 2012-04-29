@@ -18,7 +18,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 
 	private BundleMessage currentMessage;
 
-	private final BasicPeer peer;
+	private final ReliableBroadcastPeer peer;
 
 	private final ReliableBroadcastCounter reliableBroadcastCounter = new ReliableBroadcastCounter();
 
@@ -30,7 +30,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 
 	private final Logger logger = Logger.getLogger(ReliableBroadcast.class);
 
-	public ReliableBroadcast(final BasicPeer peer, final ResponseProcessor messageProccessor) {
+	public ReliableBroadcast(final ReliableBroadcastPeer peer, final ResponseProcessor messageProccessor) {
 		this.peer = peer;
 		this.responseProcessor = messageProccessor;
 	}
@@ -39,7 +39,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 		peer.getDetector().addNeighborListener(this);
 		
 		//wait for real neighbors only
-		final Set<PeerID> currentNeighbors = peer.getDetector().getCurrentNeighbors().getPeerSet();
+		final Set<PeerID> currentNeighbors = peer.getDetector().getCurrentNeighbors();
 		
 		synchronized (mutex) {
 			currentMessage = bundleMessage;
@@ -66,7 +66,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				reliableBroadcastCounter.addBroadcastedMessage();
 			}
 			else {
-				final long delayTime = BasicPeer.WAIT_TIME * (tryNumber * tryNumber) - r.nextInt(BasicPeer.MAX_JITTER);
+				final long delayTime = ReliableBroadcastPeer.WAIT_TIME * (tryNumber * tryNumber) - r.nextInt(ReliableBroadcastPeer.MAX_JITTER);
 				
 				sleepSomeTime(delayTime);
 				
@@ -81,7 +81,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 				bundleMessage.addMessages(new ArrayList<BroadcastMessage>(responseProcessor.getWaitingACKMessages()));
 			}
 			
-			peer.broadcast(bundleMessage);
+			peer.directBroadcast(bundleMessage);
 			
 			final Set<BroadcastMessage> sentACKMessages = new HashSet<BroadcastMessage>();
 			synchronized (mutex) {
@@ -148,7 +148,7 @@ final class ReliableBroadcast implements NeighborEventsListener {
 	}
 
 	public long getResponseWaitTime(int destinations) {
-		return peer.getTransmissionTime() * (destinations + 1) + BasicPeer.WAIT_TIME + BasicPeer.MAX_JITTER;
+		return ReliableBroadcastPeer.TRANSMISSION_TIME * (destinations + 1) + ReliableBroadcastPeer.WAIT_TIME + ReliableBroadcastPeer.MAX_JITTER;
 	}
 
 	@Override

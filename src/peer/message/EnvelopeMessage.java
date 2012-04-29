@@ -14,7 +14,7 @@ public interface EnvelopeMessage {
 	 * 
 	 * @return the payload of the message
 	 */
-	public PayloadMessage getPayload();
+	public BroadcastMessage getPayload();
 
 	/**
 	 * Checks if the message contains a payload
