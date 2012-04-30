@@ -222,10 +222,10 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 
 	@Override
 	public SearchID startComposition(final Service searchedService) {
-		boolean wasPrepared = false;
+		boolean wasPrepared = true;
 		if (!wasCompositionPrepared(searchedService)) {
 			prepareComposition(searchedService);
-			wasPrepared = true;
+			wasPrepared = false;
 		}
 		
 		final SearchID searchID = new SearchID(peer.getPeerID());
