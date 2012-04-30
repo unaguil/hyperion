@@ -1,21 +1,35 @@
 package graphsearch;
 
-import peer.message.MessageID;
-import peer.peerid.PeerID;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-public class SearchID extends MessageID {
+import peer.message.MessageID;
+import peer.message.MessageIDGenerator;
+import peer.peerid.PeerID;
+import serialization.binary.UnserializationUtils;
+
+public class SearchID implements Externalizable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	
-	private static short searchCounter = 0;
+	private final MessageID messageID;
 	
 	public SearchID() {
-	}
-	
-	public SearchID(final PeerID startPeer, final short id) {
-		super(startPeer, id);
+		messageID = null;
 	}
 
 	public SearchID(final PeerID startPeer) {
-		super(startPeer, searchCounter++);
+		messageID = new MessageID(startPeer, MessageIDGenerator.getNewID());
+	}
+
+	@Override
+	public int hashCode() {
+		return messageID.hashCode();
 	}
 
 	@Override
@@ -23,6 +37,22 @@ public class SearchID extends MessageID {
 		if (!(o instanceof SearchID))
 			return false;
 
-		return super.equals(o);
+		final SearchID searchID = (SearchID) o;
+		return this.messageID.equals(searchID.messageID);
+	}
+
+	@Override
+	public String toString() {
+		return messageID.toString();
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(SearchID.class, this, "messageID", in.readObject());
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(messageID);		
 	}
 }

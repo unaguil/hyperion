@@ -1,14 +1,14 @@
 package peer;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import peer.message.BroadcastMessage;
-import peer.message.MessageReceivedListener;
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
-import peer.messagecounter.MessageCounter;
 import util.WaitableThread;
 import util.logger.Logger;
 
@@ -20,29 +20,12 @@ import util.logger.Logger;
  */
 final class ReceivingThread extends WaitableThread {
 
-	private final ReceivedProcessor receivedProcessor;
+	private final BasicPeer peer;
 
 	private final Logger logger = Logger.getLogger(ReceivingThread.class);
-	private final BasicPeer peer;
-	private final MessageCounter msgCounter;
-	
-	// Sets the message hearing listener
-	private MessageReceivedListener hearListener = null;
-	
 
-	public ReceivingThread(final ReceivedProcessor receivedProcessor, final BasicPeer peer, final MessageCounter msgCounter) {
-		this.receivedProcessor = receivedProcessor;
+	public ReceivingThread(final BasicPeer peer) {
 		this.peer = peer;
-		this.msgCounter = msgCounter;
-	}
-	
-	public void setHearListener(final MessageReceivedListener hearListener) {
-		this.hearListener = hearListener;
-	}
-	
-	private void notifyHearListener(final BroadcastMessage message, final long receptionTime) {
-		if (hearListener != null)
-			hearListener.messageReceived(message, receptionTime);
 	}
 
 	@Override
@@ -59,21 +42,16 @@ final class ReceivingThread extends WaitableThread {
 
 			try {
 				if (data != null) {					
-					final BroadcastMessage message = getBroadcastMessage(data);
+					final byte[] uncompressed = uncompress(data);
+					final BroadcastMessage message = (BroadcastMessage) getObject(uncompressed);
 					if (peer.getCommProvider().isValid(message)) {
-						// messages are only processed if node is initialized
-						logger.debug("Peer " + peer.getPeerID() + " received packet " + message + " from node " + message.getSender());
-						msgCounter.addReceivedPacket(message.getClass());
-						// Notify hear listeners indicating that a message was received
-						notifyHearListener(message, System.currentTimeMillis());
-						msgCounter.addReceived(message.getClass());
-						receivedProcessor.enqueuReceivedMessage(message);
-						logger.trace("Peer " + peer.getPeerID() + " received message enqueued");
+						peer.processReceivedMessage(message);
+						logger.trace("Peer " + peer.getPeerID() + " message processed");
 					}
 				}
 			} catch (final IOException e) {
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
-			} catch (final UnsupportedTypeException e) {
+			} catch (final ClassNotFoundException e) {
 				logger.error("Peer " + peer.getPeerID() + " problem deserializing received data. " + e.getMessage());
 			}
 		}
@@ -83,10 +61,35 @@ final class ReceivingThread extends WaitableThread {
 	}
 
 	// Creates an object from its byte array representation
-	private BroadcastMessage getBroadcastMessage(final byte[] bytes) throws IOException, UnsupportedTypeException {
+	private Object getObject(final byte[] bytes) throws IOException, ClassNotFoundException {
 		final ByteArrayInputStream bios = new ByteArrayInputStream(bytes);
-		final ObjectInputStream in = new ObjectInputStream(bios);
-		final BroadcastMessage message = MessageTypes.readBroadcastMessage(in);
-		return message;
+		final ObjectInput in = new ObjectInputStream(bios);
+		return in.readObject();
+	}
+	
+	private byte[] uncompress(byte[] data) {
+		// Create the decompressor and give it the data to compress
+		Inflater decompressor = new Inflater();
+		decompressor.setInput(data);
+
+		// Create an expandable byte array to hold the decompressed data
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
+
+		// Decompress the data
+		byte[] buf = new byte[1024];
+		while (!decompressor.finished()) {
+		    try {
+		        int count = decompressor.inflate(buf);
+		        bos.write(buf, 0, count);
+		    } catch (DataFormatException e) {
+		    }
+		}
+		try {
+		    bos.close();
+		} catch (IOException e) {
+		}
+
+		// Get the decompressed data
+		return bos.toByteArray();
 	}
 }

@@ -1,16 +1,14 @@
 package multicast.search.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import peer.message.MessageID;
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -21,6 +19,10 @@ import taxonomy.parameter.Parameter;
  */
 public class GeneralizeSearchMessage extends RemoteMessage {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// the new parameters
 	private final Set<Parameter> parameters = new HashSet<Parameter>();
@@ -29,7 +31,7 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	private final Set<MessageID> routeIDs = new HashSet<MessageID>();
 	
 	public GeneralizeSearchMessage() {
-		super(MessageTypes.GENERALIZE_SEARCH_MESSAGE);
+		
 	}
 
 	/**
@@ -44,7 +46,7 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	 *            the source of the message
 	 */
 	public GeneralizeSearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<Parameter> parameters, final Set<MessageID> routeIDs) {
-		super(MessageTypes.GENERALIZE_SEARCH_MESSAGE, source, null, expectedDestinations);
+		super(source, expectedDestinations);
 		this.parameters.addAll(parameters);
 		this.routeIDs.addAll(routeIDs);
 	}
@@ -91,32 +93,18 @@ public class GeneralizeSearchMessage extends RemoteMessage {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		try {
-			final byte nParameters = in.readByte();
-			for (int i = 0; i < nParameters; i++) {
-				final Parameter p = Parameter.readParameter(in);
-				parameters.add(p);
-			}
-		} catch (UnsupportedTypeException e) {
-			throw new IOException();
-		}
-		
-		final byte nRoutes = in.readByte();
-		for (int i = 0; i < nRoutes; i++) {
-			final MessageID messageID = new MessageID();
-			messageID.read(in);
-			routeIDs.add(messageID);
-		}
+		parameters.addAll(Arrays.asList((Parameter[])in.readObject()));
+		routeIDs.addAll(Arrays.asList((MessageID[])in.readObject()));
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeCollection(parameters, out);
-		SerializationUtils.writeCollection(routeIDs, out);
+		out.writeObject(parameters.toArray(new Parameter[0]));
+		out.writeObject(routeIDs.toArray(new MessageID[0]));
 	}
 }

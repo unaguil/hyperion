@@ -1,18 +1,18 @@
 package dissemination.newProtocol.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import peer.message.BigEnvelopeMessage;
 import peer.message.BroadcastMessage;
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 import taxonomy.Taxonomy;
 import dissemination.newProtocol.ptable.UpdateTable;
 
@@ -28,29 +28,34 @@ import dissemination.newProtocol.ptable.UpdateTable;
  */
 public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private final UpdateTable updateTable;
 
 	// the message contained as payload
-	private final List<BroadcastMessage> payloadMessages = new ArrayList<BroadcastMessage>();
+	private final List<PayloadMessage> payloadMessages = new ArrayList<PayloadMessage>();
 	
 	public TableMessage() {
-		super(MessageTypes.TABLE_MESSAGE);
-		updateTable = new UpdateTable();
+		updateTable = null;
 	}
 
 	/**
 	 * Constructor of the table message
-	 * @param sender
-	 *            the sender of the message
+	 * 
 	 * @param updateTable
 	 *            a table containing the updates for neighbors
-	 * @param payload
-	 *            the message payload
+	 * @param sender
+	 *            the sender of the message
 	 * @param op
 	 *            the operation of this table message
+	 * @param payload
+	 *            the message payload
 	 */
-	public TableMessage(final PeerID sender, final Set<PeerID> expectedDestinations, final UpdateTable updateTable, final BroadcastMessage payload) {
-		super(MessageTypes.TABLE_MESSAGE, sender, expectedDestinations);
+	public TableMessage(final PeerID sender, final Set<PeerID> expectedDestinations, final UpdateTable updateTable, final PayloadMessage payload) {
+		super(sender, expectedDestinations);
 		this.updateTable = updateTable;
 		if (payload != null)
 			this.payloadMessages.add(payload);
@@ -66,7 +71,7 @@ public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage
 	}
 
 	@Override
-	public List<BroadcastMessage> getPayloadMessages() {
+	public List<PayloadMessage> getPayloadMessages() {
 		return payloadMessages;
 	}
 
@@ -81,27 +86,23 @@ public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
-		updateTable.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		try {
-			final byte nMessages = in.readByte();
-			for (int i = 0; i < nMessages; i++) {
-				final BroadcastMessage message = MessageTypes.readBroadcastMessage(in);
-				payloadMessages.add(message);
-			}
-		} catch (UnsupportedTypeException e) {
-			throw new IOException(e);
-		}
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
+		
+		UnserializationUtils.setFinalField(TableMessage.class, this, "updateTable", in.readObject());
+		payloadMessages.addAll(Arrays.asList((PayloadMessage[])in.readObject()));
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		updateTable.write(out);
-		SerializationUtils.writeCollection(payloadMessages, out);
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
+		
+		out.writeObject(updateTable);
+		out.writeObject(payloadMessages.toArray(new PayloadMessage[0]));
 	}
 
 	public void merge(final BroadcastMessage broadcastMessage, final Taxonomy taxonomy) {
@@ -109,6 +110,7 @@ public class TableMessage extends BroadcastMessage implements BigEnvelopeMessage
 		
 		final TableMessage tableMessage = (TableMessage) broadcastMessage;
 		updateTable.merge(tableMessage.updateTable, taxonomy);
-		payloadMessages.addAll(tableMessage.payloadMessages);		
+		
+		payloadMessages.addAll(tableMessage.payloadMessages);
 	}
 }

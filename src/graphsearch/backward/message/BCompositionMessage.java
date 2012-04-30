@@ -5,24 +5,31 @@ import graphcreation.services.Service;
 import graphsearch.SearchID;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.BroadcastMessage;
 import peer.message.MessageID;
-import peer.message.MessageTypes;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 
-public class BCompositionMessage extends RemoteMessage {
+public class BCompositionMessage extends RemoteMessage implements PayloadMessage {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// stores the services in the order they are added to the composition
 	private final Set<Service> compositionServices = new HashSet<Service>();
@@ -46,10 +53,9 @@ public class BCompositionMessage extends RemoteMessage {
 	private final short remainingTime;
 	
 	public BCompositionMessage() {
-		super(MessageTypes.BCOMPOSITION_MESSAGE);
-		sourceService = new Service();
-		searchID = new SearchID();
-		messagePart = new MessagePart();
+		sourceService = null;
+		searchID = null;
+		messagePart = null;
 		ttl = 0;
 		remainingTime = 0;
 	}
@@ -71,7 +77,7 @@ public class BCompositionMessage extends RemoteMessage {
 	 *            the peerID which created the message
 	 */
 	public BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final PeerID peerID) {
-		super(MessageTypes.BCOMPOSITION_MESSAGE, sourceService.getPeerID(), null, Collections.<PeerID> emptySet());
+		super(sourceService.getPeerID(), Collections.<PeerID> emptySet());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
@@ -85,7 +91,7 @@ public class BCompositionMessage extends RemoteMessage {
 	}
 
 	private BCompositionMessage(final SearchID searchID, final Service sourceService, final Set<ServiceDistance> destServices, final int ttl, final long remainingTime, final MessagePart newMessagePart) {
-		super(MessageTypes.BCOMPOSITION_MESSAGE, sourceService.getPeerID(), null, Collections.<PeerID> emptySet());
+		super(sourceService.getPeerID(), Collections.<PeerID> emptySet());
 		this.searchID = searchID;
 		this.destServices.addAll(destServices);
 		this.sourceService = sourceService;
@@ -193,10 +199,12 @@ public class BCompositionMessage extends RemoteMessage {
 	}
 
 	@Override
-	public BroadcastMessage copy() {
+	public PayloadMessage copy() {
 		final BCompositionMessage bCompositionMessage = new BCompositionMessage(getSearchID(), getSourceService(), getDestServices(), getTTL(), getRemainingTime(), getMessagePart());
 		bCompositionMessage.compositionServices.addAll(compositionServices);
+
 		copyDistances(bCompositionMessage.ancestorDistances, this.ancestorDistances);
+
 		return bCompositionMessage;
 	}
 
@@ -210,31 +218,49 @@ public class BCompositionMessage extends RemoteMessage {
 	}
 	
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		SerializationUtils.readServices(compositionServices, in);
-		SerializationUtils.readServiceDistances(destServices, in);
-		SerializationUtils.readServiceMap(ancestorDistances, in);
-		sourceService.read(in);
-		searchID.read(in);
-		SerializationUtils.setFinalField(BCompositionMessage.class, this, "ttl", in.readByte());
-		messagePart.read(in);
-		SerializationUtils.setFinalField(BCompositionMessage.class, this, "remainingTime", in.readShort());
+		compositionServices.addAll(Arrays.asList((Service[])in.readObject()));
+		destServices.addAll(Arrays.asList((ServiceDistance[])in.readObject()));
+		readMap(ancestorDistances, in);
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "sourceService", in.readObject());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "searchID", in.readObject());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "ttl", in.readByte());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "messagePart", in.readObject());
+		UnserializationUtils.setFinalField(BCompositionMessage.class, this, "remainingTime", in.readShort());
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeCollection(compositionServices, out);
-		SerializationUtils.writeCollection(destServices, out);
-
-		SerializationUtils.writeServiceMap(ancestorDistances, out);
-		sourceService.write(out);
-		searchID.write(out);
+		out.writeObject(compositionServices.toArray(new Service[0]));
+		out.writeObject(destServices.toArray(new ServiceDistance[0]));
+		writeMap(ancestorDistances, out);
+		out.writeObject(sourceService);
+		out.writeObject(searchID);
 		out.writeByte(ttl);
-		messagePart.write(out);
+		out.writeObject(messagePart);
 		out.writeShort(remainingTime);
+	}
+	
+	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
+		out.writeObject(map.keySet().toArray(new Service[0]));
+		out.writeShort(map.values().size());
+		for (Set<ServiceDistance> set : map.values())
+			out.writeObject(set.toArray(new ServiceDistance[0]));
+	}
+	
+	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
+		List<Service> keys = Arrays.asList((Service[])in.readObject());
+		short size = in.readShort();
+		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
+		for (int i = 0; i < size; i++) {
+			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));
+			values.add(value);
+		}
+		
+		UnserializationUtils.fillMap(map, keys, values);
 	}
 }

@@ -36,10 +36,11 @@ import multicast.search.message.SearchResponseMessage;
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
-import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 import util.logger.Logger;
@@ -88,7 +89,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	 *            the communication peer
 	 * 
 	 */
-	public CollisionGraphCreator(final ReliableBroadcastPeer peer, final MulticastMessageListener mMessageListener, final GraphCreationListener graphCreationListener, final GraphType graphType) {
+	public CollisionGraphCreator(final Peer peer, final MulticastMessageListener mMessageListener, final GraphCreationListener graphCreationListener, final GraphType graphType) {
 		this.peer = peer;
 		this.pSearch = new ParameterSearchImpl(peer, this, this);
 		this.collisionNode = new CollisionNode(peer, this, graphCreationListener, graphType);
@@ -121,7 +122,7 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	 * BroadcastMessage, java.util.Set)
 	 */
 	@Override
-	public void forwardMessage(final BroadcastMessage payload, final Set<Service> destinations, final boolean directBroadcast) {		
+	public void forwardMessage(final PayloadMessage payload, final Set<Service> destinations) {		
 		logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType() + " to " + destinations);
 		final Map<PeerID, Set<PeerID>> forwardTable = new HashMap<PeerID, Set<PeerID>>();
 		final Set<PeerID> directMulticast = new HashSet<PeerID>();
@@ -144,13 +145,13 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		//perform forwarding through different intermediate nodes
 		for (final Entry<PeerID, Set<PeerID>> forwardEntry : forwardTable.entrySet()) {
 			logger.trace("Peer " + peer.getPeerID() + " forwarding message to " + forwardEntry.getValue() + " through " + forwardEntry.getKey());
-			pSearch.sendMulticastMessage(Collections.singleton(forwardEntry.getKey()), new ForwardMessage(peer.getPeerID(), payload, forwardEntry.getValue()), directBroadcast);
+			pSearch.sendMulticastMessage(new PeerIDSet(Collections.singleton(forwardEntry.getKey())), new ForwardMessage(peer.getPeerID(), payload, forwardEntry.getValue()));
 		}
 		
 		//perform direct multicast
 		if (!directMulticast.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " multicasting to " + directMulticast);
-			pSearch.sendMulticastMessage(directMulticast, payload, directBroadcast);
+			pSearch.sendMulticastMessage(new PeerIDSet(directMulticast), payload);
 		}
 	}
 
@@ -412,15 +413,15 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		traceSDG();
 	}
 
-	private void processForwardMessage(final ForwardMessage forwardMessage, final int distance, boolean directBroadcast) {
+	private void processForwardMessage(final ForwardMessage forwardMessage, final int distance) {
 		logger.trace("Peer " + peer.getPeerID() + " accepted a forward message from " + forwardMessage.getSource() + " to " + forwardMessage.getDestinations());
 
 		// get destinations from services
-		pSearch.sendMulticastMessage(forwardMessage.getDestinations(), forwardMessage.getPayload(), distance, directBroadcast);
+		pSearch.sendMulticastMessage(new PeerIDSet(forwardMessage.getDestinations()), forwardMessage.getPayload(), distance);
 	}
 
 	@Override
-	public void multicastMessageAccepted(final PeerID source, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
+	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
 		if (!enabled)
 			return;
 		
@@ -431,10 +432,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		else if (payload instanceof RemovedServicesMessage)
 			collisionNode.processRemovedServicesMessage((RemovedServicesMessage) payload);
 		else if (payload instanceof ForwardMessage)
-			processForwardMessage((ForwardMessage) payload, distance, directBroadcast);
+			processForwardMessage((ForwardMessage) payload, distance);
 		else {
 			// the message must be processed by the upper layers
-			mMessageListener.multicastMessageAccepted(source, payload, distance, directBroadcast);
+			mMessageListener.multicastMessageAccepted(source, payload, distance);
 		}
 	}
 
@@ -452,11 +453,11 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 		
 		logger.trace("Peer " + peer.getPeerID() + " sending removed services message to " + notifiedPeers + " with removed services " + rServices);
 		final RemovedServicesMessage message = new RemovedServicesMessage(peer.getPeerID(), rServices);
-		pSearch.sendMulticastMessage(notifiedPeers, message, false);
+		pSearch.sendMulticastMessage(new PeerIDSet(notifiedPeers), message);
 	}
 
 	@Override
-	public BroadcastMessage searchReceived(final Set<Parameter> foundParameters, final MessageID routeID) {
+	public PayloadMessage searchReceived(final Set<Parameter> foundParameters, final MessageID routeID) {
 		// only messages containing a collision message as payload are valid
 
 		Set<Service> services;
@@ -557,10 +558,10 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	}
 
 	@Override
-	public BroadcastMessage parametersChanged(final PeerID neighbor, final Set<Parameter> newParameters, final Set<Parameter> removedParameters, 
+	public PayloadMessage parametersChanged(final PeerID neighbor, final Set<Parameter> newParameters, final Set<Parameter> removedParameters, 
 											final Set<Parameter> removedLocalParameters, final Map<Parameter, DistanceChange> changedParameters, 
-											final Set<Parameter> tableAdditions, final List<BroadcastMessage> payloadMessages) {
-		return collisionNode.parametersChanged(neighbor, removedParameters, changedParameters, tableAdditions, payloadMessages);
+											final Set<Parameter> addedParameters, final List<PayloadMessage> payloadMessages) {
+		return collisionNode.parametersChanged(neighbor, addedParameters, removedParameters, changedParameters, payloadMessages);
 	}
 
 	@Override

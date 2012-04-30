@@ -3,8 +3,8 @@ package multicast;
 import java.util.Set;
 
 import multicast.search.message.SearchResponseMessage;
-import peer.message.BroadcastMessage;
 import peer.message.MessageID;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import taxonomy.parameter.Parameter;
 
@@ -17,7 +17,7 @@ import taxonomy.parameter.Parameter;
  */
 public interface ParameterSearchListener extends MulticastMessageListener {
 
-	public BroadcastMessage searchReceived(Set<Parameter> foundParameters, MessageID routeID);
+	public PayloadMessage searchReceived(Set<Parameter> foundParameters, MessageID routeID);
 
 	/**
 	 * This method is called when searched parameters is found in some node

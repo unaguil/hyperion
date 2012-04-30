@@ -4,11 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,8 +14,6 @@ import multicast.search.message.SearchMessage.SearchType;
 
 import org.junit.Test;
 
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
@@ -112,30 +105,5 @@ public class SearchMessageTest {
 		results = searchMessage.generalizeParameters(generalizations, taxonomy);
 
 		assertTrue(results.isEmpty());
-	}
-	
-	@Test
-	public void testSerialization() throws IOException, UnsupportedTypeException, InvalidParameterIDException {
-		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
-		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-1", emptyTaxonomy), 3));
-		searchedParameters.add(new SearchedParameter(ParameterFactory.createParameter("I-2", emptyTaxonomy), 3));
-		final SearchMessage searchMessage = new SearchMessage(new PeerID("0"), emptySet, searchedParameters, null, 3, SearchType.Generic);
-		
-		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		final ObjectOutputStream out = new ObjectOutputStream(bos);
-		searchMessage.write(out);
-		out.close();
-		
-		assertEquals(41, bos.toByteArray().length);
-		
-		final ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-		final ObjectInputStream in = new ObjectInputStream(bis);
-		
-		final SearchMessage result = (SearchMessage) MessageTypes.readBroadcastMessage(in);
-		in.close();
-		assertEquals(searchMessage, result);
-		assertEquals(searchMessage.getDistance(), result.getDistance());
-		assertEquals(searchMessage.getRemoteMessageID(), result.getRemoteMessageID());
-		assertEquals(searchMessage.getSearchType(), result.getSearchType());
 	}
 }

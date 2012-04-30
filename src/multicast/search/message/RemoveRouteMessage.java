@@ -1,15 +1,14 @@
 package multicast.search.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import peer.message.MessageID;
-import peer.message.MessageTypes;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
 
 /**
  * This class defines a message which is used to remove invalid routes
@@ -18,11 +17,14 @@ import serialization.binary.SerializationUtils;
  * 
  */
 public class RemoveRouteMessage extends RemoteMessage {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	
 	private final Set<MessageID> lostRoutes = new HashSet<MessageID>();
 	
 	public RemoveRouteMessage() {
-		super(MessageTypes.REMOVE_ROUTE_MESSAGE);
 	}
 
 	/**
@@ -34,7 +36,7 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 *            the routes which have to be removed
 	 */
 	public RemoveRouteMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<MessageID> lostRoutes) {
-		super(MessageTypes.REMOVE_ROUTE_MESSAGE, source, null, expectedDestinations);
+		super(source, expectedDestinations);
 		this.lostRoutes.addAll(lostRoutes);
 	}
 
@@ -68,16 +70,16 @@ public class RemoveRouteMessage extends RemoteMessage {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		SerializationUtils.readMessageIDs(lostRoutes, in);
+		lostRoutes.addAll(Arrays.asList((MessageID[])in.readObject()));
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeCollection(lostRoutes, out);
+		out.writeObject(lostRoutes.toArray(new MessageID[0]));
 	}
 }

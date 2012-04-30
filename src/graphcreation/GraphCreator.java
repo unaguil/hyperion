@@ -7,7 +7,7 @@ import graphcreation.services.ServiceList;
 import java.util.Set;
 
 import multicast.ParameterSearch;
-import peer.message.BroadcastMessage;
+import peer.message.PayloadMessage;
 import serialization.xml.XMLSerializable;
 import taxonomy.Taxonomy;
 
@@ -15,7 +15,7 @@ public interface GraphCreator extends XMLSerializable {
 	
 	public enum GraphType { FORWARD, BACKWARD, BIDIRECTIONAL }
 
-	public void forwardMessage(BroadcastMessage payload, Set<Service> destinations, boolean directBroadcast);
+	public void forwardMessage(PayloadMessage payload, Set<Service> destinations);
 
 	/**
 	 * Intended for upper layers usage

@@ -103,7 +103,7 @@ public class ConnectionsManagerTest {
 	public void testUpdateConnections() throws InvalidParameterIDException {
 		assertTrue(cManager.updateConnections(searchResponseMessage1).isEmpty());
 
-		Map<Connection, Set<PeerID>> updatedConnections = cManager.updateConnections(searchResponseMessage2);
+		Map<Connection, PeerIDSet> updatedConnections = cManager.updateConnections(searchResponseMessage2);
 		assertEquals(1, updatedConnections.size());
 		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-2", emptyTaxonomy), (OutputParameter) ParameterFactory.createParameter("O-2", emptyTaxonomy)), emptyTaxonomy,  GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection));
@@ -332,7 +332,7 @@ public class ConnectionsManagerTest {
 		
 		assertTrue(cManagerWithTaxonomy.updateConnections(createSearchResponseMessageA(taxonomy)).isEmpty());
 
-		Map<Connection, Set<PeerID>> updatedConnections = cManagerWithTaxonomy.updateConnections(createSearchResponseMessageB(taxonomy));
+		Map<Connection, PeerIDSet> updatedConnections = cManagerWithTaxonomy.updateConnections(createSearchResponseMessageB(taxonomy));
 		assertEquals(3, updatedConnections.size());
 		final Connection connection = new Connection(new Collision((InputParameter) ParameterFactory.createParameter("I-A", taxonomy), (OutputParameter) ParameterFactory.createParameter("O-B", taxonomy)), taxonomy, GraphType.BIDIRECTIONAL);
 		assertTrue(updatedConnections.containsKey(connection));

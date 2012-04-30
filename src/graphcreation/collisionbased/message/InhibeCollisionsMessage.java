@@ -1,28 +1,32 @@
 package graphcreation.collisionbased.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.BroadcastMessage;
-import peer.message.MessageTypes;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
 
-public class InhibeCollisionsMessage extends RemoteMessage {
+public class InhibeCollisionsMessage extends RemoteMessage implements PayloadMessage {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final Set<Inhibition> inhibitedCollisions = new HashSet<Inhibition>();
 	
 	public InhibeCollisionsMessage() {
-		super(MessageTypes.INHIBE_COLLISIONS_MESSAGE);
+		
 	}
 
 	public InhibeCollisionsMessage(final PeerID source, final Set<Inhibition> inhibitions) {
-		super(MessageTypes.INHIBE_COLLISIONS_MESSAGE, source, null, Collections.<PeerID> emptySet());
+		super(source, Collections.<PeerID> emptySet());
 		inhibitedCollisions.addAll(inhibitions);
 	}
 
@@ -36,26 +40,21 @@ public class InhibeCollisionsMessage extends RemoteMessage {
 	}
 
 	@Override
-	public BroadcastMessage copy() {
+	public PayloadMessage copy() {
 		return new InhibeCollisionsMessage(getSource(), getInhibedCollisions());
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		final byte sCollisions = in.readByte();
-		for (int i = 0; i < sCollisions; i++) {
-			final Inhibition inhibition = new Inhibition();
-			inhibition.read(in);
-			inhibitedCollisions.add(inhibition);
-		}
+		inhibitedCollisions.addAll(Arrays.asList((Inhibition[])in.readObject()));
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeCollection(inhibitedCollisions, out);
+		out.writeObject(inhibitedCollisions.toArray(new Inhibition[0]));
 	}
 }

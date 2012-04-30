@@ -1,17 +1,19 @@
 package multicast.search.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import peer.message.MessageID;
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -22,10 +24,15 @@ import taxonomy.parameter.Parameter;
  */
 public class RemoveParametersMessage extends RemoteMessage {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private final Map<MessageID, Set<Parameter>> removedParameters = new HashMap<MessageID, Set<Parameter>>();
 
 	public RemoveParametersMessage() {
-		super(MessageTypes.REMOVE_PARAM_MESSAGE);
+		
 	}
 	
 	/**
@@ -39,7 +46,7 @@ public class RemoveParametersMessage extends RemoteMessage {
 	 *            the source of the message
 	 */
 	public RemoveParametersMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Map<MessageID, Set<Parameter>> removedParameters) {
-		super(MessageTypes.REMOVE_PARAM_MESSAGE, source, null, expectedDestinations);
+		super(source, expectedDestinations);
 		this.removedParameters.putAll(removedParameters);
 	}
 
@@ -70,20 +77,35 @@ public class RemoveParametersMessage extends RemoteMessage {
 	}
 	
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		try {
-			SerializationUtils.readParametersMap(removedParameters, in);
-		} catch (UnsupportedTypeException e) {
-			throw new IOException(e);
-		}
+		readMap(removedParameters, in);
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeParametersMap(removedParameters, out);
+		writeMap(removedParameters, out);
+	}
+	
+	private void writeMap(Map<MessageID, Set<Parameter>> map, ObjectOutput out) throws IOException {
+		out.writeObject(map.keySet().toArray(new MessageID[0]));
+		out.writeShort(map.values().size());
+		for (Set<Parameter> set : map.values())
+			out.writeObject(set.toArray(new Parameter[0]));
+	}
+	
+	private void readMap(Map<MessageID, Set<Parameter>> map, ObjectInput in) throws ClassNotFoundException, IOException {
+		List<MessageID> keys = Arrays.asList((MessageID[])in.readObject());
+		short size = in.readShort();
+		List<Set<Parameter>> values = new ArrayList<Set<Parameter>>();
+		for (int i = 0; i < size; i++) {
+			Set<Parameter> value = new HashSet<Parameter>(Arrays.asList((Parameter[])in.readObject()));
+			values.add(value);
+		}
+		
+		UnserializationUtils.fillMap(map, keys, values);
 	}
 }

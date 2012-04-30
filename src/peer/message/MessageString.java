@@ -1,12 +1,12 @@
 package peer.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Set;
 
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 
 /**
  * Example implementation of a message.
@@ -16,15 +16,19 @@ import serialization.binary.SerializationUtils;
  */
 public class MessageString extends BroadcastMessage {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private final String content;
 	
 	public MessageString() {
-		super(MessageTypes.MESSAGE_STRING);
-		content = new String();
+		content = null;
 	}
 
 	public MessageString(final PeerID sender, final Set<PeerID> expectedDestinations, final String content) {
-		super(MessageTypes.MESSAGE_STRING, sender, expectedDestinations);
+		super(sender, expectedDestinations);
 		this.content = content;
 	}
 
@@ -34,14 +38,16 @@ public class MessageString extends BroadcastMessage {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);		
-		SerializationUtils.setFinalField(MessageString.class, this, "content", in.readUTF());
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		
+		UnserializationUtils.setFinalField(MessageString.class, this, "content", in.readUTF());
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);		
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
 		out.writeUTF(content);
 	}
 }

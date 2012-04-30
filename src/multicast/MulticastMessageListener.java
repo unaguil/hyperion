@@ -1,6 +1,6 @@
 package multicast;
 
-import peer.message.BroadcastMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 
 public interface MulticastMessageListener {
@@ -14,5 +14,5 @@ public interface MulticastMessageListener {
 	 *            the payload included in the multicast message
 	 * @param distance
 	 */
-	public void multicastMessageAccepted(PeerID source, BroadcastMessage payload, int distance, boolean directBroadcast);
+	public void multicastMessageAccepted(PeerID source, PayloadMessage payload, int distance);
 }

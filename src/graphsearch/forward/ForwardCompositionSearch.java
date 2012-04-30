@@ -4,25 +4,27 @@ import graphcreation.GraphCreator.GraphType;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 import graphsearch.CompositionListener;
-import graphsearch.SearchID;
 import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
 import graphsearch.commonCompositionSearch.CommonCompositionSearch;
 import graphsearch.forward.forwardCompositionTable.ForwardCompositionData;
+import graphsearch.forward.message.CompositionModificationMessage;
 import graphsearch.forward.message.FCompositionMessage;
+import graphsearch.forward.message.InvalidCompositionsMessage;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import peer.ReliableBroadcastPeer;
+import peer.Peer;
 import peer.message.BroadcastMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 
 public class ForwardCompositionSearch extends CommonCompositionSearch {
 
 	private ForwardComposer forwardComposer;
 
-	public ForwardCompositionSearch(final ReliableBroadcastPeer peer, final CompositionListener compositionListener) {
+	public ForwardCompositionSearch(final Peer peer, final CompositionListener compositionListener) {
 		super(peer, compositionListener, GraphType.FORWARD);
 	}
 
@@ -33,19 +35,12 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		compositionData.start();
 
-		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this, DIRECT_BROADCAST);
+		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this);
 	}
 	
 	@Override
 	public void stop() {
 		super.stop();
-	}
-	
-	@Override
-	public SearchID startComposition(final Service searchedService) {
-		final SearchID searchID = super.startComposition(searchedService);
-		forwardComposer.initFComposition(getInitService(searchedService), searchID);
-		return searchID;
 	}
 
 	@Override
@@ -63,26 +58,28 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public void multicastMessageAccepted(final PeerID source, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
+	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
 		if (payload instanceof FCompositionMessage) {
 			final FCompositionMessage fCompositionMessage = (FCompositionMessage) payload;
 			fCompositionMessage.addHops(distance);
 			forwardComposer.receivedFComposition(fCompositionMessage);
 		}
+		if (payload instanceof InvalidCompositionsMessage)
+			forwardComposer.receivedInvalidComposition((InvalidCompositionsMessage) payload);
+		if (payload instanceof CompositionModificationMessage)
+			getShortestPathNotificator().processShortestPathNotificationMessage((CompositionModificationMessage) payload);
 	}
 
 	@Override
 	public void acceptShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
+		if (shortestPathNotificationMessage instanceof CompositionModificationMessage) {
+			final CompositionModificationMessage compositionModificationMessage = (CompositionModificationMessage) shortestPathNotificationMessage;
+			notifyCompositionModified(compositionModificationMessage.getSearchID(), compositionModificationMessage.getRemovedServices());
+		}
 	}
 
 	@Override
 	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		return false;		
-	}
-
-	@Override
-	public void initFComposition(final Service initService, final SearchID searchID) {
-		if (MSG_INTERVAL > 0)
-			forwardComposer.initFComposition(initService, searchID);
 	}
 }

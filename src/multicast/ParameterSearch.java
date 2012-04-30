@@ -5,8 +5,9 @@ import java.util.Set;
 
 import multicast.search.Route;
 import multicast.search.message.SearchMessage.SearchType;
-import peer.message.BroadcastMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import serialization.xml.XMLSerializable;
 import taxonomy.parameter.Parameter;
 import dissemination.ParameterDisseminator;
@@ -62,14 +63,25 @@ public interface ParameterSearch extends XMLSerializable {
 
 	// sends a remote multicast message. This message is routed to multiple
 	// remote destinations.
-	public void sendMulticastMessage(Set<PeerID> destinations, BroadcastMessage payload, boolean directBroadcast);
+	public void sendMulticastMessage(PeerIDSet destinations, PayloadMessage payload);
 	
-	public void sendMulticastMessage(Set<PeerID> destinations, BroadcastMessage payload, int distance, boolean directBroadcast);
+	public void sendMulticastMessage(PeerIDSet destinations, PayloadMessage payload, int distance);
+
+	/**
+	 * Sends a remote unicast message. This message is routed to a unique remote
+	 * destination.
+	 * 
+	 * @param destination
+	 *            the remote destination of the unicast message
+	 * @param payload
+	 *            the payload contained in the message
+	 */
+	public void sendUnicastMessage(PeerID destination, PayloadMessage payload);
 
 	// Sends a message which searches for specified parameters with default TTLs
-	public void sendSearchMessageDefaultTTL(Set<Parameter> parameters, BroadcastMessage payload, SearchType searchType);
+	public void sendSearchMessageDefaultTTL(Set<Parameter> parameters, PayloadMessage payload, SearchType searchType);
 	
-	public void sendSearchMessage(Set<SearchedParameter> searchedParameters, BroadcastMessage payload, SearchType searchType);
+	public void sendSearchMessage(Set<SearchedParameter> searchedParameters, PayloadMessage payload, SearchType searchType);
 
 	public Route getRoute(PeerID destination);
 

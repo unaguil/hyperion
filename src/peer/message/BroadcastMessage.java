@@ -1,15 +1,15 @@
 package peer.message;
 
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import peer.ReliableBroadcastPeer;
 import peer.peerid.PeerID;
-import serialization.binary.BSerializable;
+import serialization.binary.UnserializationUtils;
 
 /**
  * The type of message which are sent by the reliable broadcasting.
@@ -17,21 +17,23 @@ import serialization.binary.BSerializable;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public abstract class BroadcastMessage implements BSerializable {
-	
+public abstract class BroadcastMessage implements Externalizable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	// the identification of the message (peer, id)
 	private final MessageID messageID;
-	protected final byte mType;
 
-	protected Set<PeerID> expectedDestinations = new HashSet<PeerID>(); //not serialized
+	protected Set<PeerID> expectedDestinations = new HashSet<PeerID>();
 
-	public BroadcastMessage(final byte mType) {
-		this.messageID = new MessageID();
-		this.mType = mType;
+	public BroadcastMessage() {
+		messageID = null;
 	}
 	
-	public BroadcastMessage(final byte mType, final PeerID sender, final Set<PeerID> expectedDestinations) {
-		this.mType = mType;
+	public BroadcastMessage(final PeerID sender, final Set<PeerID> expectedDestinations) {
 		this.messageID = new MessageID(sender, MessageIDGenerator.getNewID());
 		this.expectedDestinations.addAll(expectedDestinations);
 	}
@@ -74,7 +76,7 @@ public abstract class BroadcastMessage implements BSerializable {
 			return false;
 
 		final BroadcastMessage broadcastMessage = (BroadcastMessage) o;
-		return this.mType == broadcastMessage.mType && this.messageID.equals(broadcastMessage.messageID);
+		return this.messageID.equals(broadcastMessage.messageID);
 	}
 
 	@Override
@@ -88,23 +90,12 @@ public abstract class BroadcastMessage implements BSerializable {
 	} 
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		messageID.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(BroadcastMessage.class, this, "messageID", in.readObject());
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		out.writeByte(mType);
-		messageID.write(out);
-	}
-	
-	public BroadcastMessage copy() {
-		return this;
-	}
-
-	public static Set<PeerID> removePropagatedNeighbors(final BroadcastMessage broadcastMessage, final ReliableBroadcastPeer peer) {
-		final Set<PeerID> neighbors = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors());
-		neighbors.remove(broadcastMessage.getSender());
-		return neighbors;
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(messageID);
 	}
 }

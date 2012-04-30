@@ -1,8 +1,6 @@
 package peer.message;
 
-import java.util.Set;
-
-import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 
 /**
  * This interface identifies those messages which are broadcasted to a set of
@@ -18,5 +16,5 @@ public interface MulticastMessage {
 	 * 
 	 * @return the set of destination neighbors
 	 */
-	public Set<PeerID> getDestNeighbors();
+	public PeerIDSet getDestNeighbors();
 }

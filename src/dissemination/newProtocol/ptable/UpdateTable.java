@@ -1,8 +1,9 @@
 package dissemination.newProtocol.ptable;
 
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,10 +11,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
-import serialization.binary.BSerializable;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
@@ -25,8 +24,12 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class UpdateTable implements BSerializable {
+public class UpdateTable implements Externalizable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final Map<Parameter, EstimatedDistance> deletions = new HashMap<Parameter, EstimatedDistance>();
 	private final Map<Parameter, EstimatedDistance> additions = new HashMap<Parameter, EstimatedDistance>();
@@ -169,29 +172,18 @@ public class UpdateTable implements BSerializable {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {		
-		readEstimatedDistances(additions, in);
-		readEstimatedDistances(deletions, in);
-	}
-
-	private void readEstimatedDistances(final Map<Parameter, EstimatedDistance> estimatedDistances, final ObjectInputStream in) throws IOException {
-		try {
-			final byte nEntries = in.readByte();
-			for (int i = 0; i < nEntries; i++) {
-				final Parameter p = Parameter.readParameter(in);
-				final EstimatedDistance eDistance = new EstimatedDistance();
-				eDistance.read(in);
-				estimatedDistances.put(p, eDistance);
-			}
-		} catch (UnsupportedTypeException e) {
-			throw new IOException(e);
-		}
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.readMap(additions, in);	
+		UnserializationUtils.readMap(deletions, in);
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {	
-		SerializationUtils.<Parameter, EstimatedDistance>writeMap(additions, out);
-		SerializationUtils.<Parameter, EstimatedDistance>writeMap(deletions, out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(additions.keySet().toArray(new Parameter[0]));
+		out.writeObject(additions.values().toArray(new EstimatedDistance[0]));
+		
+		out.writeObject(deletions.keySet().toArray(new Parameter[0]));
+		out.writeObject(deletions.values().toArray(new EstimatedDistance[0]));
 	}
 	
 	private boolean areRelated(final Parameter parameterA, final Parameter parameterB, final Taxonomy taxonomy) {
@@ -239,9 +231,5 @@ public class UpdateTable implements BSerializable {
 		if (postValue.getDistance() > currentValue.getDistance())
 			return postValue;
 		return currentValue;
-	}
-
-	public Set<Parameter> getAdditions() {
-		return new HashSet<Parameter>(additions.keySet());
 	}
 }

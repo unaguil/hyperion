@@ -1,11 +1,11 @@
 package peer.peerid;
 
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-import serialization.binary.BSerializable;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class is used for peer identification. It is implemented through the
@@ -14,7 +14,9 @@ import serialization.binary.SerializationUtils;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public final class PeerID implements Comparable<PeerID>, BSerializable {
+public final class PeerID implements Externalizable, Comparable<PeerID> {
+
+	private static final long serialVersionUID = 1L;
 	
 	private final int id;
 
@@ -56,12 +58,12 @@ public final class PeerID implements Comparable<PeerID>, BSerializable {
 	}
 
 	@Override
-	public void read(final ObjectInputStream in) throws IOException {
-		SerializationUtils.setFinalField(PeerID.class, this, "id", in.readInt());
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		UnserializationUtils.setFinalField(PeerID.class, this, "id", in.readInt());
 	}
 
 	@Override
-	public void write(final ObjectOutputStream out) throws IOException {
+	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeInt(id);
 	}
 }

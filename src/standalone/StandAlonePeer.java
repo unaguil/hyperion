@@ -15,8 +15,9 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Set;
 
+import peer.BasicPeer;
 import peer.CommProvider;
-import peer.ReliableBroadcastPeer;
+import peer.Peer;
 import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
 import util.logger.Logger;
@@ -28,7 +29,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 	protected static final String TEMP_DIR = "tmp";
 
 	// Basic peer
-	protected final ReliableBroadcastPeer peer;
+	protected final Peer peer;
 
 	// The UDP socket used by the peer for communication.
 	private MulticastSocket socket;
@@ -54,7 +55,7 @@ public class StandAlonePeer implements CommProvider, CompositionListener {
 
 		this.servicesDir = servicesDir;
 
-		peer = new ReliableBroadcastPeer(this);
+		peer = new BasicPeer(this);
 
 		compositionSearch = new ForwardCompositionSearch(peer, this);
 	}

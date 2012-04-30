@@ -29,7 +29,7 @@ import multicast.SearchedParameter;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
 import peer.Peer;
-import peer.message.BroadcastMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
 import taxonomy.parameter.Parameter;
@@ -58,9 +58,9 @@ class CollisionNode {
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
 
-	public BroadcastMessage parametersChanged(final PeerID sender, final Set<Parameter> removedParameters, 
-			final Map<Parameter, DistanceChange> changedParameters, 
-			final Set<Parameter> tableAdditions, final List<BroadcastMessage> payloadMessages) {
+	public PayloadMessage parametersChanged(final PeerID sender, final Set<Parameter> addedParameters, final Set<Parameter> removedParameters, 
+											final Map<Parameter, DistanceChange> changedParameters,
+											final List<PayloadMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		
 		if (!removedParameters.isEmpty()) {	
@@ -84,20 +84,42 @@ class CollisionNode {
 			}	
 		}
 		
-		final Set<Parameter> validParameters = getValidParameters(tableAdditions, changedParameters);
-		
+		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
 		final Set<Collision> collisions = new HashSet<Collision>();
-		if (!validParameters.isEmpty()) {
-			logger.debug("Peer " + peer.getPeerID() + " checking collisions for " + validParameters);
-			collisions.addAll(checkParametersCollisions(validParameters));
+		
+		if (!addedParameters.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " parameters added " + addedParameters + ", checking for collisions");
+			collisions.addAll(checkParametersCollisions(addedParameters));
+			
+		}
+
+		if (!changedParameters.isEmpty()) {			
+			final Map<Parameter, DistanceChange> validChanges = new HashMap<Parameter, DistanceChange>();
+			for (final Entry<Parameter, DistanceChange> changedParameter : changedParameters.entrySet()) {
+				if (changedParameter.getValue().getNewValue() > 0)
+					validChanges.put(changedParameter.getKey(), changedParameter.getValue());
+			}
+			
+			logger.trace("Peer " + peer.getPeerID() + " parameters estimated distance changed " + validChanges);
+			
+			collisions.addAll(checkParametersCollisions(validChanges.keySet()));
 		}
 		
-		final Set<Inhibition> inhibitions = getInhibitions(sender, collisions);
-		removeAlreadyDetectedCollisions(collisions);
+		processCollisions(sender, inhibitions, collisions);
+		
+		//remove already detected collisions
+		//TODO improve with taxonomy checking
+		synchronized (cManager) {
+			for (final Iterator<Collision> it = collisions.iterator(); it.hasNext(); ) {
+				Collision detectedCollision = it.next();
+				if (cManager.contains(detectedCollision))
+					it.remove();
+			}
+		}
 
 		// include those inhibitions received with the message which added the
 		// new parameters
-		for (final BroadcastMessage payload : payloadMessages) {
+		for (final PayloadMessage payload : payloadMessages) {
 			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
 			final Set<Inhibition> receivedInhibitions = inhibeCollisionsMessage.getInhibedCollisions();
 			if (!receivedInhibitions.isEmpty()) {
@@ -139,29 +161,6 @@ class CollisionNode {
 		return null;
 	}
 
-	private Set<Parameter> getValidParameters(final Set<Parameter> tableAdditions, final Map<Parameter, DistanceChange> changedParameters) {
-		final Set<Parameter> validParameters = new HashSet<Parameter>();
-		for (final Parameter p : tableAdditions) {
-			if (changedParameters.containsKey(p)) {
-				final DistanceChange dChange = changedParameters.get(p);
-				if (dChange.getNewValue() > dChange.getPreviousValue())
-					validParameters.add(p);
-			}
-		}
-		return validParameters;
-	}
-
-	private void removeAlreadyDetectedCollisions(final Set<Collision> collisions) {
-		//TODO improve with taxonomy checking
-		synchronized (cManager) {
-			for (final Iterator<Collision> it = collisions.iterator(); it.hasNext(); ) {
-				Collision detectedCollision = it.next();
-				if (cManager.contains(detectedCollision))
-					it.remove();
-			}
-		}
-	}
-
 	private void sendCollisionSearchMessage(final Set<Collision> collisions) {
 		final Set<SearchedParameter> searchedParameters = new HashSet<SearchedParameter>();
 		for (final Collision collision : collisions) {
@@ -177,9 +176,9 @@ class CollisionNode {
 		gCreator.getPSearch().sendSearchMessage(searchedParameters, null, SearchType.Generic);
 	}	
 
-	private final Set<Inhibition> getInhibitions(final PeerID sender, final Set<Collision> collisions) {
-		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
+	private void processCollisions(final PeerID sender, final Set<Inhibition> inhibitions, final Set<Collision> collisions) {
 		logger.trace("Peer " + peer.getPeerID() + " provisional collisions " + collisions);
+
 		Set<Collision> invalidCollisions = getInvalidCollisions(collisions, sender);
 		logger.trace("Peer " + peer.getPeerID() + " invalid collisions " + invalidCollisions);
 					
@@ -192,8 +191,6 @@ class CollisionNode {
 			
 		for (Collision validCollision : collisions)
 			inhibitions.add(new Inhibition(validCollision, PeerID.VOID_PEERID));
-		
-		return inhibitions;
 	}
 
 	private Set<Collision> getInvalidCollisions(final Set<Collision> newParametersCollisions, final PeerID neighbor) {
@@ -208,7 +205,7 @@ class CollisionNode {
 	// checks for new collisions taking into account the new added parameters.
 	// Returns the list of detected collisions
 	private Set<Collision> checkParametersCollisions(final Set<Parameter> addedParameters) {
-		return CollisionDetector.getParametersColliding(addedParameters, gCreator.getPSearch().getDisseminationLayer().getParameters(), false, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
+		return CollisionDetector.getParametersColliding(addedParameters, gCreator.getPSearch().getDisseminationLayer().getParameters(), true, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
 	}
 	
 	// checks if the collision must be detected by the current node
@@ -261,16 +258,16 @@ class CollisionNode {
 		sendDisconnectNotifications(notifications, true);
 	}
 	
-	private void sendDisconnectServicesMessage(final Set<Service> lostServices, final Set<PeerID> notifiedPeers, boolean servicesWereRemoved) {
+	private void sendDisconnectServicesMessage(final Set<Service> lostServices, final PeerIDSet notifiedPeers, boolean servicesWereRemoved) {
 		logger.trace("Peer " + peer.getPeerID() + " sending disconnect services message to " + notifiedPeers + " with lost services " + lostServices);
 		final DisconnectServicesMessage messageForOutputPeers = new DisconnectServicesMessage(peer.getPeerID(), lostServices, servicesWereRemoved);
-		gCreator.getPSearch().sendMulticastMessage(notifiedPeers, messageForOutputPeers, false);
+		gCreator.getPSearch().sendMulticastMessage(notifiedPeers, messageForOutputPeers);
 	}
 	
 	// sends the notifications for service disconnection
 	private void sendDisconnectNotifications(final Map<PeerIDSet, Set<Service>> notifications, boolean servicesWereRemoved) {			
 		for (final Entry<PeerIDSet, Set<Service>> entry : notifications.entrySet())
-			sendDisconnectServicesMessage(entry.getValue(), entry.getKey().getPeerSet(), servicesWereRemoved);
+			sendDisconnectServicesMessage(entry.getValue(), entry.getKey(), servicesWereRemoved);
 	}
 
 	public void processCollisionResponse(SearchResponseMessage searchResponseMessage) {
@@ -280,23 +277,23 @@ class CollisionNode {
 
 		// obtain the peers which must be notified with the found services
 		// information
-		final Map<Connection, Set<PeerID>> updatedConnections = new HashMap<Connection, Set<PeerID>>();
+		final Map<Connection, PeerIDSet> updatedConnections = new HashMap<Connection, PeerIDSet>();
 		synchronized (cManager) {
 			updatedConnections.putAll(cManager.updateConnections(searchResponseMessage));
 		}
 		
 		logger.trace("Peer " + peer.getPeerID() + " updated connections: " + updatedConnections);
 
-		final Set<PeerID> notifiedPeers = new HashSet<PeerID>();
+		final PeerIDSet notifiedPeers = new PeerIDSet();
 
 		final Map<Service, Set<ServiceDistance>> successors = new HashMap<Service, Set<ServiceDistance>>();
 		final Map<Service, Set<ServiceDistance>> ancestors = new HashMap<Service, Set<ServiceDistance>>();
 
-		for (final Entry<Connection, Set<PeerID>> e : updatedConnections.entrySet()) {
+		for (final Entry<Connection, PeerIDSet> e : updatedConnections.entrySet()) {
 			final Connection connection = e.getKey();
 			logger.trace("Peer " + peer.getPeerID() + " connection " + connection + " updated");
 
-			final Set<PeerID> partialPeers = e.getValue();
+			final PeerIDSet partialPeers = e.getValue();
 			final Map<ServiceDistance, Set<ServiceDistance>> currentSuccessors = getSuccessors(connection, collisionResponseMessage);
 			final Map<ServiceDistance, Set<ServiceDistance>> currentAncestors = getAncestors(connection, collisionResponseMessage);
 
@@ -319,7 +316,7 @@ class CollisionNode {
 				}
 
 			// Merge partial results
-			notifiedPeers.addAll(partialPeers);
+			notifiedPeers.addPeers(partialPeers);
 
 			addServices(successors, inverseSuccessors);
 
@@ -406,10 +403,10 @@ class CollisionNode {
 	}
 	
 	// sends a message including the passed connections
-	private void sendConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final Set<PeerID> notifiedPeers) {
+	private void sendConnectServicesMessage(final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors, final PeerIDSet notifiedPeers) {
 		logger.trace("Peer " + peer.getPeerID() + " sending connect services message to " + notifiedPeers + " RS:" + remoteSuccessors + " RA:" + remoteAncestors);
 		final ConnectServicesMessage messageForPeers = new ConnectServicesMessage(peer.getPeerID(), remoteSuccessors, remoteAncestors);
-		gCreator.getPSearch().sendMulticastMessage(notifiedPeers, messageForPeers, false);
+		gCreator.getPSearch().sendMulticastMessage(notifiedPeers, messageForPeers);
 	}
 	
 	private Set<ServiceDistance> updateDistances(final Set<ServiceDistance> serviceDistances, final Integer distance) {

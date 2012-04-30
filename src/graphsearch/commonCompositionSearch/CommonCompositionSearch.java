@@ -1,7 +1,5 @@
 package graphsearch.commonCompositionSearch;
 
-import floodsearch.InitCompositionListener;
-import floodsearch.RunningSearches;
 import graphcreation.GraphCreationListener;
 import graphcreation.GraphCreator;
 import graphcreation.GraphCreator.GraphType;
@@ -15,12 +13,13 @@ import graphsearch.CompositionSearch;
 import graphsearch.SearchID;
 import graphsearch.compositionData.CompositionData;
 import graphsearch.compositionData.ExpiredSearch;
+import graphsearch.compositionData.localSearchesTable.LocalSearchesTable.SearchStatus;
+import graphsearch.compositionData.localSearchesTable.SearchExpiredListener;
 import graphsearch.connectionsFilter.ConnectionsFilter;
 import graphsearch.shortestpathnotificator.ShortestPathListener;
 import graphsearch.shortestpathnotificator.ShortestPathNotificator;
 import graphsearch.util.Utility;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,16 +28,15 @@ import multicast.MulticastMessageListener;
 import peer.CommunicationLayer;
 import peer.Peer;
 import peer.RegisterCommunicationLayerException;
-import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
 import taxonomy.Taxonomy;
 import util.logger.Logger;
 import config.Configuration;
 
-public abstract class CommonCompositionSearch implements CommunicationLayer, MulticastMessageListener, GraphCreationListener, CompositionSearch, ShortestPathListener, InitCompositionListener {
+public abstract class CommonCompositionSearch implements CommunicationLayer, SearchExpiredListener, MulticastMessageListener, GraphCreationListener, CompositionSearch, ShortestPathListener {
 
 	// a reference to the communication peer
-	protected final ReliableBroadcastPeer peer;
+	protected final Peer peer;
 
 	// a reference to the graph creation layer
 	protected final GraphCreator gCreator;
@@ -53,22 +51,14 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 
 	// used to store composition data
 	protected CompositionData compositionData;
-	
-	protected Map<Service, SearchID> preparedCompositions = new HashMap<Service, SearchID>();
 
 	// default values
-	protected short MAX_TTL = Short.MAX_VALUE;
+	protected int MAX_TTL = 5;
 	protected long SEARCH_EXPIRATION = 10000;
-	
-	protected long MSG_INTERVAL = 0;
-	
-	protected boolean DIRECT_BROADCAST = false;
-
-	private RunningSearches runningSearches;
 
 	private final Logger logger = Logger.getLogger(CommonCompositionSearch.class);
 
-	public CommonCompositionSearch(final ReliableBroadcastPeer peer, final CompositionListener compositionListener, final GraphType graphType) {
+	public CommonCompositionSearch(final Peer peer, final CompositionListener compositionListener, final GraphType graphType) {
 		this.peer = peer;
 		this.gCreator = new CollisionGraphCreator(peer, this, this, graphType);
 		this.compositionListener = compositionListener;
@@ -103,9 +93,6 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 
 		logger.debug("Peer " + peer.getPeerID() + " received composition for search " + searchID + " hops: " + hops + " time: " + (System.currentTimeMillis() - startingTime));
 		compositionListener.compositionFound(composition, searchID, hops);
-		
-		if (MSG_INTERVAL > 0)
-			runningSearches.stopSearch(searchID);
 	}
 
 	@Override
@@ -153,11 +140,9 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 	public void expiredSearches(final Set<ExpiredSearch> expiredSearches) {
 		final ServiceList removedServices = new ServiceList();
 		for (final ExpiredSearch expiredSearch : expiredSearches) {
-			if (!expiredSearch.wasPrepared()) {
-				removedServices.addService(expiredSearch.getInitService());
-				removedServices.addService(expiredSearch.getGoalService());
-				compositionListener.compositionTimeExpired(expiredSearch.getSearchID());
-			}
+			removedServices.addService(expiredSearch.getInitService());
+			removedServices.addService(expiredSearch.getGoalService());
+			compositionListener.compositionTimeExpired(expiredSearch.getSearchID());
 		}
 		
 		manageLocalServices(new ServiceList(), removedServices);
@@ -178,7 +163,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 		try {
 			// Configure internal properties
 			final String maxTTL = Configuration.getInstance().getProperty("graphsearch.maxTTL");
-			MAX_TTL = Short.parseShort(maxTTL);
+			MAX_TTL = Integer.parseInt(maxTTL);
 			logger.info("Peer " + peer.getPeerID() + " set MAX_TTL to : " + MAX_TTL);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
@@ -187,73 +172,43 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 		try {
 			final String maxSearchTime = Configuration.getInstance().getProperty("graphsearch.searchExpiration");
 			SEARCH_EXPIRATION = Long.parseLong(maxSearchTime);
-			logger.info("Peer " + peer.getPeerID() + " SEARCH_EXPIRATION set to " + SEARCH_EXPIRATION);
+			logger.info("Peer " + peer.getPeerID() + " search expiration time: " + SEARCH_EXPIRATION);
 		} catch (final Exception e) {
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
-		
-		try {
-			final String msgInterval = Configuration.getInstance().getProperty("graphsearch.msgInterval");
-			MSG_INTERVAL = Long.parseLong(msgInterval);
-			logger.info("Peer " + peer.getPeerID() + " MSG_INTERVAL set to " + MSG_INTERVAL);
-		} catch (final Exception e) {
-			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
-		}
-		
-		try {
-			final String directBroadcast = Configuration.getInstance().getProperty("graphsearch.directBroadcast");
-			DIRECT_BROADCAST = Boolean.parseBoolean(directBroadcast);
-			logger.info("Peer " + peer.getPeerID() + " DIRECT_BROADCAST set to " + DIRECT_BROADCAST);
-		} catch (final Exception e) {
-			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
-		}
-		
-		shortestPathNotificator = new ShortestPathNotificator(peer.getPeerID(), gCreator, this, DIRECT_BROADCAST);
-		
-		runningSearches = new RunningSearches(SEARCH_EXPIRATION, true);
-		runningSearches.start();
+
+		shortestPathNotificator = new ShortestPathNotificator(peer.getPeerID(), gCreator, this);
 	}
 
 	@Override
 	public void stop() {
-		runningSearches.stopAndWait();
 		compositionData.stopAndWait();
 	}
 
 	@Override
 	public SearchID startComposition(final Service searchedService) {
-		boolean wasPrepared = false;
-		if (!wasCompositionPrepared(searchedService)) {
-			prepareComposition(searchedService);
-			wasPrepared = true;
-		}
-		
 		final SearchID searchID = new SearchID(peer.getPeerID());
 		logger.debug("Peer " + peer.getPeerID() + " started composition search " + searchID);
+		logger.debug("Peer " + peer.getPeerID() + " finding composition for service " + searchedService);
 		// the search is added to the search table as waiting
 		compositionData.addWaitingSearch(searchID);
-		startComposition(searchedService, MAX_TTL, SEARCH_EXPIRATION, searchID, wasPrepared);
+		startComposition(searchedService, MAX_TTL, SEARCH_EXPIRATION, searchID);
 		return searchID;
 	}
-	
-	protected boolean wasCompositionPrepared(final Service searchedService) {
-		return preparedCompositions.containsKey(searchedService);
-	}
-	
+
 	@Override
-	public SearchID prepareComposition(final Service searchedService) {
-		if (preparedCompositions.containsKey(searchedService)) {
-			logger.trace("Peer " + peer.getPeerID() + " already prepared composition for service " + searchedService);
-			return preparedCompositions.get(searchedService);
-		}
-		
-		final SearchID searchID = new SearchID(peer.getPeerID());
-		preparedCompositions.put(searchedService, searchID);
-		
-		logger.trace("Peer " + peer.getPeerID() + " preparing composition for service " + searchedService + " with searchID " + searchID);
-		final Service initService = Utility.createInitService(searchedService, searchID);
-		final Service goalService = Utility.createGoalService(searchedService, searchID);
-		
+	public boolean isRunningSearch(final SearchID searchID) {
+		return compositionData.getSearchStatus(searchID).equals(SearchStatus.RUNNING);
+	}
+
+	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
+		logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
+		final Service initService = Utility.createInitService(service, peer.getPeerID());
+		final Service goalService = Utility.createGoalService(service, peer.getPeerID());
+
+		// save the INIT and goal services with the current searchID
+		compositionData.addRunningSearch(searchID, initService, goalService, maxTTL, maxTime);
+
 		// Add INIT and GOAL services to current node
 		final ServiceList addedServices = new ServiceList();
 		addedServices.addService(initService);
@@ -263,23 +218,6 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 
 		logger.trace("Peer " + peer.getPeerID() + " added GOAL service " + goalService);
 		manageLocalServices(addedServices, new ServiceList());
-		return searchID;
-	}
-	
-	protected Service getInitService(final Service preparedComposition) {
-		final SearchID searchID = preparedCompositions.get(preparedComposition);
-		return Utility.createInitService(preparedComposition, searchID);
-	}
-	
-	protected Service getGoalService(final Service preparedComposition) {
-		final SearchID searchID = preparedCompositions.get(preparedComposition);
-		return Utility.createInitService(preparedComposition, searchID);
-	}
-	
-	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID, final boolean wasPrepared) {		
-		// save the INIT and goal services with the current searchID
-		compositionData.addRunningSearch(searchID, getInitService(service), getGoalService(service), maxTTL, maxTime, wasPrepared);
-		runningSearches.addRunningSearch(searchID, getInitService(service), getGoalService(service), service, this, MSG_INTERVAL);
 	}
 
 	public GraphCreator getGraphCreator() {
@@ -302,9 +240,5 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 	@Override
 	public void lostAncestors(final Map<Service, Set<Service>> lostAncestors) {
 		logger.debug("Peer " + peer.getPeerID() + " lost successors " + lostAncestors);
-	}
-
-	public boolean isDirectBroadcast() {
-		return DIRECT_BROADCAST;
 	}
 }

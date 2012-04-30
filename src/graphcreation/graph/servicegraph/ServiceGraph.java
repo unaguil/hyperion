@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +74,7 @@ public class ServiceGraph extends ANDORGraph<ServiceNode, ParameterNode> impleme
 		return g;
 	}
 
-	public List<ServiceNode> merge(final Collection<Service> services) {
+	public List<ServiceNode> merge(final List<Service> services) {
 		final List<ServiceNode> serviceNodes = new ArrayList<ServiceNode>();
 		for (final Service s : services)
 			serviceNodes.add(merge(s));

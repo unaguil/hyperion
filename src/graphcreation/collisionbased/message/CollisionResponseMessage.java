@@ -3,8 +3,8 @@ package graphcreation.collisionbased.message;
 import graphcreation.services.Service;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,28 +13,32 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.BroadcastMessage;
-import peer.message.MessageTypes;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
 
-public class CollisionResponseMessage extends RemoteMessage {
+public class CollisionResponseMessage extends RemoteMessage implements PayloadMessage {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final Map<Service, Byte> serviceDistanceTable = new HashMap<Service, Byte>();
 	
 	public CollisionResponseMessage() {
-		super(MessageTypes.COLLISION_RESPONSE_MESSAGE);
+		
 	}
 
 	public CollisionResponseMessage(final PeerID source, final Map<Service, Byte> serviceTable) {
-		super(MessageTypes.COLLISION_RESPONSE_MESSAGE, source, null, Collections.<PeerID> emptySet());
+		super(source, Collections.<PeerID> emptySet());
 		serviceDistanceTable.putAll(serviceTable);
 	}
 	
 	protected CollisionResponseMessage(final CollisionResponseMessage collisionResponseMessage) {
-		super(MessageTypes.COLLISION_RESPONSE_MESSAGE, collisionResponseMessage);
+		super(collisionResponseMessage);
 		
 		for (final Entry<Service, Byte> entry : collisionResponseMessage.serviceDistanceTable.entrySet())
 			serviceDistanceTable.put(entry.getKey(), new Byte(entry.getValue().byteValue()));
@@ -42,10 +46,6 @@ public class CollisionResponseMessage extends RemoteMessage {
 
 	public Set<Service> getServices() {
 		return new HashSet<Service>(serviceDistanceTable.keySet());
-	}
-	
-	public Set<Byte> getDistances() {
-		return new HashSet<Byte>(serviceDistanceTable.values());
 	}
 
 	public Integer getDistance(final Service s) {
@@ -82,7 +82,7 @@ public class CollisionResponseMessage extends RemoteMessage {
 	}
 
 	@Override
-	public BroadcastMessage copy() {		
+	public PayloadMessage copy() {		
 		return new CollisionResponseMessage(this);
 	}
 
@@ -94,22 +94,17 @@ public class CollisionResponseMessage extends RemoteMessage {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		final byte entrySize = in.readByte();
-		for (int i = 0; i < entrySize; i++) {
-			final Service service = new Service();
-			service.read(in);
-			final Byte value = new Byte(in.readByte());
-			serviceDistanceTable.put(service, value);
-		}
+		UnserializationUtils.readMap(serviceDistanceTable, in);
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeByteMap(serviceDistanceTable, out);
+		out.writeObject(serviceDistanceTable.keySet().toArray(new Service[0]));
+		out.writeObject(serviceDistanceTable.values().toArray(new Byte[0]));
 	}
 }

@@ -28,7 +28,7 @@ class BidirectionalForwardComposer extends ForwardComposer {
 	private final Logger logger = Logger.getLogger(BidirectionalForwardComposer.class);
 
 	public BidirectionalForwardComposer(final ForwardCompositionData fCompositionData, final BackwardCompositionData bCompositionData, final CommonCompositionSearch commonCompositionSearch) {
-		super(fCompositionData, commonCompositionSearch, commonCompositionSearch.isDirectBroadcast());
+		super(fCompositionData, commonCompositionSearch);
 
 		this.bCompositionData = bCompositionData;
 	}
@@ -40,7 +40,7 @@ class BidirectionalForwardComposer extends ForwardComposer {
 
 			logger.trace("Peer " + peer.getPeerID() + " covered all inputs for service " + service);
 
-			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(service, searchID, peer.getPeerID(), successors, fCompositionData, logger);
+			final FCompositionMessage mergedForwardMessage = mergeReceivedMessages(successors, service, searchID, peer.getPeerID(), fCompositionData, logger);
 
 			if (!Utility.isGoalService(service)) {
 				final Set<Service> exploredSuccessors = checkBackwardMessages(mergedForwardMessage, successors);

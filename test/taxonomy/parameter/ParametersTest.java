@@ -4,16 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import peer.message.UnsupportedTypeException;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 
@@ -78,39 +71,5 @@ public class ParametersTest {
 		assertFalse(i1.equals(o3));
 
 		assertFalse(i2.equals(o3));
-	}
-	
-	@Test
-	public void testInputSerialization() throws IOException, UnsupportedTypeException {		
-		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		final ObjectOutputStream out = new ObjectOutputStream(bos);
-		i1.write(out);
-		out.close();
-		
-		assertEquals(9, bos.toByteArray().length);
-		
-		final ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-		final ObjectInputStream in = new ObjectInputStream(bis);
-		
-		final Parameter p = Parameter.readParameter(in);
-		in.close();
-		assertEquals(i1, p);
-	}
-	
-	@Test
-	public void testOutputSerialization() throws IOException, UnsupportedTypeException {		
-		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		final ObjectOutputStream out = new ObjectOutputStream(bos);
-		o1.write(out);
-		out.close();
-		
-		assertEquals(9, bos.toByteArray().length);
-		
-		final ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-		final ObjectInputStream in = new ObjectInputStream(bis);
-		
-		final Parameter p = Parameter.readParameter(in);
-		in.close();
-		assertEquals(o1, p);
 	}
 }

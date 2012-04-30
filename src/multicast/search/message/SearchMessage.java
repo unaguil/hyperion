@@ -1,8 +1,10 @@
 package multicast.search.message;
 
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,12 +13,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.SearchedParameter;
-import peer.message.BroadcastMessage;
-import peer.message.MessageTypes;
-import peer.message.UnsupportedTypeException;
+import peer.message.EnvelopeMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.BSerializable;
-import serialization.binary.SerializationUtils;
+import serialization.binary.UnserializationUtils;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.Parameter;
 
@@ -29,10 +29,15 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class SearchMessage extends RemoteMessage {
+public class SearchMessage extends RemoteMessage implements EnvelopeMessage, PayloadMessage {
 
 	// this class is used to represent a searched parameter
-	private static class ParameterEntry implements BSerializable {
+	private static class ParameterEntry implements Externalizable {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 5041859241963577106L;
 
 		// the searched parameter
 		private final Parameter parameter;
@@ -40,6 +45,7 @@ public class SearchMessage extends RemoteMessage {
 		// the TTL of the search for this parameter
 		private final byte ttl;
 		
+		@SuppressWarnings("unused")
 		public ParameterEntry() {
 			parameter = null;
 			ttl = 0;
@@ -76,25 +82,25 @@ public class SearchMessage extends RemoteMessage {
 		}
 
 		@Override
-		public void read(ObjectInputStream in) throws IOException {
-			try {
-				final Parameter p = Parameter.readParameter(in);
-				SerializationUtils.setFinalField(ParameterEntry.class, this, "parameter", p);
-				SerializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readByte());
-			} catch (UnsupportedTypeException e) {
-				throw new IOException(e);
-			}
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "parameter", in.readObject());
+			UnserializationUtils.setFinalField(ParameterEntry.class, this, "ttl", in.readByte());
 		}
 
 		@Override
-		public void write(ObjectOutputStream out) throws IOException {
-			parameter.write(out);
+		public void writeExternal(ObjectOutput out) throws IOException {
+			out.writeObject(parameter);
 			out.writeByte(ttl);
 		}
 	}
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	// payload of the message
-	private final BroadcastMessage payload;
+	private final PayloadMessage payload;
 
 	// searched parameters
 	private final Map<Parameter, ParameterEntry> parameterEntries = new HashMap<Parameter, ParameterEntry>(); 
@@ -110,14 +116,13 @@ public class SearchMessage extends RemoteMessage {
 	private final PeerID previousSender;
 	
 	public SearchMessage() {
-		super(MessageTypes.SEARCH_MESSAGE);
 		payload = null;
-		searchType = SearchType.Exact;
-		previousSender = new PeerID();
+		searchType = null;
+		previousSender = null;
 	}
 	
-	public SearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<SearchedParameter> searchedParameters, final BroadcastMessage payload, final int distance, final SearchType searchType) {
-		super(MessageTypes.SEARCH_MESSAGE, source, payload, expectedDestinations, distance);
+	public SearchMessage(final PeerID source, final Set<PeerID> expectedDestinations, final Set<SearchedParameter> searchedParameters, final PayloadMessage payload, final int distance, final SearchType searchType) {
+		super(source, expectedDestinations, distance);
 		this.payload = payload;
 		this.searchType = searchType;
 		this.previousSender = PeerID.VOID_PEERID;
@@ -161,6 +166,11 @@ public class SearchMessage extends RemoteMessage {
 	 */
 	public Set<Parameter> getSearchedParameters() {
 		return new HashSet<Parameter>(parameterEntries.keySet());
+	}
+
+	@Override
+	public PayloadMessage getPayload() {
+		return payload;
 	}
 
 	/**
@@ -263,34 +273,31 @@ public class SearchMessage extends RemoteMessage {
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		try {
-			final byte nEntries = in.readByte();
-			for (int i = 0; i < nEntries; i++) {
-				final Parameter p = Parameter.readParameter(in);
-				final ParameterEntry pEntry = new ParameterEntry();
-				pEntry.read(in);
-				parameterEntries.put(p, pEntry);
-			}
-		} catch (UnsupportedTypeException e) {
-			throw new IOException(e);
-		}
+		UnserializationUtils.readMap(parameterEntries, in);
 		
 		SearchType type = SearchType.values()[in.readByte()];
-		SerializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
-		previousSender.read(in);
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "searchType", type);
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "previousSender", in.readObject());
+		UnserializationUtils.setFinalField(SearchMessage.class, this, "payload", in.readObject());
+		
+		expectedDestinations.addAll(Arrays.asList((PeerID[])in.readObject()));
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.<Parameter, ParameterEntry>writeMap(parameterEntries, out);
+		out.writeObject(parameterEntries.keySet().toArray(new Parameter[0]));
+		out.writeObject(parameterEntries.values().toArray(new ParameterEntry[0]));
 		
 		out.writeByte(searchType.ordinal());
-		previousSender.write(out);
+		out.writeObject(previousSender);
+		out.writeObject(payload);
+		
+		out.writeObject(expectedDestinations.toArray(new PeerID[0]));
 	}
 
 	public void removeParameter(Parameter p) {
@@ -298,7 +305,7 @@ public class SearchMessage extends RemoteMessage {
 	}
 
 	@Override
-	public BroadcastMessage copy() {
+	public PayloadMessage copy() {
 		return new SearchMessage(this, getSender(), getExpectedDestinations(), getDistance());
 	}
 }

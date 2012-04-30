@@ -97,13 +97,11 @@ public class SDGTaxonomy implements SDG {
 		final Set<ServiceDistance> successors = new HashSet<ServiceDistance>();
 		if (service.isLocal(peerID)) {
 			ServiceNode serviceNode = eServiceGraph.getServiceNode(service);
-			if (serviceNode != null) {
-				for (final ServiceNode successorNode : eServiceGraph.getSuccessors(serviceNode, false)) {
-					if (successorNode.getService().isLocal(peerID))
-						successors.add(new ServiceDistance(successorNode.getService(), new Integer(0)));
-					else
-						successors.add(new ServiceDistance(successorNode.getService(), getDistance(successorNode.getService().getPeerID())));
-				}
+			for (final ServiceNode successorNode : eServiceGraph.getSuccessors(serviceNode, false)) {
+				if (successorNode.getService().isLocal(peerID))
+					successors.add(new ServiceDistance(successorNode.getService(), new Integer(0)));
+				else
+					successors.add(new ServiceDistance(successorNode.getService(), getDistance(successorNode.getService().getPeerID())));
 			}
 		}
 		return successors;

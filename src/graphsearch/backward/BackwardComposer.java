@@ -98,7 +98,7 @@ public class BackwardComposer {
 
 					logger.trace("Peer " + peerID + " enqueuing message forwarding " + message + " for successors " + Collections.singleton(antecessor));
 					final Set<Service> destServices = Utility.getServices(coveringSet);
-					gCreator.forwardMessage(message, destServices, commonCompositionSearch.isDirectBroadcast());
+					gCreator.forwardMessage(message, destServices);
 				} else
 					logger.trace("Peer " + peerID + " discarded search message due to TTL");
 			}

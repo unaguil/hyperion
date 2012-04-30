@@ -11,11 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import peer.Peer;
 import peer.RegisterCommunicationLayerException;
-import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
 import peer.message.MessageSentListener;
+import peer.messagecounter.MessageCounter;
 import peer.peerid.PeerID;
+import peer.peerid.PeerIDSet;
 import util.WaitableThread;
 import util.logger.Logger;
 import util.timer.Timer;
@@ -50,18 +52,18 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		public void run() {			
 			while (!Thread.interrupted()) {
 				logger.trace("Peer " + peer.getPeerID() + " beacon thread running");
-				
+
 				// Get the time elapsed since the last packet (beacon or not)
 				// was sent by this node
 				final long elapsedTime = System.currentTimeMillis() - lastSentTime.get();
-	
+
 				// Clean old neighbors
 				beaconDetector.cleanOldNeighbors();
-	
+
 				// Check if a beacon must be sent. Beacons are only sent if a
 				// packet was not previously broadcasted by this node in a
 				// period of time
-	
+
 				final long sleepTime;
 				final int jitter = r.nextInt(MAX_JITTER);
 				final int beaconTime = BEACON_TIME - jitter;
@@ -116,14 +118,15 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	private final Set<PeerID> lostNeighbors = new HashSet<PeerID>();
 
 	// Reference to the peer
-	private final ReliableBroadcastPeer peer;
+	private final Peer peer;
+	private final MessageCounter msgCounter;
 
 	// Thread which sends beacons periodically
 	private BeaconSendThread beaconThread;
 
-	private BeaconMessage beaconMessage; 
+	private BeaconMessage beaconMessage;
 	
-	private static final int MAX_JITTER = 500;
+	private static final int MAX_JITTER = 25;
 
 	private long LOST_TIME;
 
@@ -140,8 +143,9 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	 * @param peer
 	 *            the peer which provides communication capabilities
 	 */
-	public BeaconDetector(final ReliableBroadcastPeer peer) {
+	public BeaconDetector(final Peer peer, final MessageCounter msgCounter) {
 		this.peer = peer;
+		this.msgCounter = msgCounter;
 
 		peer.addSentListener(this);
 
@@ -161,18 +165,18 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 	}
 
 	@Override
-	public Set<PeerID> getCurrentNeighbors() {
-		final Set<PeerID> currentNeighbors = new HashSet<PeerID>();
+	public PeerIDSet getCurrentNeighbors() {
+		final PeerIDSet currentNeighbors = new PeerIDSet();
 		synchronized (neighborsTable) {
-			currentNeighbors.addAll(neighborsTable.keySet());
+			currentNeighbors.addPeers(neighborsTable.keySet());
 		}
 		
 		synchronized (newNeighbors) {
-			currentNeighbors.addAll(newNeighbors);
+			currentNeighbors.addPeers(newNeighbors);
 			currentNeighbors.remove(lostNeighbors);
 		}
 		
-		return Collections.unmodifiableSet(currentNeighbors);
+		return currentNeighbors;
 	}
 
 	@Override
@@ -189,10 +193,7 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 		logger.trace("Peer " + peer.getPeerID() + " beacon time (" + BEACON_TIME + ")");
 
-		beaconMessage = new BeaconMessage(peer.getPeerID());
-		
-		final Random r = new Random(); 
-		lastSentTime.set(System.currentTimeMillis() - r.nextInt(BEACON_TIME));
+		beaconMessage = new BeaconMessage(peer.getPeerID(), peer.getDetector().getCurrentNeighbors().getPeerSet());
 
 		// Send initial beacon and schedule next
 		beaconThread = new BeaconSendThread(this);
@@ -258,7 +259,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 
 	// Send a beacon using broadcast provided by communication peer
 	private void sendBeacon() {
-		peer.directBroadcast(beaconMessage);
+		msgCounter.addSent(beaconMessage.getClass());
+		peer.broadcast(beaconMessage);
 	}
 
 	@Override

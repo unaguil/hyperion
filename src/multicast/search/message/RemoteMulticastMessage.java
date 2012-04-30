@@ -1,17 +1,17 @@
 package multicast.search.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
-import peer.message.BroadcastMessage;
-import peer.message.MessageTypes;
+import peer.message.EnvelopeMessage;
 import peer.message.MulticastMessage;
+import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
-import serialization.binary.SerializationUtils;
+import peer.peerid.PeerIDSet;
+import serialization.binary.UnserializationUtils;
 
 /**
  * This class defines a message which can be send to multiple remote nodes. It
@@ -20,59 +20,75 @@ import serialization.binary.SerializationUtils;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public class RemoteMulticastMessage extends RemoteMessage implements MulticastMessage {
+public class RemoteMulticastMessage extends RemoteMessage implements MulticastMessage, EnvelopeMessage {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// the remote destinations for this message
-	private final Set<PeerID> remoteDestinations = new HashSet<PeerID>();
+	private final PeerIDSet remoteDestinations = new PeerIDSet();
+
+	// the payload of the message
+	private final PayloadMessage payload;
 
 	// the nodes that the message is sent through
-	private final Set<PeerID> throughPeers = new HashSet<PeerID>();
-	
-	private final boolean directBroadcast;
+	private final PeerIDSet throughPeers = new PeerIDSet();
 	
 	public RemoteMulticastMessage() {
-		super(MessageTypes.REMOTE_MULTICAST_MESSAGE);
-		directBroadcast = false;
-	}
-	
-	protected RemoteMulticastMessage(final byte mType) {
-		super(mType);
-		directBroadcast = false;
+		payload = null;
 	}
 
-	protected RemoteMulticastMessage(final byte mType, final PeerID source, final Set<PeerID> remoteDestinations, final BroadcastMessage payload, final boolean directBroadcast) {
-		super(mType, source, payload, Collections.singleton(source));
-		this.remoteDestinations.addAll(remoteDestinations);
-		this.throughPeers.addAll(Collections.singleton(source));
-		this.directBroadcast = directBroadcast;
+	/**
+	 * Constructor of the remote multicast message
+	 * 
+	 * @param remoteDestinations
+	 *            the set containing the remote destinations for the message
+	 * @param payload
+	 *            the payload of the message
+	 * @param source
+	 *            the remote node which sent the message
+	 */
+	public RemoteMulticastMessage(final PeerID source, final PeerIDSet remoteDestinations, final PayloadMessage payload) {
+		super(source, Collections.singleton(source));
+		this.remoteDestinations.addPeers(remoteDestinations);
+		this.payload = payload;
+		this.throughPeers.addPeers(Collections.singleton(source));
 	}
 	
-	protected RemoteMulticastMessage(final byte mType, final PeerID source, final Set<PeerID> remoteDestinations, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
-		super(mType, source, payload, Collections.singleton(source), distance);
-		this.remoteDestinations.addAll(remoteDestinations);
-		this.throughPeers.addAll(Collections.singleton(source));
-		this.directBroadcast = directBroadcast;
-	}
-	
-	public RemoteMulticastMessage(final PeerID source, final Set<PeerID> remoteDestinations, final BroadcastMessage payload, final boolean directBroadcast) {
-		super(MessageTypes.REMOTE_MULTICAST_MESSAGE, source, payload, Collections.singleton(source));
-		this.remoteDestinations.addAll(remoteDestinations);
-		this.throughPeers.addAll(Collections.singleton(source));
-		this.directBroadcast = directBroadcast;
-	}
-	
-	public RemoteMulticastMessage(final PeerID source, final Set<PeerID> remoteDestinations, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
-		super(MessageTypes.REMOTE_MULTICAST_MESSAGE, source, payload, Collections.singleton(source), distance);
-		this.remoteDestinations.addAll(remoteDestinations);
-		this.throughPeers.addAll(Collections.singleton(source));
-		this.directBroadcast = directBroadcast;
+	public RemoteMulticastMessage(final PeerID source, final PeerIDSet remoteDestinations, final PayloadMessage payload, final int distance) {
+		super(source, Collections.singleton(source), distance);
+		this.remoteDestinations.addPeers(remoteDestinations);
+		this.payload = payload;
+		this.throughPeers.addPeers(Collections.singleton(source));
 	}
 
-	public RemoteMulticastMessage(final RemoteMulticastMessage multicastMessage, final PeerID sender, final Set<PeerID> throughPeers, final int newDistance) {
-		super(multicastMessage, sender, throughPeers, newDistance);
-		this.remoteDestinations.addAll(multicastMessage.getRemoteDestinations());
-		this.throughPeers.addAll(throughPeers);
-		this.directBroadcast = multicastMessage.directBroadcast;
+	/**
+	 * Constructor of the remote multicast message. It uses another message as
+	 * base.
+	 * 
+	 * @param remoteMessage
+	 *            the message used to construct this one
+	 * @param sender
+	 *            the new sender of the message
+	 * @param throughPeers
+	 *            the set of peers used to reached the destination nodes
+	 * @param respondingTo
+	 *            the message this one responds to
+	 * @param newDistance
+	 *            the new distance for the message
+	 */
+	public RemoteMulticastMessage(final RemoteMulticastMessage multicastMessage, final PeerID sender, final PeerIDSet throughPeers, final int newDistance) {
+		super(multicastMessage, sender, throughPeers.getPeerSet(), newDistance);
+		this.remoteDestinations.addPeers(multicastMessage.getRemoteDestinations());
+		this.payload = multicastMessage.getPayload();
+		this.throughPeers.addPeers(throughPeers);
+	}
+
+	@Override
+	public PayloadMessage getPayload() {
+		return payload;
 	}
 
 	/**
@@ -80,8 +96,8 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	 * 
 	 * @return a set containing the destinations of this message
 	 */
-	public Set<PeerID> getRemoteDestinations() {
-		return new HashSet<PeerID>(remoteDestinations);
+	public PeerIDSet getRemoteDestinations() {
+		return new PeerIDSet(remoteDestinations);
 	}
 
 	/**
@@ -89,7 +105,7 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	 * 
 	 * @return a set containing those neighbors used to sent the message
 	 */
-	public Set<PeerID> getThroughPeers() {
+	public PeerIDSet getThroughPeers() {
 		return throughPeers;
 	}
 
@@ -102,14 +118,15 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	public void removeRemoteDestination(final PeerID destination) {
 		remoteDestinations.remove(destination);
 	}
-	
-	public boolean isDirectBroadcas() {
-		return directBroadcast;
+
+	@Override
+	public PeerIDSet getDestNeighbors() {
+		return throughPeers;
 	}
 
 	@Override
-	public Set<PeerID> getDestNeighbors() {
-		return throughPeers;
+	public boolean hasPayload() {
+		return payload != null;
 	}
 
 	@Override
@@ -118,20 +135,28 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 	}
 
 	@Override
-	public void read(ObjectInputStream in) throws IOException {
-		super.read(in);
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
 		
-		SerializationUtils.readPeers(remoteDestinations, in);
-		SerializationUtils.readPeers(throughPeers, in);
-		SerializationUtils.setFinalField(RemoteMulticastMessage.class, this, "directBroadcast", in.readBoolean());
+		remoteDestinations.addPeers(Arrays.asList((PeerID[])in.readObject()));
+		throughPeers.addPeers(Arrays.asList((PeerID[])in.readObject()));
+		UnserializationUtils.setFinalField(RemoteMulticastMessage.class, this, "payload", in.readObject());
 	}
 
 	@Override
-	public void write(ObjectOutputStream out) throws IOException {
-		super.write(out);
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
 		
-		SerializationUtils.writeCollection(remoteDestinations, out);
-		SerializationUtils.writeCollection(throughPeers, out);
-		out.writeBoolean(directBroadcast);
+		out.writeObject(remoteDestinations.getPeerSet().toArray(new PeerID[0]));
+		out.writeObject(throughPeers.getPeerSet().toArray(new PeerID[0]));
+		out.writeObject(payload);
+	}
+
+	@Override
+	public String getType() {
+		if (payload != null)
+			return super.getType() + "(" + payload.getType() + ")";
+		
+		return super.getType();
 	}
 }
