@@ -11,7 +11,6 @@ import java.io.ObjectOutputStream;
 
 import org.junit.Test;
 
-import peer.peerid.PeerID;
 import taxonomy.BasicTaxonomy;
 import taxonomy.Taxonomy;
 import taxonomy.parameter.InputParameter;
@@ -28,7 +27,7 @@ public class InhibitionTest {
 		final Collision collision = new Collision((InputParameter)ParameterFactory.createParameter("I-1", emptyTaxonomy), 
 												  (OutputParameter)ParameterFactory.createParameter("O-1", emptyTaxonomy));
 
-		final Inhibition inhibition = new Inhibition(collision, new PeerID("3"));
+		final Inhibition inhibition = new Inhibition(collision);
 
 		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		final ObjectOutputStream out = new ObjectOutputStream(bos);

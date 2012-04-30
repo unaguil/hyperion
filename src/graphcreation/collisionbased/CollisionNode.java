@@ -36,7 +36,6 @@ import taxonomy.parameter.Parameter;
 import taxonomy.parameterList.ParameterList;
 import util.logger.Logger;
 import dissemination.DistanceChange;
-import dissemination.ParameterDisseminator;
 
 class CollisionNode {
 	
@@ -58,9 +57,9 @@ class CollisionNode {
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
 
-	public BroadcastMessage parametersChanged(final PeerID sender, final Set<Parameter> removedParameters, 
-			final Map<Parameter, DistanceChange> changedParameters, 
-			final Set<Parameter> tableAdditions, final List<BroadcastMessage> payloadMessages) {
+	public BroadcastMessage parametersChanged(final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, 
+			final Set<Parameter> tableAdditions, 
+			final List<BroadcastMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		
 		if (!removedParameters.isEmpty()) {	
@@ -92,7 +91,10 @@ class CollisionNode {
 			collisions.addAll(checkParametersCollisions(validParameters));
 		}
 		
-		final Set<Inhibition> inhibitions = getInhibitions(sender, collisions);
+		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
+		for (final Collision collision : collisions) 
+			inhibitions.add(new Inhibition(collision));
+		
 		removeAlreadyDetectedCollisions(collisions);
 
 		// include those inhibitions received with the message which added the
@@ -104,10 +106,8 @@ class CollisionNode {
 				logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + receivedInhibitions);
 	
 				// remove collisions using received inhibitions (checking if collision is applied)
-				for (Inhibition inhibedCollision : receivedInhibitions) {
-					if (!inhibedCollision.getNotAppliedTo().equals(peer.getPeerID()))
-						collisions.remove(inhibedCollision.getCollision());
-				}
+				for (Inhibition inhibedCollision : receivedInhibitions)
+					collisions.remove(inhibedCollision.getCollision());
 				
 				logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);
 					
@@ -177,77 +177,10 @@ class CollisionNode {
 		gCreator.getPSearch().sendSearchMessage(searchedParameters, null, SearchType.Generic);
 	}	
 
-	private final Set<Inhibition> getInhibitions(final PeerID sender, final Set<Collision> collisions) {
-		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
-		logger.trace("Peer " + peer.getPeerID() + " provisional collisions " + collisions);
-		Set<Collision> invalidCollisions = getInvalidCollisions(collisions, sender);
-		logger.trace("Peer " + peer.getPeerID() + " invalid collisions " + invalidCollisions);
-					
-		for (Collision invalidCollision : invalidCollisions) {
-			collisions.remove(invalidCollision);
-			inhibitions.add(new Inhibition(invalidCollision, sender));
-		}
-		
-		logger.trace("Peer " + peer.getPeerID() + " collisions after removing invalid " + collisions);
-			
-		for (Collision validCollision : collisions)
-			inhibitions.add(new Inhibition(validCollision, PeerID.VOID_PEERID));
-		
-		return inhibitions;
-	}
-
-	private Set<Collision> getInvalidCollisions(final Set<Collision> newParametersCollisions, final PeerID neighbor) {
-		final Set<Collision> invalidCollisions = new HashSet<Collision>();
-		for (final Collision collision : newParametersCollisions) {
-			if (!isCollisionValid(collision, neighbor))
-				invalidCollisions.add(collision);
-		}
-		return invalidCollisions;
-	}
-
 	// checks for new collisions taking into account the new added parameters.
 	// Returns the list of detected collisions
 	private Set<Collision> checkParametersCollisions(final Set<Parameter> addedParameters) {
 		return CollisionDetector.getParametersColliding(addedParameters, gCreator.getPSearch().getDisseminationLayer().getParameters(), false, gCreator.getPSearch().getDisseminationLayer().getTaxonomy());
-	}
-	
-	// checks if the collision must be detected by the current node
-	private boolean isCollisionValid(final Collision collision, final PeerID neighbor) {
-		// all collisions produced by local parameters are valid
-		if (neighbor.equals(peer.getPeerID()))
-			return true;
-
-		final ParameterDisseminator dissemination = gCreator.getPSearch().getDisseminationLayer();
-
-		logger.trace("Peer " + peer.getPeerID() + " I:" + dissemination.getEstimatedDistance(collision.getInput()) + " O:" + dissemination.getEstimatedDistance(collision.getOutput()));
-		final int localSum = dissemination.getEstimatedDistance(collision.getInput()) + dissemination.getEstimatedDistance(collision.getOutput());
-
-		logger.trace("Peer " + peer.getPeerID() + " localSum: " + localSum);
-
-		// obtain the estimated distance for the colliding parameters according
-		// to the values in the local table
-		final int neighborInput = (dissemination.getDistance(collision.getInput(), neighbor) == 0) ? dissemination.getEstimatedDistance(collision.getInput()) - 1 : dissemination.getDistance(collision.getInput(), neighbor) + 1;
-		final int neighborOutput = (dissemination.getDistance(collision.getOutput(), neighbor) == 0) ? dissemination.getEstimatedDistance(collision.getOutput()) - 1 : dissemination.getDistance(collision.getOutput(), neighbor) + 1;
-		if (neighborInput == 0 || neighborOutput == 0)
-			return true;
-
-		final int neighborSum = neighborInput + neighborOutput;
-
-		logger.trace("Peer " + peer.getPeerID() + " I:" + neighborInput + " O:" + neighborOutput);
-
-		logger.trace("Peer " + peer.getPeerID() + " neighbor: " + neighbor + " sum: " + neighborSum);
-
-		// collision is valid if the local sum for colliding parameters is
-		// greater than the sum estimated for the neighbor
-		if (localSum > neighborSum)
-			return true;
-
-		// if it is equal the collision is valid if the local identifier is
-		// greater than the one which sent the update message
-		if (localSum == neighborSum)
-			return peer.getPeerID().compareTo(neighbor) > 0;
-
-		return false;
 	}
 	
 	public void processRemovedServicesMessage(final RemovedServicesMessage removedServicesMessage) {
