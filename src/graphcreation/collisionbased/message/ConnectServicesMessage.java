@@ -4,39 +4,32 @@ import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.PayloadMessage;
+import peer.message.BroadcastMessage;
+import peer.message.MessageTypes;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.SerializationUtils;
 
-public class ConnectServicesMessage extends RemoteMessage implements PayloadMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class ConnectServicesMessage extends RemoteMessage {
 
 	private final Map<Service, Set<ServiceDistance>> remoteSuccessors = new HashMap<Service, Set<ServiceDistance>>();
 	private final Map<Service, Set<ServiceDistance>> remoteAncestors = new HashMap<Service, Set<ServiceDistance>>();
 	
 	public ConnectServicesMessage() {
-		
+		super(MessageTypes.CONNECT_SERVICES_MESSAGE);
 	}
 
 	public ConnectServicesMessage(final PeerID source, final Map<Service, Set<ServiceDistance>> remoteSuccessors, final Map<Service, Set<ServiceDistance>> remoteAncestors) {
-		super(source, Collections.<PeerID> emptySet());
+		super(MessageTypes.CONNECT_SERVICES_MESSAGE, source, null, Collections.<PeerID> emptySet());
 		this.remoteAncestors.putAll(remoteAncestors);
 		this.remoteSuccessors.putAll(remoteSuccessors);
 	}
@@ -64,42 +57,23 @@ public class ConnectServicesMessage extends RemoteMessage implements PayloadMess
 	}
 
 	@Override
-	public PayloadMessage copy() {
+	public BroadcastMessage copy() {
 		return new ConnectServicesMessage(getSource(), deepCopyMap(getRemoteSuccessors()), deepCopyMap(getRemoteAncestors()));
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
 		
-		readMap(remoteSuccessors, in);
-		readMap(remoteAncestors, in);
-	}
-
-	private void readMap(Map<Service, Set<ServiceDistance>> map, ObjectInput in) throws ClassNotFoundException, IOException {
-		List<Service> keys = Arrays.asList((Service[])in.readObject());
-		short size = in.readShort();
-		List<Set<ServiceDistance>> values = new ArrayList<Set<ServiceDistance>>();
-		for (int i = 0; i < size; i++) {
-			Set<ServiceDistance> value = new HashSet<ServiceDistance>(Arrays.asList((ServiceDistance[])in.readObject()));
-			values.add(value);
-		}
-		
-		UnserializationUtils.fillMap(map, keys, values);
+		SerializationUtils.readServiceMap(remoteSuccessors, in);
+		SerializationUtils.readServiceMap(remoteAncestors, in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		writeMap(remoteSuccessors, out);
-		writeMap(remoteAncestors, out);
-	}
-
-	private void writeMap(Map<Service, Set<ServiceDistance>> map, ObjectOutput out) throws IOException {
-		out.writeObject(map.keySet().toArray(new Service[0]));
-		out.writeShort(map.values().size());
-		for (Set<ServiceDistance> set : map.values())
-			out.writeObject(set.toArray(new ServiceDistance[0]));
+		SerializationUtils.writeServiceMap(remoteSuccessors, out);
+		SerializationUtils.writeServiceMap(remoteAncestors, out);
 	}
 }

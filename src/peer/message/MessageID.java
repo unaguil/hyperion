@@ -1,26 +1,23 @@
 package peer.message;
 
-import java.io.Externalizable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.BSerializable;
+import serialization.binary.SerializationUtils;
 
-public class MessageID implements Externalizable, Comparable<MessageID> {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class MessageID implements Comparable<MessageID>, BSerializable {
 
 	private final PeerID peer;
 
 	private final short id;
 	
 	public MessageID() {
-		peer = null;
+		peer = new PeerID();
 		id = 0;
 	}
 
@@ -75,14 +72,28 @@ public class MessageID implements Externalizable, Comparable<MessageID> {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(MessageID.class, this, "peer", in.readObject());
-		UnserializationUtils.setFinalField(MessageID.class, this, "id", in.readShort());
+	public void read(ObjectInputStream in) throws IOException {
+		peer.read(in); 
+		SerializationUtils.setFinalField(MessageID.class, this, "id", in.readShort());
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeObject(peer);
+	public void write(ObjectOutputStream out) throws IOException {
+		peer.write(out);
 		out.writeShort(id);
+	}
+	
+	public static void main(final String args[]) {
+		try {					
+			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			final ObjectOutput out = new ObjectOutputStream(baos);
+			for (int i = 0; i < 200; i++)
+				out.writeInt(Integer.MAX_VALUE);
+		
+			out.close();
+			System.out.println("Serialization length: " + baos.toByteArray().length);
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

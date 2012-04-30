@@ -37,24 +37,23 @@ public class UpdateTableTest {
 	}
 
 	@Test
-	public void testSerialization() throws IOException, ClassNotFoundException, InvalidParameterIDException {
+	public void testSerialization() throws IOException, InvalidParameterIDException {
 		final UpdateTable updateTable = new UpdateTable();
 		updateTable.setAddition(ParameterFactory.createParameter("I-A", taxonomy), 3, new PeerID("0"));
 		updateTable.setAddition(ParameterFactory.createParameter("I-B", taxonomy), 3, new PeerID("0"));
 		updateTable.setDelete(ParameterFactory.createParameter("I-B", taxonomy), new PeerID("0"));
 
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		final ObjectOutputStream os = new ObjectOutputStream(baos);
-
-		os.writeObject(updateTable);
-
+		final ObjectOutputStream out = new ObjectOutputStream(baos);
+		updateTable.write(out);
+		out.close();
+		
 		final byte[] data = baos.toByteArray();
 
-		os.close();
-		baos.close();
-
-		final ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(data));
-		final UpdateTable result = (UpdateTable) is.readObject();
+		final ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data));
+		final UpdateTable result = new UpdateTable();
+		result.read(in);
+		in.close();
 
 		assertEquals(updateTable, result);
 	} 

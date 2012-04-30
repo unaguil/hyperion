@@ -110,8 +110,8 @@ public class Connection {
 	 *            the taxonomy to use during management
 	 * @return the peers which must be notified after the change
 	 */
-	public PeerIDSet addSearchResponse(final SearchResponseMessage searchResponseMessage) {
-		final PeerIDSet notifiedPeers = new PeerIDSet();
+	public Set<PeerID> addSearchResponse(final SearchResponseMessage searchResponseMessage) {
+		final Set<PeerID> notifiedPeers = new HashSet<PeerID>();
 		if (searchResponseMessage.getPayload() != null && searchResponseMessage.getPayload() instanceof CollisionResponseMessage)
 			// Check if input subsumes any of the received parameters
 			for (final Parameter p : searchResponseMessage.getParameters())
@@ -123,11 +123,11 @@ public class Connection {
 						if (notifyOutputs()) {
 							// Notify output peers if it is connected
 							for (final CollisionResponseMessage outputResponse : getConnectedOutputResponses((CollisionResponseMessage)searchResponseMessage.getPayload()))
-								notifiedPeers.addPeer(outputResponse.getSource());
+								notifiedPeers.add(outputResponse.getSource());
 						}
 						// And the added input peer
 						if (notifyInputs())
-							notifiedPeers.addPeer(searchResponseMessage.getSource());
+							notifiedPeers.add(searchResponseMessage.getSource());
 					}
 					// if response contains any parameter which is subsumed by
 					// the output of the collision add it as output response
@@ -137,11 +137,11 @@ public class Connection {
 						if (notifyInputs()) {
 							// Notify input peers if it is connected
 							for (final CollisionResponseMessage inputResponse : getConnectedInputResponses((CollisionResponseMessage)searchResponseMessage.getPayload()))
-								notifiedPeers.addPeer(inputResponse.getSource());
+								notifiedPeers.add(inputResponse.getSource());
 						}
 						// And the added output peer
 						if (notifyOutputs())
-							notifiedPeers.addPeer(searchResponseMessage.getSource());
+							notifiedPeers.add(searchResponseMessage.getSource());
 					}
 				}
 

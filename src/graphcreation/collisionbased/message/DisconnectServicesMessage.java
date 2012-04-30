@@ -3,35 +3,31 @@ package graphcreation.collisionbased.message;
 import graphcreation.services.Service;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.PayloadMessage;
+import peer.message.BroadcastMessage;
+import peer.message.MessageTypes;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.SerializationUtils;
 
-public class DisconnectServicesMessage extends RemoteMessage implements PayloadMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class DisconnectServicesMessage extends RemoteMessage {
 
 	private final Set<Service> lostServices = new HashSet<Service>();
 	
 	private final boolean servicesWereRemoved;
 	
 	public DisconnectServicesMessage() {
+		super(MessageTypes.DISCONNECT_SERVICES_MESSAGE);
 		this.servicesWereRemoved = true;
 	}
 
 	public DisconnectServicesMessage(final PeerID source, final Set<Service> lostServices, final boolean servicesWereRemoved) {
-		super(source, Collections.<PeerID> emptySet());
+		super(MessageTypes.DISCONNECT_SERVICES_MESSAGE, source, null, Collections.<PeerID> emptySet());
 		this.lostServices.addAll(lostServices);
 		this.servicesWereRemoved = servicesWereRemoved;
 	}
@@ -54,23 +50,23 @@ public class DisconnectServicesMessage extends RemoteMessage implements PayloadM
 	}
 
 	@Override
-	public PayloadMessage copy() {
+	public BroadcastMessage copy() {
 		return new DisconnectServicesMessage(getSource(), getLostServices(), servicesWereRemoved);
 	}
 	
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
 		
-		lostServices.addAll(Arrays.asList((Service[])in.readObject()));
-		UnserializationUtils.setFinalField(DisconnectServicesMessage.class, this, "servicesWereRemoved", in.readBoolean());
+		SerializationUtils.readServices(lostServices, in);
+		SerializationUtils.setFinalField(DisconnectServicesMessage.class, this, "servicesWereRemoved", in.readBoolean());
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		out.writeObject(lostServices.toArray(new Service[0]));
+		SerializationUtils.writeCollection(lostServices, out);
 		out.writeBoolean(servicesWereRemoved);
 	}
 }

@@ -3,32 +3,28 @@ package graphcreation.collisionbased.message;
 import graphcreation.services.Service;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.PayloadMessage;
+import peer.message.BroadcastMessage;
+import peer.message.MessageTypes;
 import peer.peerid.PeerID;
+import serialization.binary.SerializationUtils;
 
-public class RemovedServicesMessage extends RemoteMessage implements PayloadMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class RemovedServicesMessage extends RemoteMessage {
 
 	private final Set<Service> lostServices = new HashSet<Service>();
 	
 	public RemovedServicesMessage() {
-		
+		super (MessageTypes.REMOVED_SERVICE_MESSAGE);
 	}
 
 	public RemovedServicesMessage(final PeerID source, final Set<Service> lostServices) {
-		super(source, Collections.<PeerID> emptySet());
+		super(MessageTypes.REMOVED_SERVICE_MESSAGE, source, null, Collections.<PeerID> emptySet());
 		this.lostServices.addAll(lostServices);
 	}
 
@@ -42,21 +38,21 @@ public class RemovedServicesMessage extends RemoteMessage implements PayloadMess
 	}
 
 	@Override
-	public PayloadMessage copy() {
+	public BroadcastMessage copy() {
 		return new RemovedServicesMessage(getSource(), getLostServices());
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
 		
-		lostServices.addAll(Arrays.asList((Service[])in.readObject()));
+		SerializationUtils.readServices(lostServices, in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		out.writeObject(lostServices.toArray(new Service[0]));
+		SerializationUtils.writeCollection(lostServices, out);
 	}
 }

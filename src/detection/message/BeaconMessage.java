@@ -1,8 +1,10 @@
 package detection.message;
 
-import java.util.Set;
+
+import java.util.Collections;
 
 import peer.message.BroadcastMessage;
+import peer.message.MessageTypes;
 import peer.peerid.PeerID;
 
 /**
@@ -12,14 +14,9 @@ import peer.peerid.PeerID;
  * 
  */
 public class BeaconMessage extends BroadcastMessage {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 	
 	public BeaconMessage() {
-		
+		super(MessageTypes.BEACON_MESSAGE);
 	}
 
 	/**
@@ -30,8 +27,8 @@ public class BeaconMessage extends BroadcastMessage {
 	 * @param sentTime
 	 *            the time when the message was sent
 	 */
-	public BeaconMessage(final PeerID sender, final Set<PeerID> expectedDestinations) {
-		super(sender, expectedDestinations);
+	public BeaconMessage(final PeerID sender) {
+		super(MessageTypes.BEACON_MESSAGE, sender, Collections.<PeerID>emptySet());
 	}
 
 	@Override

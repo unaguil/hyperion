@@ -11,7 +11,6 @@ import graphsearch.backward.message.BCompositionMessage;
 import graphsearch.bidirectionalsearch.message.CompositionNotificationMessage;
 import graphsearch.bidirectionalsearch.message.ShortestPathNotificationMessage;
 import graphsearch.commonCompositionSearch.CommonCompositionSearch;
-import graphsearch.compositionData.localSearchesTable.LocalSearchesTable.SearchStatus;
 import graphsearch.forward.forwardCompositionTable.ForwardCompositionData;
 import graphsearch.forward.message.FCompositionMessage;
 import graphsearch.shortestpathnotificator.ShortestPathCalculator;
@@ -21,9 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import peer.Peer;
+import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
-import peer.message.PayloadMessage;
 import peer.peerid.PeerID;
 import taxonomy.Taxonomy;
 import util.logger.Logger;
@@ -37,7 +35,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 
 	private final Logger logger = Logger.getLogger(BidirectionalSearch.class);
 
-	public BidirectionalSearch(final Peer peer, final CompositionListener compositionListener) {
+	public BidirectionalSearch(final ReliableBroadcastPeer peer, final CompositionListener compositionListener) {
 		super(peer, compositionListener, GraphType.BIDIRECTIONAL);
 	}
 
@@ -56,11 +54,6 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public boolean isRunningSearch(final SearchID searchID) {
-		return compositionData.getSearchStatus(searchID).equals(SearchStatus.RUNNING) || bCompositionData.getSearchStatus(searchID).equals(SearchStatus.RUNNING);
-	}
-
-	@Override
 	public SearchID startComposition(final Service searchedService) {
 		final SearchID searchID = new SearchID(peer.getPeerID());
 		logger.debug("Peer " + peer.getPeerID() + " started composition search " + searchID);
@@ -68,19 +61,19 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 		// the search is added to the search table as waiting
 		compositionData.addWaitingSearch(searchID);
 		bCompositionData.addWaitingSearch(searchID);
-		startComposition(searchedService, MAX_TTL, SEARCH_EXPIRATION, searchID);
+		startComposition(searchedService, MAX_TTL, SEARCH_EXPIRATION, searchID, false);
 		return searchID;
 	}
 
 	@Override
-	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID) {
+	protected void startComposition(final Service service, final int maxTTL, final long maxTime, final SearchID searchID, final boolean wasPrepared) {
 		logger.trace("Peer " + peer.getPeerID() + " starting composition process: " + searchID + " of service: " + service);
-		final Service initService = Utility.createInitService(service, peer.getPeerID());
-		final Service goalService = Utility.createGoalService(service, peer.getPeerID());
+		final Service initService = Utility.createInitService(service, searchID);
+		final Service goalService = Utility.createGoalService(service, searchID);
 
 		// save the INIT and goal services with the current searchID
-		compositionData.addRunningSearch(searchID, initService, goalService, maxTTL, maxTime);
-		bCompositionData.addRunningSearch(searchID, initService, goalService, maxTTL, maxTime);
+		compositionData.addRunningSearch(searchID, initService, goalService, maxTTL, maxTime, wasPrepared);
+		bCompositionData.addRunningSearch(searchID, initService, goalService, maxTTL, maxTime, wasPrepared);
 
 		// Add INIT and GOAL services to current node
 		final ServiceList addedServices = new ServiceList();
@@ -94,7 +87,7 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	}
 
 	@Override
-	public void multicastMessageAccepted(final PeerID source, final PayloadMessage payload, final int distance) {
+	public void multicastMessageAccepted(final PeerID source, final BroadcastMessage payload, final int distance, final boolean directBroadcast) {
 		if (payload instanceof BCompositionMessage)
 			backwardComposer.receivedBComposition((BCompositionMessage) payload);
 		else if (payload instanceof FCompositionMessage)
@@ -146,5 +139,9 @@ public class BidirectionalSearch extends CommonCompositionSearch {
 	@Override
 	public boolean merge(List<BroadcastMessage> waitingMessages, BroadcastMessage sendingMessage) {
 		return false;
+	}
+
+	@Override
+	public void initFComposition(final Service initService, final SearchID searchID) {
 	}
 }

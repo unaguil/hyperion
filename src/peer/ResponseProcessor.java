@@ -25,7 +25,7 @@ import util.logger.Logger;
 final class ResponseProcessor extends WaitableThread {
 
 	// the communication peer
-	private final BasicPeer peer;
+	private final ReliableBroadcastPeer peer;
 	
 	private final Logger logger = Logger.getLogger(ResponseProcessor.class);
 
@@ -46,7 +46,7 @@ final class ResponseProcessor extends WaitableThread {
 	 * @param peer
 	 *            the communication peer
 	 */
-	public ResponseProcessor(final BasicPeer peer, final MessageCounter msgCounter) {
+	public ResponseProcessor(final ReliableBroadcastPeer peer, final MessageCounter msgCounter) {
 		this.peer = peer;
 		this.msgCounter = msgCounter;
 	}
@@ -59,7 +59,7 @@ final class ResponseProcessor extends WaitableThread {
 			if (!Thread.interrupted()) {						
 				final BundleMessage bundleMessage = processResponses();
 				
-				if (!bundleMessage.getMessages().isEmpty())
+				if (!bundleMessage.getPayloadMessages().isEmpty())
 					sendResponses(bundleMessage);								
 			} else
 				interrupt();
@@ -70,7 +70,7 @@ final class ResponseProcessor extends WaitableThread {
 			if (!ackMessages.isEmpty()) {			
 				logger.trace("Peer " + peer.getPeerID() + " sending bundled message with " + ackMessages.size() + " ACK messages");
 				final BundleMessage bundleACKMessages = new BundleMessage(peer.getPeerID(), new ArrayList<BroadcastMessage>(ackMessages));
-				peer.broadcast(bundleACKMessages);
+				peer.directBroadcast(bundleACKMessages);
 				sentACKMessages(ackMessages);
 			}
 		}
@@ -80,7 +80,7 @@ final class ResponseProcessor extends WaitableThread {
 	}
 
 	private void randomSleep() { 
-		final long randomWait = BasicPeer.WAIT_TIME - r.nextInt(BasicPeer.MAX_JITTER);				
+		final long randomWait = ReliableBroadcastPeer.WAIT_TIME - r.nextInt(ReliableBroadcastPeer.MAX_JITTER);				
 		try {
 			Thread.sleep(randomWait);
 		} catch (InterruptedException e) {

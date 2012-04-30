@@ -1,42 +1,29 @@
 package graphcreation.collisionbased.message;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import multicast.search.message.RemoteMessage;
-import peer.message.EnvelopeMessage;
-import peer.message.PayloadMessage;
+import peer.message.BroadcastMessage;
+import peer.message.MessageTypes;
 import peer.peerid.PeerID;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.SerializationUtils;
 
-public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, PayloadMessage {
+public class ForwardMessage extends RemoteMessage {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private final PayloadMessage payload;
 	private final Set<PeerID> destinations = new HashSet<PeerID>();
 	
 	public ForwardMessage() {
-		payload = null;
+		super(MessageTypes.FORWARD_MESSAGE);
 	}
 
-	public ForwardMessage(final PeerID source, final PayloadMessage payload, final Set<PeerID> destinations) {
-		super(source, Collections.<PeerID> emptySet());
-		this.payload = payload;
+	public ForwardMessage(final PeerID source, final BroadcastMessage payload, final Set<PeerID> destinations) {
+		super(MessageTypes.FORWARD_MESSAGE, source, payload, Collections.<PeerID> emptySet());
 		this.destinations.addAll(destinations);
-	}
-
-	@Override
-	public PayloadMessage getPayload() {
-		return payload;
 	}
 
 	public Set<PeerID> getDestinations() {
@@ -44,28 +31,21 @@ public class ForwardMessage extends RemoteMessage implements EnvelopeMessage, Pa
 	}
 
 	@Override
-	public PayloadMessage copy() {
+	public BroadcastMessage copy() {
 		return new ForwardMessage(getSource(), getPayload().copy(), getDestinations());
 	}
 
 	@Override
-	public boolean hasPayload() {
-		return payload != null;
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
+		
+		SerializationUtils.readPeers(destinations, in);
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		UnserializationUtils.setFinalField(ForwardMessage.class, this, "payload", in.readObject());
-		destinations.addAll(Arrays.asList((PeerID[])in.readObject()));
-	}
-
-	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
-		
-		out.writeObject(payload);
-		out.writeObject(destinations.toArray(new PeerID[0]));
+		SerializationUtils.writeCollection(destinations, out);
 	}
 }

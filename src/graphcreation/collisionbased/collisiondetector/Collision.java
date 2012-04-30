@@ -1,20 +1,17 @@
 package graphcreation.collisionbased.collisiondetector;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import serialization.binary.UnserializationUtils;
+import peer.message.UnsupportedTypeException;
+import serialization.binary.BSerializable;
+import serialization.binary.SerializationUtils;
 import taxonomy.parameter.InputParameter;
 import taxonomy.parameter.OutputParameter;
+import taxonomy.parameter.Parameter;
 
-public class Collision implements Externalizable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class Collision implements BSerializable {
 
 	private final InputParameter input;
 	private final OutputParameter output;
@@ -62,14 +59,20 @@ public class Collision implements Externalizable {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		UnserializationUtils.setFinalField(Collision.class, this, "input", in.readObject());
-		UnserializationUtils.setFinalField(Collision.class, this, "output", in.readObject());
+	public void read(ObjectInputStream in) throws IOException {
+		try {
+			final Parameter pInput = Parameter.readParameter(in);
+			SerializationUtils.setFinalField(Collision.class, this, "input", pInput);
+			final Parameter pOutput = Parameter.readParameter(in);
+			SerializationUtils.setFinalField(Collision.class, this, "output", pOutput);
+		} catch (UnsupportedTypeException e) {
+			throw new IOException(e);
+		}
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeObject(input);
-		out.writeObject(output);
+	public void write(ObjectOutputStream out) throws IOException {
+		input.write(out);
+		output.write(out);
 	}
 }

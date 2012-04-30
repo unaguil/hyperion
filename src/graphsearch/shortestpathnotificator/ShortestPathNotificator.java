@@ -16,13 +16,16 @@ public class ShortestPathNotificator {
 	private final GraphCreator gCreator;
 
 	private final ShortestPathListener listener;
+	
+	private final boolean directBroadcast;
 
 	private final Logger logger = Logger.getLogger(ShortestPathNotificator.class);
 
-	public ShortestPathNotificator(final PeerID peerID, final GraphCreator gCreator, final ShortestPathListener listener) {
+	public ShortestPathNotificator(final PeerID peerID, final GraphCreator gCreator, final ShortestPathListener listener, final boolean directBroadcast) {
 		this.peerID = peerID;
 		this.gCreator = gCreator;
 		this.listener = listener;
+		this.directBroadcast = directBroadcast;
 	}
 
 	public void processShortestPathNotificationMessage(final ShortestPathNotificationMessage shortestPathNotificationMessage) {
@@ -44,7 +47,7 @@ public class ShortestPathNotificator {
 			if (multicastDistance <= pathDistance) {
 
 				logger.trace("Peer " + peerID + " has a shortest route to destination peer " + destination.getPeerID());
-				gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(destination));
+				gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(destination), directBroadcast);
 				return;
 			}
 		}
@@ -54,6 +57,6 @@ public class ShortestPathNotificator {
 
 		logger.trace("Peer " + peerID + " forwarding composition through next service " + nextService);
 
-		gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(nextService));
+		gCreator.forwardMessage(shortestPathNotificationMessage, Collections.singleton(nextService), directBroadcast);
 	}
 }

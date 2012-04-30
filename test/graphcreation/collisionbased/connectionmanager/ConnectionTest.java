@@ -116,7 +116,7 @@ public class ConnectionTest {
 
 		assertTrue(connection.addSearchResponse(searchResponseMessage1).isEmpty());
 
-		PeerIDSet notifiedPeers = connection.addSearchResponse(searchResponseMessage2);
+		Set<PeerID> notifiedPeers = connection.addSearchResponse(searchResponseMessage2);
 		assertEquals(2, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("1")));
 		assertTrue(notifiedPeers.contains(new PeerID("2")));
@@ -306,7 +306,7 @@ public class ConnectionTest {
 		assertTrue(connectionA.addSearchResponse(createSearchMessage(taxonomy)).isEmpty());
 
 		final SearchResponseMessage searchResponseMessageA = createSearchResponseMessageA(taxonomy);
-		PeerIDSet notifiedPeers = connectionA.addSearchResponse(searchResponseMessageA);
+		Set<PeerID> notifiedPeers = connectionA.addSearchResponse(searchResponseMessageA);
 		assertEquals(2, notifiedPeers.size());
 		assertTrue(notifiedPeers.contains(new PeerID("1")));
 		assertTrue(notifiedPeers.contains(new PeerID("2")));

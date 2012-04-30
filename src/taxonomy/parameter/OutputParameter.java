@@ -3,18 +3,13 @@ package taxonomy.parameter;
 import taxonomy.Taxonomy;
 
 public class OutputParameter extends Parameter {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 	
 	public OutputParameter() {
-		
+		super(OUTPUT_PARAMETER);
 	}
 
 	public OutputParameter(final short value) {
-		super(value);
+		super(OUTPUT_PARAMETER, value);
 	}
 
 	@Override

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import peer.message.BroadcastMessage;
+import peer.message.MessageReceivedListener;
+import peer.messagecounter.MessageCounter;
 import util.WaitableThread;
 
 class ReceivedProcessor {
@@ -15,6 +17,8 @@ class ReceivedProcessor {
 	private BasicPeer peer;
 	
 	private final Processor processor = new Processor(); 
+	
+	private final ReceivingThread receivingThread;
 	
 	private class Processor extends WaitableThread {
 		
@@ -34,22 +38,25 @@ class ReceivedProcessor {
 				}
 				
 				for (final BroadcastMessage message : messages)
-					peer.processMessage(message);
+					peer.receiveMessage(message);
 			}
 			
 			threadFinished();
 		}
 	}
 	
-	public ReceivedProcessor(final BasicPeer peer) {
+	public ReceivedProcessor(final BasicPeer peer, final MessageCounter msgCounter) {
 		this.peer = peer;
+		this.receivingThread = new ReceivingThread(this, peer, msgCounter);
 	}
 	
 	public void start() {
 		processor.start();
+		receivingThread.start();
 	}
 	
 	public void stopAndWait() {
+		receivingThread.stopAndWait();
 		processor.stopAndWait();
 	}
 	
@@ -57,5 +64,13 @@ class ReceivedProcessor {
 		synchronized (receivedMessages) {
 			receivedMessages.add(broadcastMessage);
 		}
+	}
+	
+	public BasicPeer getPeer() {
+		return peer;
+	}
+
+	public void setHearListerner(MessageReceivedListener hearListener) {
+		receivingThread.setHearListener(hearListener);
 	}
 }

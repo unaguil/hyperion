@@ -37,8 +37,8 @@ public abstract class CompositionData implements TimerTask {
 		localSearchesTable.addWaitingSearch(searchID);
 	}
 
-	public void addRunningSearch(final SearchID searchID, final Service initService, final Service goalService, final int ttl, final long remainingTime) {
-		localSearchesTable.addRunningSearch(searchID, initService, goalService, ttl, remainingTime);
+	public void addRunningSearch(final SearchID searchID, final Service initService, final Service goalService, final int ttl, final long remainingTime, final boolean wasPrepared) {
+		localSearchesTable.addRunningSearch(searchID, initService, goalService, ttl, remainingTime, wasPrepared);
 	}
 
 	public void stopAndWait() {
@@ -64,6 +64,12 @@ public abstract class CompositionData implements TimerTask {
 		if (!localSearchesTable.getStatus(searchID).equals(SearchStatus.RUNNING))
 			return 0;
 		return localSearchesTable.getRelatedData(searchID).getMaxTTL();
+	}
+	
+	public boolean wasPrepared(final SearchID searchID) {
+		if (!localSearchesTable.getStatus(searchID).equals(SearchStatus.RUNNING))
+			return false;
+		return localSearchesTable.getRelatedData(searchID).wasPrepared();
 	}
 
 	public long getRemainingInitTime(final SearchID searchID) {

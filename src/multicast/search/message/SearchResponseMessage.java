@@ -1,18 +1,18 @@
 package multicast.search.message;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import peer.message.BroadcastMessage;
 import peer.message.MessageID;
-import peer.message.PayloadMessage;
+import peer.message.MessageTypes;
+import peer.message.UnsupportedTypeException;
 import peer.peerid.PeerID;
-import peer.peerid.PeerIDSet;
-import serialization.binary.UnserializationUtils;
+import serialization.binary.SerializationUtils;
 import taxonomy.parameter.Parameter;
 
 /**
@@ -23,11 +23,6 @@ import taxonomy.parameter.Parameter;
  */
 public class SearchResponseMessage extends RemoteMulticastMessage {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
 	// the set of parameters found in the source node
 	private final Set<Parameter> parameters = new HashSet<Parameter>();
 
@@ -35,7 +30,8 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 	private final MessageID respondedRouteID;
 	
 	public SearchResponseMessage() {
-		respondedRouteID = null;
+		super(MessageTypes.SEARCH_RESPONSE_MESSAGE);
+		respondedRouteID = new MessageID();
 	}
 
 	/**
@@ -49,8 +45,8 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 	 * @param payload
 	 *            the payload of the response message
 	 */
-	public SearchResponseMessage(final PeerID source, final PeerID destination, final Set<Parameter> foundParameters, final PayloadMessage payload, final MessageID respondedRouteID) {
-		super(source, new PeerIDSet(Collections.singleton(destination)), payload);
+	public SearchResponseMessage(final PeerID source, final PeerID destination, final Set<Parameter> foundParameters, final BroadcastMessage payload, final MessageID respondedRouteID) {
+		super(MessageTypes.SEARCH_RESPONSE_MESSAGE, source, Collections.singleton(destination), payload, false);
 		this.parameters.addAll(foundParameters);
 		this.respondedRouteID = respondedRouteID;
 	}
@@ -71,7 +67,7 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 	 *            the new distance traversed by the message
 	 */
 	public SearchResponseMessage(final SearchResponseMessage searchResponseMessage, final PeerID sender, final PeerID through, final int newDistance) {
-		super(searchResponseMessage, sender, new PeerIDSet(Collections.singleton(through)), newDistance);
+		super(searchResponseMessage, sender, Collections.singleton(through), newDistance);
 		this.parameters.addAll(searchResponseMessage.parameters);
 		this.respondedRouteID = searchResponseMessage.getRespondedRouteID();
 	}
@@ -110,18 +106,27 @@ public class SearchResponseMessage extends RemoteMulticastMessage {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
+	public void read(ObjectInputStream in) throws IOException {
+		super.read(in);
 		
-		parameters.addAll(Arrays.asList((Parameter[])in.readObject()));
-		UnserializationUtils.setFinalField(SearchResponseMessage.class, this, "respondedRouteID", in.readObject());
+		try {
+			final byte nParameters = in.readByte();
+			for (int i = 0; i < nParameters; i++) {
+				final Parameter p = Parameter.readParameter(in);
+				parameters.add(p);
+			}
+		} catch (UnsupportedTypeException e) {
+			throw new IOException(e);
+		}
+		
+		respondedRouteID.read(in);
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		super.writeExternal(out);
+	public void write(ObjectOutputStream out) throws IOException {
+		super.write(out);
 		
-		out.writeObject(parameters.toArray(new Parameter[0]));
-		out.writeObject(respondedRouteID);
+		SerializationUtils.writeCollection(parameters, out);
+		respondedRouteID.write(out);
 	}
 }

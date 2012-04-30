@@ -1,7 +1,9 @@
 package detection;
 
+import java.util.Set;
+
 import peer.CommunicationLayer;
-import peer.peerid.PeerIDSet;
+import peer.peerid.PeerID;
 
 /**
  * Interface which defines the methods of neighbor detectors
@@ -16,7 +18,7 @@ public interface NeighborDetector extends CommunicationLayer {
 	 * 
 	 * @return the current neighbor list
 	 */
-	public PeerIDSet getCurrentNeighbors();
+	public Set<PeerID> getCurrentNeighbors();
 
 	/**
 	 * Adds a new neighbor listener to the neighbor detector. The listener will
