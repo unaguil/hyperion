@@ -3,8 +3,10 @@ package multicast.search.message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashSet;
 import java.util.Set;
 
+import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
 import peer.message.EnvelopeMessage;
 import peer.message.MessageID;
@@ -184,5 +186,13 @@ public abstract class RemoteMessage extends BroadcastMessage implements Envelope
 			return super.getType() + "(" + payload.getType() + ")";
 		
 		return super.getType();
+	}
+	
+	public static Set<PeerID> removePropagatedNeighbors(final RemoteMessage remoteMessage, final ReliableBroadcastPeer peer) {
+		final Set<PeerID> neighbors = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors());
+		neighbors.remove(remoteMessage.getSender());
+		if (!remoteMessage.getSource().equals(peer.getPeerID()))
+			neighbors.removeAll(remoteMessage.getExpectedDestinations());
+		return neighbors;
 	}
 }

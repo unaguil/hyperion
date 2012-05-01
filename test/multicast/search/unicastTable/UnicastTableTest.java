@@ -62,7 +62,8 @@ public class UnicastTableTest {
 		}
 
 		@Override
-		public void addNeighborListener(NeighborEventsListener listener) {}
+		public void addNeighborListener(NeighborEventsListener listener) {
+		}
 		
 	}
 	

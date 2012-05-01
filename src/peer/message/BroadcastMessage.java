@@ -1,5 +1,6 @@
 package peer.message;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -105,6 +106,25 @@ public abstract class BroadcastMessage implements BSerializable {
 	public static Set<PeerID> removePropagatedNeighbors(final BroadcastMessage broadcastMessage, final ReliableBroadcastPeer peer) {
 		final Set<PeerID> neighbors = new HashSet<PeerID>(peer.getDetector().getCurrentNeighbors());
 		neighbors.remove(broadcastMessage.getSender());
+		neighbors.removeAll(broadcastMessage.getExpectedDestinations());
 		return neighbors;
+	}
+	
+	public int getSize() throws IOException {
+		final byte[] data = toByteArray();
+		return data.length;
+	}
+	
+	public byte[] toByteArray() throws IOException {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ObjectOutputStream out = new ObjectOutputStream(baos);
+		this.write(out);
+		out.close();
+		byte[] data = baos.toByteArray();
+		return data;
+	}
+
+	public void setExpectedDestinations(Set<PeerID> expectedDestinations) {
+		this.expectedDestinations.addAll(expectedDestinations);		
 	}
 }

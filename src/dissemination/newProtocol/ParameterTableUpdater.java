@@ -45,7 +45,6 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	private int MAX_DISTANCE = 5; // default value
 
 	// listeners for upper layers notifications
-	private final NeighborEventsListener neighborListener;
 	private final TableChangedListener tableChangedListener;
 
 	// the reference to the communication peer
@@ -76,10 +75,9 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 	 *            listener for neighbor changes. It is used to propagate
 	 *            detector information to upper layers.
 	 */
-	public ParameterTableUpdater(final ReliableBroadcastPeer peer, final TableChangedListener tableChangedListener, final NeighborEventsListener neighborListener) {
+	public ParameterTableUpdater(final ReliableBroadcastPeer peer, final TableChangedListener tableChangedListener) {
 		this.peer = peer;
 		this.tableChangedListener = tableChangedListener;
-		this.neighborListener = neighborListener;
 
 		// Register messages
 		final Set<Class<? extends BroadcastMessage>> messageClasses = new HashSet<Class<? extends BroadcastMessage>>();
@@ -342,7 +340,7 @@ public class ParameterTableUpdater implements CommunicationLayer, NeighborEvents
 				sendUpdateTableMessage(finalUpdateTable, peer.getDetector().getCurrentNeighbors(), null);
 		}
 		
-		neighborListener.neighborsChanged(newNeighbors, lostNeighbors);
+		tableChangedListener.neighborsChanged(newNeighbors, lostNeighbors);
 	}
 	
 	@Override

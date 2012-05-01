@@ -2,6 +2,8 @@ package multicast;
 
 import java.util.Set;
 
+import detection.NeighborEventsListener;
+
 import multicast.search.message.SearchResponseMessage;
 import peer.message.BroadcastMessage;
 import peer.message.MessageID;
@@ -15,7 +17,7 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public interface ParameterSearchListener extends MulticastMessageListener {
+public interface ParameterSearchListener extends MulticastMessageListener, NeighborEventsListener {
 
 	public BroadcastMessage searchReceived(Set<Parameter> foundParameters, MessageID routeID);
 

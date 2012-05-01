@@ -298,6 +298,8 @@ public final class BeaconDetector implements NeighborDetector, MessageSentListen
 		if (!removedNeighbors.isEmpty())
 			logger.debug("Peer " + peer.getPeerID() + " has lost neighbors: " + removedNeighbors);
 		
+		logger.trace("Peer " + peer.getPeerID() + " current neighbors " + getCurrentNeighbors());
+		
 		for (final NeighborEventsListener listener : neighborNotificationListeners)
 			listener.neighborsChanged(Collections.unmodifiableSet(addedNeighbors), Collections.unmodifiableSet(removedNeighbors));
 	}

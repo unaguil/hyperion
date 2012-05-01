@@ -572,4 +572,9 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 	public Taxonomy getTaxonomy() {
 		return pSearch.getDisseminationLayer().getTaxonomy();
 	}
+
+	@Override
+	public void neighborsChanged(Set<PeerID> newNeighbors, Set<PeerID> lostNeighbors) {
+		// TODO Auto-generated method stub
+	}
 }

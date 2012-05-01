@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import detection.NeighborEventsListener;
+
 import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
 import taxonomy.parameter.Parameter;
@@ -14,7 +16,7 @@ import taxonomy.parameter.Parameter;
  * @author Unai Aguilera (unai.aguilera@gmail.com)
  * 
  */
-public interface TableChangedListener {
+public interface TableChangedListener extends NeighborEventsListener {
 
 	/**
 	 * This method notifies changes in the parameters of the local table
