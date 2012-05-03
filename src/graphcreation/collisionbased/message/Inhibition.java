@@ -6,37 +6,47 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import peer.peerid.PeerID;
 import serialization.binary.BSerializable;
 
 public class Inhibition implements BSerializable {
 	
 	private final Collision collision;
+	private final PeerID detectedBy;
 	
 	public Inhibition() {
 		this.collision = new Collision();
+		this.detectedBy = new PeerID();
 	}
 	
-	public Inhibition(final Collision collision) {
+	public Inhibition(final Collision collision, final PeerID detectedBy) {
 		this.collision = collision;
+		this.detectedBy = detectedBy;
 	}
 	
 	public Collision getCollision() {
 		return collision;
 	}
+	
+	public PeerID getDetectedBy() {
+		return detectedBy;
+	}
 
 	@Override
 	public void read(ObjectInputStream in) throws IOException {
 		collision.read(in);
+		detectedBy.read(in);
 	}
 
 	@Override
 	public void write(ObjectOutputStream out) throws IOException {
 		collision.write(out);
+		detectedBy.write(out);
 	}
 	
 	@Override
 	public String toString() {
-		return "[" + collision + "]";
+		return "[" + collision + ", " + detectedBy + "]";
 	}
 	
 	@Override

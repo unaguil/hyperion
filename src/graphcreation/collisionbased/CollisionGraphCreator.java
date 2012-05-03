@@ -575,6 +575,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 
 	@Override
 	public void neighborsChanged(Set<PeerID> newNeighbors, Set<PeerID> lostNeighbors) {
-		// TODO Auto-generated method stub
+		collisionNode.neighborsChanged(lostNeighbors);
 	}
 }

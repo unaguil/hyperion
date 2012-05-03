@@ -17,6 +17,7 @@ import graphcreation.graph.extendedServiceGraph.ExtendedServiceGraph;
 import graphcreation.graph.servicegraph.node.ServiceNode;
 import graphcreation.services.Service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,10 +29,12 @@ import java.util.Set;
 import multicast.SearchedParameter;
 import multicast.search.message.SearchMessage.SearchType;
 import multicast.search.message.SearchResponseMessage;
-import peer.Peer;
+import peer.ReliableBroadcastPeer;
 import peer.message.BroadcastMessage;
 import peer.peerid.PeerID;
 import peer.peerid.PeerIDSet;
+import taxonomy.parameter.InputParameter;
+import taxonomy.parameter.OutputParameter;
 import taxonomy.parameter.Parameter;
 import taxonomy.parameterList.ParameterList;
 import util.logger.Logger;
@@ -39,29 +42,107 @@ import dissemination.DistanceChange;
 
 class CollisionNode {
 	
-	private final Peer peer;
+	private final ReliableBroadcastPeer peer;
 	
 	private final GraphCreator gCreator;
 	
 	private final GraphCreationListener graphCreationListener;
+	
+	private final Map<PeerID, Set<Inhibition>> neighborInhibitions = new HashMap<PeerID, Set<Inhibition>>();
 	
 	private final Logger logger = Logger.getLogger(CollisionNode.class);
 	
 	// the connections manager
 	private final ConnectionsManager cManager;
 	
-	public CollisionNode(final Peer peer, final GraphCreator gCreator, final GraphCreationListener graphCreationListener, final GraphType graphType) {
+	public CollisionNode(final ReliableBroadcastPeer peer, final GraphCreator gCreator, final GraphCreationListener graphCreationListener, final GraphType graphType) {
 		this.peer = peer;
 		this.gCreator = gCreator;
 		this.graphCreationListener = graphCreationListener;
 		this.cManager = new ConnectionsManager(gCreator.getPSearch().getDisseminationLayer().getTaxonomy(), graphType);
 	}
+	
+	private void updateNeighborInhibitions(final Inhibition inhibition) {
+		if (peer.getDetector().getCurrentNeighbors().contains(inhibition.getDetectedBy())) {
+			synchronized (neighborInhibitions) {
+				if (!neighborInhibitions.containsKey(inhibition.getDetectedBy()))
+					neighborInhibitions.put(inhibition.getDetectedBy(), new HashSet<Inhibition>());
+				neighborInhibitions.get(inhibition.getDetectedBy()).add(inhibition);
+			}
+		}
+	}
+	
+	private Set<Inhibition> createInhibitions(final Set<Collision> collisions) {
+		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
+		for (final Collision collision : collisions) 
+			inhibitions.add(new Inhibition(collision, peer.getPeerID()));
+		return inhibitions;
+	}
 
 	public BroadcastMessage parametersChanged(final Set<Parameter> removedParameters, final Map<Parameter, DistanceChange> changedParameters, 
-			final Set<Parameter> tableAdditions, 
-			final List<BroadcastMessage> payloadMessages) {
+											  final Set<Parameter> tableAdditions, final List<BroadcastMessage> payloadMessages) {
 		logger.trace("Peer " + peer.getPeerID() + " parameters table changed");
 		
+		checkRemovedParameters(removedParameters);
+		
+		final Set<Collision> collisions = getChangedParameterCollisions(changedParameters, tableAdditions);
+		final Set<Inhibition> inhibitions = createInhibitions(collisions);
+		removeAlreadyDetectedCollisions(collisions);
+		processReceivedInhibitions(payloadMessages, collisions, inhibitions);
+		processDetectedCollisions(collisions);
+
+		if (!inhibitions.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " sending inhibitions " + inhibitions + " as parameter table payload");
+			return new InhibeCollisionsMessage(peer.getPeerID(), inhibitions);
+		}
+
+		return null;
+	}
+
+	private void processDetectedCollisions(final Set<Collision> collisions) {
+		// if collisions were detected, notify them
+		if (!collisions.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " detected collisions " + collisions);
+
+			// Update the collisions detected by the current node
+			synchronized (cManager) {
+				for (final Collision collision : collisions)
+					cManager.addCollision(collision);
+			}
+
+			// send a message to search for the colliding parameters
+			sendCollisionSearchMessage(collisions);
+		}
+	}
+
+	private void processReceivedInhibitions(final List<BroadcastMessage> payloadMessages, final Set<Collision> collisions, final Set<Inhibition> inhibitions) {
+		for (final BroadcastMessage payload : payloadMessages) {
+			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
+			final Set<Inhibition> receivedInhibitions = inhibeCollisionsMessage.getInhibedCollisions();
+			if (!receivedInhibitions.isEmpty()) {
+				logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + receivedInhibitions);
+				for (Inhibition inhibition : receivedInhibitions) {
+					collisions.remove(inhibition.getCollision());
+					updateNeighborInhibitions(inhibition);
+				}
+				inhibitions.addAll(receivedInhibitions);
+				
+				logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);			
+			}
+		}
+	}
+
+	private Set<Collision> getChangedParameterCollisions(final Map<Parameter, DistanceChange> changedParameters, final Set<Parameter> tableAdditions) {
+		final Set<Collision> collisions = new HashSet<Collision>();
+		final Set<Parameter> validParameters = getValidParameters(tableAdditions, changedParameters);
+		if (!validParameters.isEmpty()) {
+			logger.debug("Peer " + peer.getPeerID() + " checking collisions for " + validParameters);
+			collisions.addAll(checkParametersCollisions(validParameters));
+		}
+		return collisions;
+	}
+
+	private void checkRemovedParameters(final Set<Parameter> removedParameters) {
 		if (!removedParameters.isEmpty()) {	
 			logger.trace("Peer " + peer.getPeerID() + " parameters removed " + removedParameters + ", checking for affected collisions");
 
@@ -82,61 +163,6 @@ class CollisionNode {
 				gCreator.getPSearch().sendCancelSearchMessage(canceledParameters);
 			}	
 		}
-		
-		final Set<Parameter> validParameters = getValidParameters(tableAdditions, changedParameters);
-		
-		final Set<Collision> collisions = new HashSet<Collision>();
-		if (!validParameters.isEmpty()) {
-			logger.debug("Peer " + peer.getPeerID() + " checking collisions for " + validParameters);
-			collisions.addAll(checkParametersCollisions(validParameters));
-		}
-		
-		final Set<Inhibition> inhibitions = new HashSet<Inhibition>();
-		for (final Collision collision : collisions) 
-			inhibitions.add(new Inhibition(collision));
-		
-		removeAlreadyDetectedCollisions(collisions);
-
-		// include those inhibitions received with the message which added the
-		// new parameters
-		for (final BroadcastMessage payload : payloadMessages) {
-			final InhibeCollisionsMessage inhibeCollisionsMessage = (InhibeCollisionsMessage) payload;
-			final Set<Inhibition> receivedInhibitions = inhibeCollisionsMessage.getInhibedCollisions();
-			if (!receivedInhibitions.isEmpty()) {
-				logger.trace("Peer " + peer.getPeerID() + " received inhibitions for collisions " + receivedInhibitions);
-	
-				// remove collisions using received inhibitions (checking if collision is applied)
-				for (Inhibition inhibedCollision : receivedInhibitions)
-					collisions.remove(inhibedCollision.getCollision());
-				
-				logger.trace("Peer " + peer.getPeerID() + " provisional collisions after inhibition " + collisions);
-					
-				inhibitions.addAll(receivedInhibitions);
-			}
-		}
-
-		// if collisions were detected, notify them
-		if (!collisions.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " detected collisions " + collisions);
-
-			// Update the collisions detected by the current node
-			synchronized (cManager) {
-				for (final Collision collision : collisions)
-					cManager.addCollision(collision);
-			}
-
-			// send a message to search for the colliding parameters
-			sendCollisionSearchMessage(collisions);
-		}
-
-		// if collisions were detected return them as payload for parameter
-		// table update propagated message
-		if (!inhibitions.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " sending inhibitions " + inhibitions + " as parameter table payload");
-			return new InhibeCollisionsMessage(peer.getPeerID(), inhibitions);
-		}
-
-		return null;
 	}
 
 	private Set<Parameter> getValidParameters(final Set<Parameter> tableAdditions, final Map<Parameter, DistanceChange> changedParameters) {
@@ -374,5 +400,38 @@ class CollisionNode {
 		}
 		
 		sendDisconnectNotifications(notifications, false);
+	}
+	
+	private Set<Inhibition> getInhibitions(final PeerID neighbor) {
+		synchronized (neighborInhibitions) {
+			if (neighborInhibitions.containsKey(neighbor)) {
+				final Set<Inhibition> inhibitions = neighborInhibitions.get(neighbor);
+				neighborInhibitions.remove(neighbor);
+				return inhibitions;
+			}
+			
+			return Collections.emptySet();
+		}
+	}
+	
+	public void neighborsChanged(Set<PeerID> lostNeighbors) {
+		final Set<Inhibition> affectedInhibitions = new HashSet<Inhibition>();
+		for (final PeerID lostNeighbor : lostNeighbors)
+			affectedInhibitions.addAll(getInhibitions(lostNeighbor));
+		
+		final Set<Collision> collisions = new HashSet<Collision>();
+		for (final Inhibition inhibition : affectedInhibitions) {
+			final Set<Parameter> knownParameters = gCreator.getPSearch().getDisseminationLayer().getParameters();
+			final InputParameter input = inhibition.getCollision().getInput();
+			final OutputParameter output = inhibition.getCollision().getOutput();
+			if (knownParameters.contains(input) && knownParameters.contains(output))
+				collisions.add(new Collision(input, output));
+		}
+		
+		removeAlreadyDetectedCollisions(collisions);
+		if (!collisions.isEmpty()) {
+			logger.trace("Peer " + peer.getPeerID() + " detected collisions due to neighbor removal");
+			processDetectedCollisions(collisions);
+		}
 	}
 }
