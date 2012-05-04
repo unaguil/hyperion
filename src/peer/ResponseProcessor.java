@@ -3,6 +3,7 @@ package peer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -36,6 +37,8 @@ final class ResponseProcessor extends WaitableThread {
 	private final Random r = new Random();
 	
 	private final MessageCounter msgCounter;
+	
+	private final int MAX_MESSAGES = 15;
 		
 	private ReliableBroadcast reliableBroadcast = null;
 	private final Object mutex = new Object();
@@ -92,11 +95,14 @@ final class ResponseProcessor extends WaitableThread {
 		final List<BroadcastMessage> responses = new ArrayList<BroadcastMessage>();
 		
 		synchronized (waitingResponses) {
+			int counter = 0;
 			if (!waitingResponses.isEmpty())	 {								
-				for (final BroadcastMessage broadcastMessage : waitingResponses)					
+				for (final Iterator<BroadcastMessage> it = waitingResponses.iterator(); it.hasNext() && counter < MAX_MESSAGES; ) {
+					final BroadcastMessage broadcastMessage = it.next();
 					responses.add(broadcastMessage);
-				
-				waitingResponses.clear();					
+					it.remove();
+					counter++;
+				}					
 			}
 		}
 
