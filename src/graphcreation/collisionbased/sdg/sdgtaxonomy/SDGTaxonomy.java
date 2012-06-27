@@ -102,15 +102,15 @@ public class SDGTaxonomy implements SDG {
 					if (successorNode.getService().isLocal(peerID))
 						successors.add(new ServiceDistance(successorNode.getService(), new Integer(0)));
 					else
-						successors.add(new ServiceDistance(successorNode.getService(), getDistance(successorNode.getService().getPeerID())));
+						successors.add(new ServiceDistance(successorNode.getService(), getShortestDistance(successorNode.getService().getPeerID())));
 				}
 			}
 		}
 		return successors;
 	}
 	
-	private Integer getDistance(final PeerID dest) {
-		final Route route = getRoute(dest);
+	private Integer getShortestDistance(final PeerID dest) {
+		final Route route = getShortestRoute(dest);
 		if (route != null)
 			return new Integer(route.getDistance());
 		return null;
@@ -125,7 +125,7 @@ public class SDGTaxonomy implements SDG {
 				if (ancestorNode.getService().isLocal(peerID))
 					ancestors.add(new ServiceDistance(ancestorNode.getService(), new Integer(0)));
 				else
-					ancestors.add(new ServiceDistance(ancestorNode.getService(), getDistance(ancestorNode.getService().getPeerID())));
+					ancestors.add(new ServiceDistance(ancestorNode.getService(), getShortestDistance(ancestorNode.getService().getPeerID())));
 			}
 		}
 		return ancestors;
@@ -259,7 +259,7 @@ public class SDGTaxonomy implements SDG {
 		return collisionNodes;
 	}
 	
-	private Set<IndirectRoute> getIndirectRoutes(final PeerID destination) {
+	private Set<IndirectRoute> obtainIndirectRoutes(final PeerID destination) {
 		final Set<IndirectRoute> routes = new HashSet<IndirectRoute>();
 		for (final IndirectRoute indirectRoute : indirectRoutes) {
 			if (indirectRoute.getDest().equals(destination))
@@ -269,15 +269,37 @@ public class SDGTaxonomy implements SDG {
 	}
 
 	@Override
-	public Route getRoute(final PeerID destination) {
-		final List<Route> availableRoutes = new ArrayList<Route>();
-		availableRoutes.addAll(getIndirectRoutes(destination));
+	public Route getShortestRoute(final PeerID destination) {
+		final Set<Route> availableRoutes = new HashSet<Route>();
+		availableRoutes.addAll(obtainIndirectRoutes(destination));
 		
 		final Route directRoute = pSearch.getRoute(destination);
 		if (directRoute != null)
 			availableRoutes.add(directRoute);
 		
 		return Util.getShortestRoute(availableRoutes);
+	}
+	
+	@Override
+	public Set<Route> getRoutes(final PeerID destination) {
+		final Set<Route> availableRoutes = new HashSet<Route>();
+		availableRoutes.addAll(obtainIndirectRoutes(destination));
+		availableRoutes.addAll(pSearch.getRoutes(destination));
+		return availableRoutes;
+	}
+	
+	@Override
+	public List<Route> getDirectRoutes(final PeerID destination) {
+		final List<Route> routes = new ArrayList<Route>(pSearch.getRoutes(destination));
+		Collections.sort(routes, Util.distanceComparator);
+		return routes;
+	}
+	
+	@Override
+	public List<Route> getIndirectRoutes(final PeerID destination) {
+		final List<Route> routes = new ArrayList<Route>(obtainIndirectRoutes(destination));
+		Collections.sort(routes, Util.distanceComparator);
+		return routes;
 	}
 
 	@Override
@@ -311,7 +333,7 @@ public class SDGTaxonomy implements SDG {
 		for (final Service s : eServiceGraph.getServices()) {
 			if (!s.isLocal(peerID) && eServiceGraph.isDisconnected(s)) {
 				eServiceGraph.removeService(s);
-				removedRemotedServices.add(new ServiceDistance(s, getDistance(s.getPeerID())));
+				removedRemotedServices.add(new ServiceDistance(s, getShortestDistance(s.getPeerID())));
 			}
 		}
 		return removedRemotedServices;
@@ -329,7 +351,7 @@ public class SDGTaxonomy implements SDG {
 		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService); 
 		for (final ServiceNode ancestor : eServiceGraph.getAncestors(serviceNode, false)) {
 			if (ancestor.getService().isLocal(peerID))
-				localAncestors.add(new ServiceDistance(ancestor.getService(), getDistance(ancestor.getService().getPeerID())));
+				localAncestors.add(new ServiceDistance(ancestor.getService(), getShortestDistance(ancestor.getService().getPeerID())));
 		}
 		
 		return localAncestors;
@@ -342,7 +364,7 @@ public class SDGTaxonomy implements SDG {
 		final ServiceNode serviceNode = eServiceGraph.getServiceNode(remoteService);
 		for (final ServiceNode succesor : eServiceGraph.getSuccessors(serviceNode, false)) {
 			if (succesor.getService().isLocal(peerID))
-				localSuccesors.add(new ServiceDistance(succesor.getService(), getDistance(succesor.getService().getPeerID())));
+				localSuccesors.add(new ServiceDistance(succesor.getService(), getShortestDistance(succesor.getService().getPeerID())));
 		}
 		
 		return localSuccesors;

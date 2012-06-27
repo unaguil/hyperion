@@ -185,10 +185,10 @@ public class UnicastTableTest {
 		assertTrue(table1.cancelSearch(routeIDs.iterator().next(), new PeerID("2")));
 
 		routeIDs = table1.getRouteIDs(new PeerID("5"));
-		table1.removeRoute(routeIDs.iterator().next());
+		table1.removeRoute(routeIDs.iterator().next(), new PeerID("6"));
 
 		routeIDs = table1.getRouteIDs(new PeerID("7"));
-		table1.removeRoute(routeIDs.iterator().next());
+		table1.removeRoute(routeIDs.iterator().next(), new PeerID("6"));
 
 		assertEquals(6, table1.getActiveSearches().size());
 
@@ -280,7 +280,7 @@ public class UnicastTableTest {
 		assertTrue(table1.knowsRouteTo(new PeerID("13")));
 
 		routeIDs = table1.getRouteIDs(new PeerID("5"));
-		table1.removeRoute(routeIDs.iterator().next());
+		table1.removeRoute(routeIDs.iterator().next(), new PeerID("6"));
 		assertFalse(table1.knowsRouteTo(new PeerID("5")));
 
 		routeIDs = table1.getRouteIDs(new PeerID("7"));
@@ -289,24 +289,24 @@ public class UnicastTableTest {
 			if (table1.isSearchRoute(routeID))
 				table1.cancelSearch(routeID, new PeerID("6"));
 			else 
-				table1.removeRoute(routeID);
+				table1.removeRoute(routeID, new PeerID("3"));
 		}
 
 		assertFalse(table1.knowsRouteTo(new PeerID("7")));
 
 		routeIDs = table1.getRouteIDs(new PeerID("13"));
-		table1.removeRoute(routeIDs.iterator().next());
+		table1.removeRoute(routeIDs.iterator().next(), new PeerID("14"));
 		assertFalse(table1.knowsRouteTo(new PeerID("13")));
 
 		assertTrue(table1.knowsRouteTo(new PeerID("3")));
 		routeIDs = table1.getRouteIDs(new PeerID("3"));
-		table1.removeRoute(routeIDs.iterator().next());
+		table1.removeRoute(routeIDs.iterator().next(), new PeerID("4"));
 		assertFalse(table1.knowsRouteTo(new PeerID("3")));
 	}
 
 	@Test
 	public void testRemoveSearchRouteResponseNoteRemoved() {
-		table1.removeRoute(searchMessage4.getRemoteMessageID());
+		table1.removeRoute(searchMessage4.getRemoteMessageID(), new PeerID("4"));
 
 		assertFalse(table1.knowsRouteTo(new PeerID("17")));
 		assertTrue(table1.knowsRouteTo(new PeerID("5")));

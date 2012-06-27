@@ -28,7 +28,7 @@ class BidirectionalForwardComposer extends ForwardComposer {
 	private final Logger logger = Logger.getLogger(BidirectionalForwardComposer.class);
 
 	public BidirectionalForwardComposer(final ForwardCompositionData fCompositionData, final BackwardCompositionData bCompositionData, final CommonCompositionSearch commonCompositionSearch) {
-		super(fCompositionData, commonCompositionSearch, commonCompositionSearch.isDirectBroadcast());
+		super(fCompositionData, commonCompositionSearch, commonCompositionSearch.isDirectBroadcast(), commonCompositionSearch.useMultiplePaths());
 
 		this.bCompositionData = bCompositionData;
 	}

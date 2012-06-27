@@ -377,18 +377,19 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 		MAX_TTL = searchTTL;
 		logger.info("Peer " + peer.getPeerID() + " set MAX_TTL " + MAX_TTL);
 	}
+	
+	private boolean alreadyReceived(final RemoteMessage remoteMessage) {
+		if (receivedMessages.contains(new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())))
+			return true;
+		
+		receivedMessages.addEntry((new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())));
+		return false;
+	}
 
 	@Override
 	public void messageReceived(final BroadcastMessage message, final long receptionTime) {
 		if (!enabled)
 			return;
-		
-		// check that message was not previously received
-		RemoteMessage remoteMessage = ((RemoteMessage) message);
-		if (receivedMessages.contains(new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())))
-			return;
-		
-		receivedMessages.addEntry((new ReceivedMessageID(remoteMessage.getRemoteMessageID(), remoteMessage.getSender())));
 		
 		if (message instanceof SearchMessage)
 			processSearchMessage((SearchMessage) message);
@@ -451,6 +452,13 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 	}
 	
 	@Override
+	public Set<Route> getRoutes(final PeerID dest) {
+		synchronized (uTable) {
+			return uTable.getRoutes(dest);
+		}
+	}
+	
+	@Override
 	public List<? extends Route> getAllRoutes() {
 		synchronized (uTable) {
 			return Collections.unmodifiableList(uTable.getAllRoutes());
@@ -466,7 +474,7 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 		logger.debug("Peer " + peer.getPeerID() + " accepted multicast message " + multicastMessage);
 		final BroadcastMessage payload = multicastMessage.getPayload();
 		
-		searchListener.multicastMessageAccepted(multicastMessage.getSource(), payload.copy(), multicastMessage.getDistance(), multicastMessage.isDirectBroadcas());
+		searchListener.multicastMessageAccepted(multicastMessage.getSource(), payload.copy(), multicastMessage.getDistance(), multicastMessage.isDirectBroadcast());
 	}
 
 	// this method is called when a search message is accepted by the current
@@ -491,6 +499,9 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 
 	// process the multicast messages in the current node
 	private void processMulticastMessage(final RemoteMulticastMessage multicastMessage) {
+		if (alreadyReceived(multicastMessage))
+			return;
+		
 		logger.trace("Peer " + peer.getPeerID() + " processing multicast message " + multicastMessage);
 		// Check if the current peer is valid to pass through the multicast
 		// message
@@ -527,7 +538,7 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 
 			final RemoteMulticastMessage newRemoteMulticastMessage = new RemoteMulticastMessage(multicastMessage, peer.getPeerID(), throughPeers, getNewDistance(multicastMessage));
 			logger.trace("Peer " + peer.getPeerID() + " multicasting message " + newRemoteMulticastMessage);
-			if (newRemoteMulticastMessage.isDirectBroadcas())
+			if (newRemoteMulticastMessage.isDirectBroadcast())
 				peer.directBroadcast(newRemoteMulticastMessage);
 			else
 				peer.enqueueBroadcast(newRemoteMulticastMessage, this);
@@ -589,7 +600,7 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 		}
 
 		if (broadcastMessage) {
-			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), RemoteMessage.removePropagatedNeighbors(removeParametersMessage, peer), getNewDistance(removeParametersMessage));
+			final RemoveParametersMessage newRemoveParametersMessage = new RemoveParametersMessage(removeParametersMessage, peer.getPeerID(), peer.getDetector().getCurrentNeighbors(), getNewDistance(removeParametersMessage));
 			logger.trace("Peer " + peer.getPeerID() + " sending remove parameters message " + newRemoveParametersMessage);
 			peer.enqueueBroadcast(newRemoveParametersMessage, this);
 		}
@@ -662,24 +673,43 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 					}
 				}
 			
-				final PeerID lostDestination = uTable.removeRoute(routeID);
+				final PeerID lostDestination = uTable.removeRoute(routeID,removeRouteMessage.getSender());
 				if (!lostDestination.equals(PeerID.VOID_PEERID)) {
 					removedRoutes.add(routeID);
-					lostDestinations.add(lostDestination);
 					notify = true;
+					if (!uTable.knowsRouteTo(lostDestination))
+						lostDestinations.add(lostDestination);
 				}
 			}
 		}
 		
-		searchListener.searchCanceled(canceledSearches);
+		for (final MessageID removedSearch : canceledSearches)
+			receivedMessages.remove(new ReceivedMessageID(removedSearch, PeerID.VOID_PEERID));
+		
+		searchListener.searchCanceled(Collections.unmodifiableSet(canceledSearches));
 
 		if (notify && !lostDestinations.isEmpty()) {
 			logger.trace("Peer " + peer.getPeerID() + " lost route to destinations " + lostDestinations);
 			searchListener.lostDestinations(lostDestinations);
 		}
 		
+		if (!removeRouteMessage.getSender().equals(peer.getPeerID())) {
+			final Set<SearchMessage> repropagatedSearches = new HashSet<SearchMessage>();
+			for (final SearchMessage activeSearch : uTable.getActiveSearches()) {
+				if (removeRouteMessage.getRemovedSearches().contains(activeSearch.getRemoteMessageID()))
+					repropagatedSearches.add(activeSearch);
+			}
+			 
+//			if (!repropagatedSearches.isEmpty()) {
+//				logger.trace("Peer " + peer.getPeerID() + " repropagating searches due to neighbor " + removeRouteMessage.getSender() + " route removal");
+//				repropagateSearches(Collections.singleton(removeRouteMessage.getSender()), repropagatedSearches);
+//			}
+		}
+		
 		if (notify) {			
-			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(), RemoteMessage.removePropagatedNeighbors(removeRouteMessage, peer), removedRoutes, getNewDistance(removeRouteMessage));
+			final RemoveRouteMessage newRemoveRouteMessage = new RemoveRouteMessage(removeRouteMessage, peer.getPeerID(),
+									peer.getDetector().getCurrentNeighbors(), removedRoutes, 
+									canceledSearches, getNewDistance(removeRouteMessage));
 			logger.trace("Peer " + peer.getPeerID() + " sending remove route message " + newRemoveRouteMessage);
 			peer.enqueueBroadcast(newRemoveRouteMessage, this);
 		}
@@ -688,17 +718,18 @@ public class ParameterSearchImpl implements CommunicationLayer, TableChangedList
 	private void processSearchMessage(final SearchMessage searchMessage) {		
 		logger.trace("Peer " + peer.getPeerID() + " processing search message " + searchMessage);
 		
-		boolean propagateSearch = false;
+		boolean updated = false;
 		synchronized (uTable) {
-			propagateSearch = uTable.updateUnicastTable(searchMessage);
+			updated = uTable.updateUnicastTable(searchMessage);
 		}
 		
-		final Set<Parameter> foundLocalParameters = checkLocalParameters(searchMessage);
-		if (!foundLocalParameters.isEmpty())
-			acceptSearchMessage(searchMessage, foundLocalParameters);
-		
-		if (propagateSearch)
-			propagateSearchMessage(searchMessage, RemoteMessage.removePropagatedNeighbors(searchMessage, peer));
+		if (updated) {
+			final Set<Parameter> foundLocalParameters = checkLocalParameters(searchMessage);
+			if (!foundLocalParameters.isEmpty())
+				acceptSearchMessage(searchMessage, foundLocalParameters);
+			
+				propagateSearchMessage(searchMessage, RemoteMessage.removePropagatedNeighbors(searchMessage, peer));
+		}
 	}
 
 	private Set<Parameter> checkLocalParameters(final SearchMessage searchMessage) {

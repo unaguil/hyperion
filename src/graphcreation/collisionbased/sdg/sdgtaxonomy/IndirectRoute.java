@@ -45,6 +45,11 @@ public class IndirectRoute implements Route {
 		IndirectRoute indirectRoute = (IndirectRoute)o;
 		return indirectRoute.dest.equals(this.dest) && indirectRoute.collisionNode.equals(this.collisionNode);
 	}
+	
+	@Override
+	public String toString() {
+		return "D:" + dest + " T:" + collisionNode; 
+	}
 
 	@Override
 	public int hashCode() {

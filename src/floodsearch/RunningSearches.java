@@ -86,7 +86,8 @@ public class RunningSearches implements TimerTask {
 	
 	public void stopSearch(final SearchID searchID) {
 		synchronized(runningSearches) {
-			runningSearches.get(searchID).stopTimer();
+			if (runningSearches.containsKey(searchID))
+				runningSearches.get(searchID).stopTimer();
 		}
 	}
 }

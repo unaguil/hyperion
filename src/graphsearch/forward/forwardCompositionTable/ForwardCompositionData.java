@@ -10,7 +10,6 @@ import graphsearch.forward.message.FCompositionMessage;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,13 +44,14 @@ public class ForwardCompositionData extends CompositionData {
 		}
 	}
 
-	public void addReceivedMessage(final Service service, final FCompositionMessage fCompositionMessage) {
+	public boolean addReceivedMessage(final Service service, final FCompositionMessage fCompositionMessage) {
 		synchronized (entries) {
 			if (!entries.containsKey(fCompositionMessage.getSearchID()))
 				entries.put(fCompositionMessage.getSearchID(), new SearchEntry(fCompositionMessage.getRemainingTime(), gCreator));
 
 			entries.get(fCompositionMessage.getSearchID()).addReceivedMessage(service, fCompositionMessage);
-		}
+			return entries.get(fCompositionMessage.getSearchID()).hasChanged();
+		} 
 	}
 
 	public Set<SearchID> removeMessagesReceivedFrom(final Service service, final Service ancestor) {
@@ -79,11 +79,11 @@ public class ForwardCompositionData extends CompositionData {
 		}
 	}
 
-	public Map<SearchID, List<FCompositionMessage>> getReceivedMessages(final Service service) {
-		final Map<SearchID, List<FCompositionMessage>> receivedMessages = new HashMap<SearchID, List<FCompositionMessage>>();
+	public Map<SearchID, Set<FCompositionMessage>> getReceivedMessages(final Service service) {
+		final Map<SearchID, Set<FCompositionMessage>> receivedMessages = new HashMap<SearchID, Set<FCompositionMessage>>();
 		synchronized (entries) {
 			for (final SearchID searchID : entries.keySet()) {
-				final List<FCompositionMessage> messages = entries.get(searchID).getMessages(service);
+				final Set<FCompositionMessage> messages = entries.get(searchID).getMessages(service);
 				if (!messages.isEmpty())
 					receivedMessages.put(searchID, messages);
 			}

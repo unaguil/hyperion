@@ -33,7 +33,7 @@ public class ForwardCompositionSearch extends CommonCompositionSearch {
 		compositionData = new ForwardCompositionData(EXPIRATION_CHECK_TIME, this, gCreator);
 		compositionData.start();
 
-		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this, DIRECT_BROADCAST);
+		forwardComposer = new ForwardComposer((ForwardCompositionData) compositionData, this, DIRECT_BROADCAST, MULTIPLE_PATHS);
 	}
 	
 	@Override

@@ -15,7 +15,7 @@ public interface GraphCreator extends XMLSerializable {
 	
 	public enum GraphType { FORWARD, BACKWARD, BIDIRECTIONAL }
 
-	public void forwardMessage(BroadcastMessage payload, Set<Service> destinations, boolean directBroadcast);
+	public void forwardMessage(BroadcastMessage payload, Set<Service> destinations, boolean directBroadcast, boolean multiplePaths);
 
 	/**
 	 * Intended for upper layers usage

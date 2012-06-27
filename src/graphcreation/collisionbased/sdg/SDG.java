@@ -3,6 +3,7 @@ package graphcreation.collisionbased.sdg;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -113,7 +114,7 @@ public interface SDG extends XMLSerializable {
 	 */
 	public boolean contains(Service service);
 	
-	public Route getRoute(PeerID destination);
+	public Route getShortestRoute(PeerID destination);
 
 	public void removeRemoteService(Service remoteService);
 
@@ -122,4 +123,10 @@ public interface SDG extends XMLSerializable {
 	public void removeIndirectRoute(PeerID dest, PeerID collisionNode);
 
 	public Set<ServiceDistance> getInaccesibleServices();
+
+	public Set<Route> getRoutes(PeerID peerID);
+	
+	public List<Route> getDirectRoutes(PeerID ID);
+	
+	public List<Route> getIndirectRoutes(PeerID ID);
 }

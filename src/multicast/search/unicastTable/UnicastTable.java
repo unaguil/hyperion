@@ -208,16 +208,26 @@ public class UnicastTable implements XMLSerializable {
 		if (nDetector.getCurrentNeighbors().contains(dest))
 			return new BroadcastRoute(dest, dest, defaultRouteID, 1);
 		
-		List<Route> availableRoutes = new ArrayList<Route>();
-		// find the more recent route to destination
-		for (final Route route : getAllRoutes())
-			if (route.getDest().equals(dest))
-				availableRoutes.add(route);
-		
+		final Set<Route> availableRoutes = getRoutes(dest);		
 		if (availableRoutes.isEmpty())
 			return null;
 		
 		return Util.getShortestRoute(availableRoutes); 
+	}
+	
+	public Set<Route> getRoutes(PeerID dest) {
+		if (dest.equals(peerID))
+			return Collections.<Route>singleton(new BroadcastRoute(dest, dest, defaultRouteID, 0));
+		
+		if (nDetector.getCurrentNeighbors().contains(dest))
+			return Collections.<Route>singleton(new BroadcastRoute(dest, dest, defaultRouteID, 1));
+		
+		final Set<Route> availableRoutes = new HashSet<Route>();
+		// find the more recent route to destination
+		for (final Route route : getAllRoutes())
+			if (route.getDest().equals(dest))
+				availableRoutes.add(route);
+		return availableRoutes;
 	}
 
 	/**
@@ -380,16 +390,14 @@ public class UnicastTable implements XMLSerializable {
 		return Collections.emptySet();
 	}
 
-	public PeerID removeRoute(final MessageID routeID) {
+	public PeerID removeRoute(final MessageID routeID, final PeerID neighbor) {
 		for (final Iterator<BroadcastRoute> it = routes.iterator(); it.hasNext();) {
 			final BroadcastRoute route = it.next();
-			if (route.getRouteID().equals(routeID)) {
+			if (route.getRouteID().equals(routeID) && (route.getThrough().equals(neighbor) || neighbor.equals(peerID))) {
 				it.remove();
 				final PeerID dest = route.getDest();
-				if (!knowsRouteTo(route.getDest())) {
-					logger.trace("Peer " + peerID + " removed route to " + dest);
-					return dest;
-				}
+				logger.trace("Peer " + peerID + " removed route " + route);
+				return dest;
 			}
 		}
 		return PeerID.VOID_PEERID;

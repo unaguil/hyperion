@@ -20,6 +20,7 @@ import serialization.binary.SerializationUtils;
 public class RemoveRouteMessage extends RemoteMessage {
 	
 	private final Set<MessageID> lostRoutes = new HashSet<MessageID>();
+	private final Set<MessageID> removedSearches = new HashSet<MessageID>();
 	
 	public RemoveRouteMessage() {
 		super(MessageTypes.REMOVE_ROUTE_MESSAGE);
@@ -48,9 +49,12 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 * @param newDistance
 	 *            the new distance traveled by the message
 	 */
-	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender, final Set<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, final int newDistance) {
+	public RemoveRouteMessage(final RemoveRouteMessage removeRouteMessage, final PeerID sender,
+							  final Set<PeerID> expectedDestinations, final Set<MessageID> lostRoutes, 
+							  final Set<MessageID> removedSearches, final int newDistance) {
 		super(removeRouteMessage, sender, expectedDestinations, newDistance);
 		this.lostRoutes.addAll(lostRoutes);
+		this.removedSearches.addAll(removedSearches);
 	}
 
 	/**
@@ -60,6 +64,10 @@ public class RemoveRouteMessage extends RemoteMessage {
 	 */
 	public Set<MessageID> getLostRoutes() {
 		return lostRoutes;
+	}
+	
+	public Set<MessageID> getRemovedSearches() {
+		return removedSearches;
 	}
 	
 	@Override
@@ -72,6 +80,7 @@ public class RemoveRouteMessage extends RemoteMessage {
 		super.read(in);
 		
 		SerializationUtils.readMessageIDs(lostRoutes, in);
+		SerializationUtils.readMessageIDs(removedSearches, in);
 	}
 
 	@Override
@@ -79,5 +88,6 @@ public class RemoveRouteMessage extends RemoteMessage {
 		super.write(out);
 		
 		SerializationUtils.writeCollection(lostRoutes, out);
+		SerializationUtils.writeCollection(removedSearches, out);
 	}
 }

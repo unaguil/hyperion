@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -33,15 +32,18 @@ public class ForwardComposer {
 	protected final Peer peer;
 	
 	private final boolean directBroadcast;
+	
+	private final boolean multiplePaths;
 
 	private final Logger logger = Logger.getLogger(ForwardComposer.class);
 
-	public ForwardComposer(final ForwardCompositionData fCompositionData, final CommonCompositionSearch commonCompositionSearch, final boolean directBroadcast) {
+	public ForwardComposer(final ForwardCompositionData fCompositionData, final CommonCompositionSearch commonCompositionSearch, final boolean directBroadcast, final boolean multiplePaths) {
 		this.fCompositionData = fCompositionData;
 		this.commonCompositionSearch = commonCompositionSearch;
 		this.gCreator = commonCompositionSearch.getGraphCreator();
 		this.peer = commonCompositionSearch.getPeer();
 		this.directBroadcast = directBroadcast;
+		this.multiplePaths = multiplePaths;
 	}
 
 	public void newSuccessors(final Map<Service, Set<ServiceDistance>> newSuccessors) {
@@ -58,7 +60,7 @@ public class ForwardComposer {
 			} else {
 				// the service is a not an INIT service -> check if the
 				// service is covered and forward its composition message
-				final Map<SearchID, List<FCompositionMessage>> receivedMessages = fCompositionData.getReceivedMessages(service);
+				final Map<SearchID, Set<FCompositionMessage>> receivedMessages = fCompositionData.getReceivedMessages(service);
 				for (final SearchID searchID : receivedMessages.keySet()) {
 					if (!receivedMessages.get(searchID).isEmpty()) {
 						final Set<ServiceDistance> notForwardedSuccessors = filterForwardedSuccessors(successors, searchID);
@@ -88,7 +90,7 @@ public class ForwardComposer {
 	}
 
 	private Set<ServiceDistance> filterForwardedSuccessors(final Set<ServiceDistance> successors, final SearchID searchID) {
-		if (!directBroadcast) {
+		if (!directBroadcast || multiplePaths) {
 			final Set<ServiceDistance> notForwardedSuccessors = notForwardedSuccessors(searchID, successors);
 			addAllForwardedSuccessors(searchID, notForwardedSuccessors);
 			return notForwardedSuccessors;
@@ -125,11 +127,11 @@ public class ForwardComposer {
 	public void forwardCompositionMessage(final FCompositionMessage fCompositionMessage, final Set<Service> services) {
 		if (!services.isEmpty()) {
 			logger.debug("Peer " + peer.getPeerID() + " forward composition search " + fCompositionMessage.getSearchID() + " for successors " + services + " from service " + fCompositionMessage.getSourceService());
-			gCreator.forwardMessage(fCompositionMessage, services, commonCompositionSearch.isDirectBroadcast());
+			gCreator.forwardMessage(fCompositionMessage, services, commonCompositionSearch.isDirectBroadcast(), commonCompositionSearch.useMultiplePaths());
 		}
 	}
 
-	public static int getTTL(final List<FCompositionMessage> messages) {
+	public static int getTTL(final Collection<FCompositionMessage> messages) {
 		final Collection<Integer> values = new ArrayList<Integer>();
 		for (final FCompositionMessage fCompositionMessage : messages)
 			values.add(Integer.valueOf(fCompositionMessage.getTTL()));
@@ -165,7 +167,7 @@ public class ForwardComposer {
 	}
 
 	public static FCompositionMessage mergeReceivedMessages(final Service service, final SearchID searchID, final PeerID peerID, final Set<ServiceDistance> successors, final ForwardCompositionData fCompositionData, final Logger logger) {
-		final List<FCompositionMessage> receivedMessages = fCompositionData.getReceivedMessages(service).get(searchID);
+		final Set<FCompositionMessage> receivedMessages = fCompositionData.getReceivedMessages(service).get(searchID);
 		final FCompositionMessage fCompositionMessage = new FCompositionMessage(searchID, service, successors, getTTL(receivedMessages) - 1, fCompositionData.getRemainingTime(searchID));
 		// Merge all received compositions
 
@@ -197,13 +199,13 @@ public class ForwardComposer {
 			if (gCreator.containsLocalService(service)) {
 				logger.trace("Peer " + peer.getPeerID() + " added composition message to message table");
 
-				// Updating received messages for current service node
-				fCompositionData.addReceivedMessage(service, fCompositionMessage);
-
-				// Propagate messages
-				final SearchID searchID = fCompositionMessage.getSearchID();
-				final Set<ServiceDistance> successors = gCreator.getSuccessors(service);
-				processForwardCompositionMessages(successors, service, searchID);
+				// Updating received messages for current service node				
+				if (fCompositionData.addReceivedMessage(service, fCompositionMessage)) {
+					// Propagate messages
+					final SearchID searchID = fCompositionMessage.getSearchID();
+					final Set<ServiceDistance> successors = gCreator.getSuccessors(service);
+					processForwardCompositionMessages(successors, service, searchID);
+				}
 			}
 		}
 	}

@@ -7,11 +7,9 @@ import graphcreation.graph.servicegraph.node.ServiceNode;
 import graphcreation.services.Service;
 import graphsearch.forward.message.FCompositionMessage;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,12 +19,14 @@ class SearchEntry {
 
 	// a map which holds those messages which were received for the
 	// specified service
-	private final Map<Service, List<FCompositionMessage>> receivedMessagesPerService = new HashMap<Service, List<FCompositionMessage>>();
+	private final Map<Service, Set<FCompositionMessage>> receivedMessagesPerService = new HashMap<Service, Set<FCompositionMessage>>();
 	private final Map<Service, Map<InputParameter, Boolean>> inputsTablePerService = new HashMap<Service, Map<InputParameter, Boolean>>();
 	private final Set<Service> forwardedSuccesors = new HashSet<Service>();
 
 	private final long timestamp;
 	private final long firstReceivedMessageRemainingTime;
+	
+	private boolean hasChanged = false;
 	
 	private final GraphCreator gCreator;
 
@@ -59,15 +59,25 @@ class SearchEntry {
 		return inputsTable;
 	}
 
-	public void addReceivedMessage(final Service service, final FCompositionMessage fCompositionMessage) {
+	public void addReceivedMessage(final Service service, final FCompositionMessage fCompositionMessage) { 
 		if (!receivedMessagesPerService.containsKey(service)) {
-			receivedMessagesPerService.put(service, new ArrayList<FCompositionMessage>());
+			receivedMessagesPerService.put(service, new HashSet<FCompositionMessage>());
 			inputsTablePerService.put(service, createInputsTable(service));
 		}
-
+		
+		final int priorSize = receivedMessagesPerService.get(service).size();
 		receivedMessagesPerService.get(service).add(fCompositionMessage);
+		
+		if (priorSize < receivedMessagesPerService.get(service).size())
+			hasChanged = true;
 
 		calculateNewCovers(service, fCompositionMessage);
+	}
+	
+	public boolean hasChanged() {
+		final boolean value = hasChanged;
+		hasChanged = false;
+		return value;
 	}
 	
 	private Set<InputParameter> getConnectedInputs(final Service service, final Service ancestor) {
@@ -109,9 +119,9 @@ class SearchEntry {
 			inputsTablePerService.get(service).put(input, Boolean.TRUE);
 	}
 
-	public List<FCompositionMessage> getMessages(final Service service) {
+	public Set<FCompositionMessage> getMessages(final Service service) {
 		if (!receivedMessagesPerService.containsKey(service))
-			return new ArrayList<FCompositionMessage>();
+			return new HashSet<FCompositionMessage>();
 
 		return receivedMessagesPerService.get(service);
 	}

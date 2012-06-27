@@ -1,6 +1,7 @@
 package graphsearch.forward;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import graphcreation.collisionbased.ServiceDistance;
 import graphcreation.services.Service;
@@ -46,5 +47,17 @@ public class FCompositionMessageTest {
 		
 		assertEquals(fCompositionMessage.getHops(), result.getHops());
 		assertEquals(fCompositionMessage.getDistance(), result.getDistance());
+	}
+	
+	@Test
+	public void testEquals() {
+		final ServiceDistance sDistance = new ServiceDistance(new Service("S1", new PeerID("4")), new Integer(3));
+		final FCompositionMessage fCompositionMessage = new FCompositionMessage(new SearchID(new PeerID("3")), new Service("S0", new PeerID("0")), Collections.singleton(sDistance), 5, 230);
+		
+		final ServiceDistance sDistance2 = new ServiceDistance(new Service("S1", new PeerID("4")), new Integer(3));
+		final FCompositionMessage fCompositionMessage2 = new FCompositionMessage(new SearchID(new PeerID("3")), new Service("S1", new PeerID("0")), Collections.singleton(sDistance2), 5, 230);
+						
+		assertEquals(fCompositionMessage, fCompositionMessage);
+		assertFalse(fCompositionMessage.equals(fCompositionMessage2));
 	}
 }

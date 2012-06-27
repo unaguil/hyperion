@@ -63,6 +63,7 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 	protected long MSG_INTERVAL = 0;
 	
 	protected boolean DIRECT_BROADCAST = false;
+	protected boolean MULTIPLE_PATHS = false; 
 
 	private RunningSearches runningSearches;
 
@@ -208,7 +209,15 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
 		}
 		
-		shortestPathNotificator = new ShortestPathNotificator(peer.getPeerID(), gCreator, this, DIRECT_BROADCAST);
+		try {
+			final String multiplePaths = Configuration.getInstance().getProperty("graphsearch.multiplePaths");
+			MULTIPLE_PATHS = Boolean.parseBoolean(multiplePaths);
+			logger.info("Peer " + peer.getPeerID() + " MULTIPLE_PATHS set to " + MULTIPLE_PATHS);
+		} catch (final Exception e) {
+			logger.error("Peer " + peer.getPeerID() + " had problem loading configuration: " + e.getMessage());
+		}
+		
+		shortestPathNotificator = new ShortestPathNotificator(peer.getPeerID(), gCreator, this, DIRECT_BROADCAST, MULTIPLE_PATHS);
 		
 		runningSearches = new RunningSearches(SEARCH_EXPIRATION, true);
 		runningSearches.start();
@@ -306,5 +315,9 @@ public abstract class CommonCompositionSearch implements CommunicationLayer, Mul
 
 	public boolean isDirectBroadcast() {
 		return DIRECT_BROADCAST;
+	}
+
+	public boolean useMultiplePaths() {
+		return MULTIPLE_PATHS;
 	}
 }

@@ -196,4 +196,25 @@ public class FCompositionMessage extends RemoteMessage {
 		SerializationUtils.writeServiceMap(successorDistances, out);
 		out.writeShort(hops);
 	}
+	
+	private boolean equalCompositions(final Set<Service> composition) {
+		return this.compositionServices.containsAll(composition) && composition.containsAll(this.compositionServices);
+	}
+	
+	@Override
+	public boolean equals(final Object o) {
+		if (!(o instanceof FCompositionMessage))
+			return false;
+		final FCompositionMessage fCompositionMessage = (FCompositionMessage)o;
+		return this.getSourceService().equals(fCompositionMessage.getSourceService()) && equalCompositions(fCompositionMessage.getComposition());
+	}
+	
+	@Override
+	public int hashCode() {
+		int result = 17;
+
+		result = 37 * result + getSourceService().hashCode();
+		result = 37 * result + compositionServices.hashCode();
+		return result;
+	}
 }

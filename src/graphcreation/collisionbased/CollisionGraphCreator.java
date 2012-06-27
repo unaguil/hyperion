@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +31,7 @@ import java.util.Set;
 import multicast.MulticastMessageListener;
 import multicast.ParameterSearch;
 import multicast.ParameterSearchListener;
+import multicast.Util;
 import multicast.search.ParameterSearchImpl;
 import multicast.search.Route;
 import multicast.search.message.SearchResponseMessage;
@@ -54,6 +56,8 @@ import dissemination.TableChangedListener;
  * 
  */
 public class CollisionGraphCreator implements CommunicationLayer, ParameterSearchListener, GraphCreator, TableChangedListener {
+
+	private static final int MAX_PATHS = 2;
 
 	// the communication layer
 	private final Peer peer;
@@ -113,44 +117,51 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 			return entryA.getValue().intValue() - entryB.getValue().intValue();
 		}
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see graphcreation.collisiondetection.GCreation#forwardMessage(message.
-	 * BroadcastMessage, java.util.Set)
-	 */
-	@Override
-	public void forwardMessage(final BroadcastMessage payload, final Set<Service> destinations, final boolean directBroadcast) {		
-		logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType() + " to " + destinations);
-		final Map<PeerID, Set<PeerID>> forwardTable = new HashMap<PeerID, Set<PeerID>>();
-		final Set<PeerID> directMulticast = new HashSet<PeerID>();
-		
+	
+	private Map<PeerID, List<Route>> obtainMaxPaths(final Set<Service> destServices, final int maxPaths) {
+		final Map<PeerID, List<Route>> routes = new HashMap<PeerID, List<Route>>();
+		final Set<PeerID> destPeers = getPeers(destServices);
 		synchronized (sdg) {
-			for (final Service service : destinations) {
-				//find the shortest path to reach each destination			
-				final Route route = sdg.getRoute(service.getPeerID());
-				if (route != null) {
-					if (route instanceof IndirectRoute) {
-						if (!forwardTable.containsKey(route.getThrough()))
-							forwardTable.put(route.getThrough(), new HashSet<PeerID>());
-						forwardTable.get(route.getThrough()).add(service.getPeerID());
-					} else
-						directMulticast.add(route.getDest());
-				}
+			for (final PeerID dest : destPeers) {
+				final LinkedList<Route> lList = new LinkedList<Route>(sdg.getDirectRoutes(dest));
+				lList.addAll(sdg.getIndirectRoutes(dest));
+				Collections.sort(lList, Util.distanceComparator);
+				while (lList.size() > maxPaths)
+					lList.removeLast();
+				
+				if (!lList.isEmpty())
+					routes.put(dest, lList);
 			}
 		}
-
-		//perform forwarding through different intermediate nodes
-		for (final Entry<PeerID, Set<PeerID>> forwardEntry : forwardTable.entrySet()) {
-			logger.trace("Peer " + peer.getPeerID() + " forwarding message to " + forwardEntry.getValue() + " through " + forwardEntry.getKey());
-			pSearch.sendMulticastMessage(Collections.singleton(forwardEntry.getKey()), new ForwardMessage(peer.getPeerID(), payload, forwardEntry.getValue()), directBroadcast);
-		}
-		
-		//perform direct multicast
-		if (!directMulticast.isEmpty()) {
-			logger.trace("Peer " + peer.getPeerID() + " multicasting to " + directMulticast);
-			pSearch.sendMulticastMessage(directMulticast, payload, directBroadcast);
+		return routes;
+	}
+	
+	private Set<PeerID> getPeers(final Set<Service> services) {
+		final Set<PeerID> peers = new HashSet<PeerID>();
+		for (final Service service : services)
+			peers.add(service.getPeerID());
+		return peers;
+	}
+	
+	@Override
+	public void forwardMessage(final BroadcastMessage payload, final Set<Service> destinations, final boolean directBroadcast, final boolean multiplePaths) {		
+		logger.debug("Peer " + peer.getPeerID() + " forwarding " + payload.getType() + " to " + destinations);
+	
+		final int maxPaths = multiplePaths?MAX_PATHS:1;
+		final Map<PeerID, List<Route>> routes = obtainMaxPaths(destinations, maxPaths);
+		logger.trace("Peer " + peer.getPeerID() + " routes " + routes);
+		for (final Entry<PeerID, List<Route>> entry : routes.entrySet()) {
+			final PeerID dest = entry.getKey();
+			for (final Route route : entry.getValue()) {
+				if (route instanceof IndirectRoute) {
+					final IndirectRoute indirectRoute = (IndirectRoute)route;
+					logger.trace("Peer " + peer.getPeerID() + " forwarding message to " + dest + " through " + indirectRoute.getThrough());
+					pSearch.sendMulticastMessage(Collections.singleton(indirectRoute.getThrough()), new ForwardMessage(peer.getPeerID(), payload, Collections.singleton(dest)), directBroadcast);
+				} else {
+					logger.trace("Peer " + peer.getPeerID() + " multicasting to " + route.getDest());
+					pSearch.sendMulticastMessage(Collections.singleton(route.getDest()), payload, directBroadcast);
+				}
+			}
 		}
 	}
 
@@ -575,6 +586,6 @@ public class CollisionGraphCreator implements CommunicationLayer, ParameterSearc
 
 	@Override
 	public void neighborsChanged(Set<PeerID> newNeighbors, Set<PeerID> lostNeighbors) {
-		collisionNode.neighborsChanged(lostNeighbors);
+		//collisionNode.neighborsChanged(lostNeighbors);
 	}
 }

@@ -103,7 +103,7 @@ public class RemoteMulticastMessage extends RemoteMessage implements MulticastMe
 		remoteDestinations.remove(destination);
 	}
 	
-	public boolean isDirectBroadcas() {
+	public boolean isDirectBroadcast() {
 		return directBroadcast;
 	}
 
