@@ -25,6 +25,8 @@ import util.logger.Logger;
  */
 final class ResponseProcessor extends WaitableThread {
 
+	private static final int MAX_MESSAGES = 50;
+
 	// the communication peer
 	private final ReliableBroadcastPeer peer;
 	
@@ -37,8 +39,6 @@ final class ResponseProcessor extends WaitableThread {
 	private final Random r = new Random();
 	
 	private final MessageCounter msgCounter;
-	
-	private final int MAX_MESSAGES = 15;
 		
 	private ReliableBroadcast reliableBroadcast = null;
 	private final Object mutex = new Object();
@@ -97,13 +97,13 @@ final class ResponseProcessor extends WaitableThread {
 		synchronized (waitingResponses) {
 			int counter = 0;
 			if (!waitingResponses.isEmpty())	 {								
-				for (final Iterator<BroadcastMessage> it = waitingResponses.iterator(); it.hasNext() && counter < MAX_MESSAGES; ) {
+				for (final Iterator<BroadcastMessage> it = waitingResponses.iterator(); it.hasNext() && counter < MAX_MESSAGES;) {
 					final BroadcastMessage broadcastMessage = it.next();
 					responses.add(broadcastMessage);
 					it.remove();
 					counter++;
-				}					
-			}
+				}
+			}					
 		}
 
 		return new BundleMessage(peer.getPeerID(), responses);
