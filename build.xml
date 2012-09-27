@@ -1,21 +1,20 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="build" name="Hyperion">
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="hyperion">
 	<property environment="env" />
-	<property name="AGENTJ_CORE" value="${env.AGENTJ}/core" />
 	<property name="junit.output.dir" value="junit" />
 	<property name="target" value="1.6" />
 	<property name="source" value="1.6" />
 	<property name="junit.formatter.type" value="brief" />
 
-	<path id="Hyperion.classpath">
+	<path id="hyperion.classpath">
 		<fileset dir="lib/">
 			<include name="*.jar" />
 			<exclude name="junit.jar" />
 		</fileset>
 	</path>
 
-	<path id="Hyperion.classpath.test">
-		<path refid="Hyperion.classpath" />
+	<path id="hyperion.classpath.test">
+		<path refid="hyperion.classpath" />
 		<pathelement location="dist/hyperion.jar" />
 		<pathelement location="lib/junit-4.8.2.jar" />
 	</path>
@@ -35,11 +34,11 @@
 		<echo message="${ant.project.name}: ${ant.file}" />
 		<javac debug="on" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="src" />
-			<classpath refid="Hyperion.classpath" />
+			<classpath refid="hyperion.classpath" />
 		</javac>
 		<javac debug="on" destdir="bin" source="${source}" target="${target}" includeAntRuntime="false">
 			<src path="test" />
-			<classpath refid="Hyperion.classpath" />
+			<classpath refid="hyperion.classpath" />
 		</javac>
 		<jar jarfile="dist/hyperion.jar" basedir="bin" />
 		<jar destfile="dist/hyperion-sources.jar" basedir="src" />
@@ -48,7 +47,7 @@
 	<target name="test" depends="build">
 		<mkdir dir="${junit.output.dir}" />
 		<junit printSummary="on" haltonfailure="yes" showoutput="true">
-			<classpath refid="Hyperion.classpath.test" />
+			<classpath refid="hyperion.classpath.test" />
 			<formatter type="${junit.formatter.type}" />
 			<batchtest todir="${junit.output.dir}">
 				<fileset dir="test/">
