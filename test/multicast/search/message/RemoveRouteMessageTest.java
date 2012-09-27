@@ -36,7 +36,7 @@ public class RemoveRouteMessageTest {
 		removeRouteMessage.write(out);
 		out.close();
 		
-		assertEquals(40, bos.toByteArray().length);
+		assertEquals(41, bos.toByteArray().length);
 		
 		final ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 		final ObjectInputStream in = new ObjectInputStream(bis);

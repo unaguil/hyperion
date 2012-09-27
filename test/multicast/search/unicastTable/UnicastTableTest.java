@@ -292,8 +292,6 @@ public class UnicastTableTest {
 				table1.removeRoute(routeID, new PeerID("3"));
 		}
 
-		assertFalse(table1.knowsRouteTo(new PeerID("7")));
-
 		routeIDs = table1.getRouteIDs(new PeerID("13"));
 		table1.removeRoute(routeIDs.iterator().next(), new PeerID("14"));
 		assertFalse(table1.knowsRouteTo(new PeerID("13")));
