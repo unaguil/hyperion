@@ -46,7 +46,7 @@
 
 	<target name="test" depends="build">
 		<mkdir dir="${junit.output.dir}" />
-		<junit printSummary="on" haltonfailure="yes" showoutput="true">
+		<junit printSummary="on" haltonfailure="no" showoutput="true">
 			<classpath refid="hyperion.classpath.test" />
 			<formatter type="${junit.formatter.type}" />
 			<batchtest todir="${junit.output.dir}">
