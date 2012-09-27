@@ -14,7 +14,7 @@
 *   limitations under the License.
 *
 *  
-*   Author: Unai Aguilera <gkalgan@gmail.com>
+*   Author: Unai Aguilera <unai.aguilera@deusto.es>
 */
 
 package graphsearch.connectionsFilter;
